@@ -1,17 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
+from cryptography.exceptions import InvalidTag
 from cv2_enumerate_cameras import enumerate_cameras
 
 try:
     from src.detector import FaceDetector
+    from src.face_lock import EncryptedFaceRegion, FaceRegionLocker
+    from src.privacy import anonymize_faces
 except ImportError:
     from detector import FaceDetector
+    from face_lock import EncryptedFaceRegion, FaceRegionLocker
+    from privacy import anonymize_faces
 
 
 def parse_source(source: str) -> int | str:
@@ -369,6 +375,98 @@ def main() -> None:
         default=0.9,
         help="EMA factor for smoother FPS display (0..1, higher is smoother).",
     )
+    parser.add_argument(
+        "--anonymize-mode",
+        type=str,
+        default="blur",
+        choices=["none", "blur", "pixelate", "solid", "obliterate", "headcloak", "silhouette", "lock"],
+        help="Face anonymization mode for detected boxes.",
+    )
+    parser.add_argument(
+        "--blur-scale",
+        type=float,
+        default=0.2,
+        help="Downscale factor before blur (lower is faster/stronger).",
+    )
+    parser.add_argument(
+        "--blur-kernel",
+        type=int,
+        default=31,
+        help="Gaussian blur kernel size (odd value preferred).",
+    )
+    parser.add_argument(
+        "--pixel-block",
+        type=int,
+        default=16,
+        help="Pixel block size for pixelate mode.",
+    )
+    parser.add_argument(
+        "--face-padding",
+        type=float,
+        default=0.12,
+        help="Padding ratio around each detected face box.",
+    )
+    parser.add_argument(
+        "--obliterate-scale",
+        type=float,
+        default=0.08,
+        help="Aggressive downscale factor for obliterate mode (lower = stronger destruction).",
+    )
+    parser.add_argument(
+        "--scramble-block",
+        type=int,
+        default=12,
+        help="Block size used to scramble local facial structure in obliterate mode.",
+    )
+    parser.add_argument(
+        "--palette-levels",
+        type=int,
+        default=10,
+        help="Color quantization levels in obliterate mode (lower = stronger anonymization).",
+    )
+    parser.add_argument(
+        "--scramble-seed",
+        type=int,
+        default=1337,
+        help="Seed for deterministic scrambling pattern in obliterate mode.",
+    )
+    parser.add_argument(
+        "--head-ratio",
+        type=float,
+        default=0.6,
+        help="Expansion ratio for headcloak mode to include hair/jaw/ears.",
+    )
+    parser.add_argument(
+        "--silhouette-ratio",
+        type=float,
+        default=0.8,
+        help="Expansion ratio for silhouette mode to include shoulders and upper body cues.",
+    )
+    parser.add_argument(
+        "--lock-key",
+        type=str,
+        default="",
+        help="Passphrase for reversible face lock mode.",
+    )
+    parser.add_argument(
+        "--unlock-key",
+        type=str,
+        default="",
+        help="Optional passphrase used for unlock (defaults to --lock-key).",
+    )
+    parser.add_argument(
+        "--lock-overlay",
+        type=str,
+        default="pixelate",
+        choices=["pixelate", "solid", "noise"],
+        help="Preview style used after face ROI is encrypted in lock mode.",
+    )
+    parser.add_argument(
+        "--save-lock-payload",
+        type=str,
+        default="",
+        help="Optional JSONL path to save encrypted face payloads per frame.",
+    )
     args = parser.parse_args()
     backend_flag = parse_backend(args.backend)
     enumerated_cameras = get_enumerated_cameras()
@@ -388,6 +486,18 @@ def main() -> None:
             "Provide a valid weight file with --model, for example: "
             "--model models/yolov11n-face.pt"
         )
+
+    locker: Optional[FaceRegionLocker] = None
+    unlocker: Optional[FaceRegionLocker] = None
+    last_payloads: List[EncryptedFaceRegion] = []
+    show_unlocked = False
+    decrypt_error_logged = False
+    if args.anonymize_mode == "lock":
+        if not args.lock_key:
+            raise RuntimeError("--lock-key is required when --anonymize-mode lock is used.")
+        locker = FaceRegionLocker(args.lock_key)
+        unlocker = FaceRegionLocker(args.unlock_key if args.unlock_key else args.lock_key)
+        print("Lock mode controls: press U to toggle unlock preview.")
 
     source: int | str
     if args.source_choice is not None:
@@ -441,6 +551,7 @@ def main() -> None:
     last_detections: List[Tuple[List[int], float]] = []
     t_prev = time.perf_counter()
     fps_ema = 0.0
+    anonymize_ms_ema = 0.0
     reconnect_attempts = max(args.reconnect, 0)
     detect_every = max(args.detect_every, 1)
     print_every = max(args.print_every, 1)
@@ -485,6 +596,54 @@ def main() -> None:
                 last_detections = scale_boxes(current_detections, scale_x, scale_y)
                 last_boxes = [box for box, _ in last_detections]
 
+            t_anonymize_start = time.perf_counter()
+            if args.anonymize_mode == "lock" and locker is not None:
+                locked_frame, last_payloads = locker.lock_faces(
+                    frame,
+                    last_boxes,
+                    overlay_mode=args.lock_overlay,
+                )
+                if show_unlocked:
+                    try:
+                        frame = (unlocker or locker).unlock_faces(locked_frame, last_payloads)
+                        decrypt_error_logged = False
+                    except InvalidTag:
+                        if not decrypt_error_logged:
+                            print("\nUnlock failed: wrong key or corrupted payload.")
+                            decrypt_error_logged = True
+                        frame = locked_frame
+                else:
+                    frame = locked_frame
+
+                if args.save_lock_payload and last_payloads:
+                    record = {
+                        "frame_idx": frame_idx,
+                        "payloads": FaceRegionLocker.payloads_to_jsonable(last_payloads),
+                    }
+                    with open(args.save_lock_payload, "a", encoding="utf-8") as fp:
+                        fp.write(json.dumps(record, ensure_ascii=True) + "\n")
+            else:
+                anonymize_faces(
+                    frame,
+                    last_boxes,
+                    mode=args.anonymize_mode,
+                    blur_scale=args.blur_scale,
+                    blur_kernel=args.blur_kernel,
+                    pixel_block=args.pixel_block,
+                    padding_ratio=args.face_padding,
+                    obliterate_scale=args.obliterate_scale,
+                    scramble_block=args.scramble_block,
+                    palette_levels=args.palette_levels,
+                    scramble_seed=args.scramble_seed,
+                    head_ratio=args.head_ratio,
+                    silhouette_ratio=args.silhouette_ratio,
+                )
+            anonymize_ms = (time.perf_counter() - t_anonymize_start) * 1000.0
+            if anonymize_ms_ema <= 0.0:
+                anonymize_ms_ema = anonymize_ms
+            else:
+                anonymize_ms_ema = (fps_alpha * anonymize_ms_ema) + ((1.0 - fps_alpha) * anonymize_ms)
+
             t_now = time.perf_counter()
             fps_instant = 1.0 / max(t_now - t_prev, 1e-6)
             t_prev = t_now
@@ -495,7 +654,11 @@ def main() -> None:
 
             if frame_idx % print_every == 0:
                 print(
-                    f"faces={len(last_boxes)} boxes={last_boxes} fps={fps_ema:.1f}",
+                    (
+                        f"faces={len(last_boxes)} boxes={last_boxes} "
+                        f"fps={fps_ema:.1f} anonymize_ms={anonymize_ms_ema:.2f} mode={args.anonymize_mode} "
+                        f"unlock={'on' if show_unlocked else 'off'}"
+                    ),
                     end="\r",
                 )
 
@@ -503,8 +666,11 @@ def main() -> None:
                 if args.debug_draw:
                     draw_debug_overlay(frame, last_detections)
                 cv2.imshow("Phone Camera Stream", frame)
-                if (cv2.waitKey(1) & 0xFF) == ord("q"):
+                key = cv2.waitKey(1) & 0xFF
+                if key in (ord("q"), ord("Q")):
                     break
+                if args.anonymize_mode == "lock" and key in (ord("u"), ord("U")):
+                    show_unlocked = not show_unlocked
     finally:
         cap.release()
         cv2.destroyAllWindows()
