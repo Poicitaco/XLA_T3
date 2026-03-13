@@ -1,0 +1,17 @@
+{
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true,
+    "windsurf": true,
+    "cursor-global": true,
+    "cursor-workspace": true
+  },
+  "servers": {
+    "stitch": {
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "AQ.Ab8RN6I81jaN95wxhWFx628WW42EA9ghr5yudu5PCqREpJWIjg"
+      }
+    }
+  }
+}
