@@ -35,6 +35,18 @@ def _expand_head_box(box: List[int], width: int, height: int, head_ratio: float)
     return _clamp_box(expanded, width, height)
 
 
+def _expand_neckup_box(box: List[int], width: int, height: int, neck_ratio: float) -> List[int]:
+    """Expand around face to cover only head + neck (not shoulders/chest)."""
+    x, y, w, h = box
+    r = max(0.0, neck_ratio)
+    pad_left = int(round(w * (0.45 + 0.25 * r)))
+    pad_right = int(round(w * (0.45 + 0.25 * r)))
+    pad_top = int(round(h * (0.85 + 0.45 * r)))
+    pad_bottom = int(round(h * (0.35 + 0.20 * r)))
+    expanded = [x - pad_left, y - pad_top, w + pad_left + pad_right, h + pad_top + pad_bottom]
+    return _clamp_box(expanded, width, height)
+
+
 def _expand_silhouette_box(box: List[int], width: int, height: int, silhouette_ratio: float) -> List[int]:
     """Expand to full head-and-shoulders region to hide global identity cues."""
     x, y, w, h = box
@@ -200,6 +212,7 @@ def anonymize_faces(
     scramble_seed: int = 1337,
     head_ratio: float = 0.6,
     silhouette_ratio: float = 0.8,
+    neck_ratio: float = 0.6,
 ) -> np.ndarray:
     """Apply anonymization to detected face boxes in-place and return frame."""
     if frame.size == 0 or not boxes or mode == "none":
@@ -210,6 +223,8 @@ def anonymize_faces(
     for box in boxes:
         if mode == "headcloak":
             x, y, w, h = _expand_head_box(box, width, height, head_ratio=head_ratio)
+        elif mode == "neckup":
+            x, y, w, h = _expand_neckup_box(box, width, height, neck_ratio=neck_ratio)
         elif mode == "silhouette":
             x, y, w, h = _expand_silhouette_box(box, width, height, silhouette_ratio=silhouette_ratio)
         else:
@@ -223,6 +238,12 @@ def anonymize_faces(
 
         if mode == "blur":
             processed = _fast_gaussian_blur(roi, blur_scale=blur_scale, blur_kernel=blur_kernel)
+        elif mode == "neckup":
+            processed = _fast_gaussian_blur(
+                roi,
+                blur_scale=min(blur_scale, 0.12),
+                blur_kernel=max(blur_kernel, 45),
+            )
         elif mode == "pixelate":
             processed = _pixelate(roi, pixel_block=pixel_block)
         elif mode == "solid":

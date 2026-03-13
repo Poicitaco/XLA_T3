@@ -14,10 +14,12 @@ try:
     from src.detector import FaceDetector
     from src.face_lock import EncryptedFaceRegion, FaceRegionLocker
     from src.privacy import anonymize_faces
+    from src.bbox_smoother import BBoxSmoother, KalmanBBoxSmoother
 except ImportError:
     from detector import FaceDetector
     from face_lock import EncryptedFaceRegion, FaceRegionLocker
     from privacy import anonymize_faces
+    from bbox_smoother import BBoxSmoother, KalmanBBoxSmoother
 
 
 def parse_source(source: str) -> int | str:
@@ -254,6 +256,27 @@ def draw_debug_overlay(frame, detections: List[Tuple[List[int], float]]) -> None
         )
 
 
+def draw_key_overlay(frame: np.ndarray, anonymize_mode: str, unlock_on: bool) -> None:
+    """Draw keyboard controls on the preview frame for easier live demos."""
+    lines = ["Q: quit"]
+    if anonymize_mode == "lock":
+        lines.append(f"U: toggle unlock ({'ON' if unlock_on else 'OFF'})")
+
+    y = 28
+    for line in lines:
+        cv2.putText(
+            frame,
+            line,
+            (14, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+        y += 26
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run face detection from phone camera stream or local camera."
@@ -346,6 +369,11 @@ def main() -> None:
         help="Draw face boxes and confidence on preview window for validation.",
     )
     parser.add_argument(
+        "--show-keys",
+        action="store_true",
+        help="Show keyboard shortcuts overlay on preview window.",
+    )
+    parser.add_argument(
         "--proc-width",
         type=int,
         default=640,
@@ -379,7 +407,7 @@ def main() -> None:
         "--anonymize-mode",
         type=str,
         default="blur",
-        choices=["none", "blur", "pixelate", "solid", "obliterate", "headcloak", "silhouette", "lock"],
+        choices=["none", "blur", "neckup", "pixelate", "solid", "obliterate", "headcloak", "silhouette", "lock"],
         help="Face anonymization mode for detected boxes.",
     )
     parser.add_argument(
@@ -437,6 +465,12 @@ def main() -> None:
         help="Expansion ratio for headcloak mode to include hair/jaw/ears.",
     )
     parser.add_argument(
+        "--neck-ratio",
+        type=float,
+        default=0.6,
+        help="Expansion ratio for neckup mode (head + neck only).",
+    )
+    parser.add_argument(
         "--silhouette-ratio",
         type=float,
         default=0.8,
@@ -457,15 +491,81 @@ def main() -> None:
     parser.add_argument(
         "--lock-overlay",
         type=str,
-        default="pixelate",
-        choices=["pixelate", "solid", "noise"],
+        default="rps",
+        choices=["solid", "noise", "ciphernoise", "rps"],
         help="Preview style used after face ROI is encrypted in lock mode.",
+    )
+    parser.add_argument(
+        "--lock-pixel-block",
+        type=int,
+        default=12,
+        help="Pixel block size for lock overlay (larger gives stronger mosaic).",
+    )
+    parser.add_argument(
+        "--lock-noise-intensity",
+        type=int,
+        default=70,
+        help="Noise intensity for lock overlay noise/ciphernoise modes.",
+    )
+    parser.add_argument(
+        "--lock-noise-mix",
+        type=float,
+        default=0.9,
+        help="Noise blend factor for lock overlay noise/ciphernoise modes (0..1).",
+    )
+    parser.add_argument(
+        "--lock-head-ratio",
+        type=float,
+        default=0.45,
+        help="Expand lock region to full head (including hair) in lock mode.",
+    )
+    parser.add_argument(
+        "--rps-tile-size",
+        type=int,
+        default=8,
+        help="Tile size for Reversible Pixel Shuffling lock overlay.",
+    )
+    parser.add_argument(
+        "--rps-rounds",
+        type=int,
+        default=2,
+        help="Shuffle rounds for Reversible Pixel Shuffling lock overlay.",
     )
     parser.add_argument(
         "--save-lock-payload",
         type=str,
         default="",
         help="Optional JSONL path to save encrypted face payloads per frame.",
+    )
+    parser.add_argument(
+        "--smooth-boxes",
+        action="store_true",
+        help="Enable temporal smoothing for bounding boxes to reduce jitter.",
+    )
+    parser.add_argument(
+        "--smooth-method",
+        type=str,
+        default="ema",
+        choices=["ema", "kalman"],
+        help="Smoothing method: ema (exponential moving average) or kalman (Kalman filter).",
+    )
+    parser.add_argument(
+        "--smooth-alpha",
+        type=float,
+        default=0.7,
+        help="EMA smoothing factor (0-1). Higher = more responsive, lower = smoother.",
+    )
+    parser.add_argument(
+        "--smooth-history",
+        type=int,
+        default=5,
+        help="Number of frames in smoothing history.",
+    )
+    parser.add_argument(
+        "--smooth-iou-threshold",
+        type=float,
+        default=0.3,
+        help="IoU threshold for matching boxes across frames during smoothing.",
     )
     args = parser.parse_args()
     backend_flag = parse_backend(args.backend)
@@ -498,6 +598,22 @@ def main() -> None:
         locker = FaceRegionLocker(args.lock_key)
         unlocker = FaceRegionLocker(args.unlock_key if args.unlock_key else args.lock_key)
         print("Lock mode controls: press U to toggle unlock preview.")
+
+    # Initialize bbox smoother if enabled
+    bbox_smoother: Optional[BBoxSmoother | KalmanBBoxSmoother] = None
+    if args.smooth_boxes:
+        if args.smooth_method == "ema":
+            bbox_smoother = BBoxSmoother(
+                alpha=args.smooth_alpha,
+                history_size=args.smooth_history,
+                iou_threshold=args.smooth_iou_threshold,
+            )
+            print(f"BBox smoothing enabled: EMA (alpha={args.smooth_alpha})")
+        else:
+            bbox_smoother = KalmanBBoxSmoother(
+                iou_threshold=args.smooth_iou_threshold,
+            )
+            print("BBox smoothing enabled: Kalman filter")
 
     source: int | str
     if args.source_choice is not None:
@@ -594,7 +710,13 @@ def main() -> None:
                 infer_frame, scale_x, scale_y = prepare_inference_frame(frame, args.proc_width)
                 current_detections = detector.detect_faces_with_scores(infer_frame)
                 last_detections = scale_boxes(current_detections, scale_x, scale_y)
-                last_boxes = [box for box, _ in last_detections]
+                
+                # Apply bbox smoothing if enabled
+                if bbox_smoother is not None:
+                    smoothed_boxes = bbox_smoother.update(last_detections)
+                    last_boxes = smoothed_boxes
+                else:
+                    last_boxes = [box for box, _ in last_detections]
 
             t_anonymize_start = time.perf_counter()
             if args.anonymize_mode == "lock" and locker is not None:
@@ -602,6 +724,12 @@ def main() -> None:
                     frame,
                     last_boxes,
                     overlay_mode=args.lock_overlay,
+                    overlay_pixel_block=args.lock_pixel_block,
+                    overlay_noise_intensity=args.lock_noise_intensity,
+                    overlay_noise_mix=args.lock_noise_mix,
+                    head_ratio=args.lock_head_ratio,
+                    rps_tile_size=args.rps_tile_size,
+                    rps_rounds=args.rps_rounds,
                 )
                 if show_unlocked:
                     try:
@@ -637,6 +765,7 @@ def main() -> None:
                     scramble_seed=args.scramble_seed,
                     head_ratio=args.head_ratio,
                     silhouette_ratio=args.silhouette_ratio,
+                    neck_ratio=args.neck_ratio,
                 )
             anonymize_ms = (time.perf_counter() - t_anonymize_start) * 1000.0
             if anonymize_ms_ema <= 0.0:
@@ -665,6 +794,8 @@ def main() -> None:
             if args.show:
                 if args.debug_draw:
                     draw_debug_overlay(frame, last_detections)
+                if args.show_keys:
+                    draw_key_overlay(frame, args.anonymize_mode, show_unlocked)
                 cv2.imshow("Phone Camera Stream", frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key in (ord("q"), ord("Q")):
