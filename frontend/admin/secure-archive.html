@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA Admin — Secure Archive</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&display=swap" rel="stylesheet"/>
+  <script>tailwind.config={theme:{extend:{colors:{primary:"#FAFF00"},fontFamily:{display:["Plus Jakarta Sans"],mono:["Space Mono"]},borderRadius:{DEFAULT:"0px",lg:"0px",full:"9999px"}}}}</script>
+  <style>
+    .nb{border:3px solid #000}.nb2{border:2px solid #000}.bs{box-shadow:6px 6px 0 #000}.bs-sm{box-shadow:3px 3px 0 #000}
+    .ba{transition:all .1s}.ba:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000!important}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:2px solid transparent;transition:all .15s}
+    .nav-item:hover{background:#FAFF00;border-color:#000;box-shadow:3px 3px 0 #000}
+    .nav-item.active{background:#FAFF00;border:2px solid #000;box-shadow:3px 3px 0 #000}
+    .nav-soon{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.35;cursor:not-allowed}
+    select,input[type=text],input[type=password]{border:2px solid #000!important;border-radius:0!important;background:#fff}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#000}
+    /* Polaroid clip card */
+    .clip-card{background:#fff;border:3px solid #000;box-shadow:5px 5px 0 #000;padding:12px 12px 16px;display:flex;flex-direction:column;gap:0}
+    .clip-thumb{width:100%;aspect-ratio:16/9;background:#111;position:relative;overflow:hidden;border:2px solid #000;margin-bottom:12px}
+    .clip-thumb img{width:100%;height:100%;object-fit:cover}
+    .clip-thumb .no-thumb{display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#1a1a1a}
+    .clip-thumb .enc-badge{position:absolute;top:8px;left:8px;background:#000;color:#FAFF00;font-family:"Space Mono",monospace;font-size:9px;font-weight:bold;text-transform:uppercase;padding:2px 6px}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex overflow-hidden">
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="w-[220px] min-h-screen bg-white border-r-4 border-black flex flex-col shrink-0">
+  <div class="p-5 border-b-3 border-black bg-primary">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-2xl font-black">security</span>
+      <div>
+        <div class="font-black text-lg uppercase leading-none">XLA</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest opacity-70">Admin Panel</div>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1 mt-2">
+    <a href="/ui/admin/dashboard.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">dashboard</span>Dashboard
+    </a>
+    <a href="/ui/admin/face-registry.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">face</span>Face Registry
+    </a>
+    <a href="/ui/admin/secure-archive.html" class="nav-item active">
+      <span class="material-symbols-outlined text-[18px]">lock</span>Secure Archive
+    </a>
+    <div class="my-3 border-t-2 border-black opacity-20"></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">analytics</span>Analytics <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">videocam</span>Cameras <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">policy</span>Privacy Rules <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">history</span>Admin Logs <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+  </nav>
+  <div class="p-3 border-t-3 border-black space-y-2">
+    <button onclick="switchToUser()" class="w-full flex items-center gap-2 px-4 py-3 bg-primary nb font-black text-xs uppercase bs-sm ba">
+      <span class="material-symbols-outlined text-[16px]">shield_person</span>User View
+    </button>
+    <button onclick="doLogout()" class="w-full flex items-center gap-2 px-4 py-3 bg-black text-white font-black text-xs uppercase bs-sm ba hover:bg-red-600">
+      <span class="material-symbols-outlined text-[16px]">logout</span>Logout
+    </button>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+  <header class="bg-white border-b-4 border-black px-8 py-4 flex items-center justify-between shrink-0">
+    <div>
+      <h1 class="text-2xl font-black uppercase tracking-tight">Secure Archive</h1>
+      <p class="font-mono text-xs text-gray-500 uppercase tracking-widest">AES-256-GCM encrypted clip vault</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="clip-count-badge" class="px-4 py-2 nb bs-sm font-black text-xs uppercase bg-white">0 CLIPS</div>
+      <button onclick="openDeleteAll()" class="flex items-center gap-2 px-4 py-2 bg-black text-white nb bs-sm font-black text-xs uppercase ba hover:bg-red-600">
+        <span class="material-symbols-outlined text-[16px]">delete_sweep</span>Delete All
+      </button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="px-8 pt-5 pb-0 shrink-0 flex gap-3 items-center">
+    <div class="relative flex-1">
+      <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-[20px]">search</span>
+      <input type="text" id="search-input" placeholder="SEARCH CLIPS BY NAME OR DATE..."
+             oninput="filterClips()" class="w-full pl-10 pr-4 py-2 nb2 font-bold text-sm focus:outline-none bg-white"/>
+    </div>
+    <button onclick="loadClips()" class="flex items-center gap-1 px-4 py-2 nb2 bs-sm font-black text-xs uppercase ba hover:bg-primary">
+      <span class="material-symbols-outlined text-[16px]">refresh</span>Refresh
+    </button>
+  </div>
+
+  <!-- Clips grid -->
+  <div id="clips-area" class="flex-1 overflow-y-auto px-8 py-5">
+    <div id="loading-state" class="flex flex-col items-center justify-center h-40 gap-4">
+      <span class="material-symbols-outlined text-5xl text-gray-300 animate-spin">settings</span>
+      <p class="font-black text-sm uppercase text-gray-400">Loading clips...</p>
+    </div>
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center h-40 nb bs-sm bg-white p-12 gap-4">
+      <span class="material-symbols-outlined text-5xl text-gray-300">video_library</span>
+      <p class="font-black text-sm uppercase text-gray-400">No encrypted clips found</p>
+      <p class="font-mono text-[11px] text-gray-400">Enable Privacy Shield in the pipeline to record clips</p>
+    </div>
+    <div id="clips-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"></div>
+  </div>
+</main>
+
+<!-- ─── DECRYPT MODAL ──────────────────────────────────────────────────────── -->
+<div id="modal-decrypt" class="modal-overlay hidden" onclick="onOverlayClick(event,'modal-decrypt')">
+  <div class="bg-white nb bs w-full max-w-2xl max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-4 border-b-3 border-black bg-primary">
+      <h2 class="font-black text-lg uppercase flex items-center gap-2">
+        <span class="material-symbols-outlined">lock_open</span>Decrypt Clip
+      </h2>
+      <button onclick="closeDecryptModal()" class="font-black text-xl hover:opacity-60">&times;</button>
+    </div>
+    <div class="p-6 space-y-5">
+      <div id="decrypt-clip-info" class="font-mono text-[11px] text-gray-500 uppercase"></div>
+
+      <!-- Password form (shown before decrypt) -->
+      <div id="decrypt-pw-section">
+        <label class="block font-black text-xs uppercase tracking-widest mb-2">Admin Password</label>
+        <input type="password" id="decrypt-pw" placeholder="Enter admin password to decrypt"
+               class="w-full px-3 py-2 text-sm font-bold focus:outline-none" onkeydown="if(event.key==='Enter')submitDecrypt()"/>
+        <p class="font-mono text-[10px] text-gray-400 mt-1">Session password auto-loaded if available</p>
+        <div id="decrypt-error" class="hidden mt-3 px-4 py-3 bg-red-100 nb2 border-red-500 font-bold text-sm text-red-700"></div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="submitDecrypt()" id="btn-decrypt-do" class="flex-1 py-3 bg-primary nb bs-sm font-black text-sm uppercase ba hover:bg-yellow-300">
+            <span class="material-symbols-outlined align-text-bottom mr-1">lock_open</span>DECRYPT &amp; PLAY
+          </button>
+          <button onclick="closeDecryptModal()" class="px-5 py-3 bg-black text-white nb bs-sm font-black text-sm uppercase ba">CANCEL</button>
+        </div>
+      </div>
+
+      <!-- Video player (shown after decrypt) -->
+      <div id="decrypt-player-section" class="hidden">
+        <video id="decrypt-video" controls class="w-full nb bs-sm bg-black" style="max-height:400px">
+          Your browser doesn't support video playback.
+        </video>
+        <div class="flex gap-3 mt-4">
+          <a id="decrypt-download" download class="flex items-center gap-2 px-5 py-3 bg-primary nb bs-sm font-black text-sm uppercase ba hover:bg-yellow-300">
+            <span class="material-symbols-outlined text-[18px]">download</span>DOWNLOAD
+          </a>
+          <button onclick="closeDecryptModal()" class="px-5 py-3 bg-black text-white nb bs-sm font-black text-sm uppercase ba">CLOSE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DELETE CONFIRM MODAL ─────────────────────────────────────────────────── -->
+<div id="modal-delete" class="modal-overlay hidden" onclick="onOverlayClick(event,'modal-delete')">
+  <div class="bg-white nb bs w-full max-w-sm" onclick="event.stopPropagation()">
+    <div class="px-6 py-4 border-b-3 border-black bg-red-500">
+      <h2 class="font-black text-lg uppercase text-white">Confirm Delete</h2>
+    </div>
+    <div class="p-6">
+      <p class="font-bold text-sm mb-1">Delete clip <strong id="del-clip-name" class="font-black"></strong>?</p>
+      <p class="font-mono text-xs text-gray-500 mb-3">The encrypted file will be permanently removed.</p>
+      <label class="block font-black text-xs uppercase tracking-widest mb-2">Admin Password</label>
+      <input type="password" id="del-pw" placeholder="Enter admin password to confirm"
+             class="w-full px-3 py-2 text-sm font-bold focus:outline-none mb-1" onkeydown="if(event.key==='Enter')confirmDeleteClip()"/>
+      <p id="del-pw-error" class="hidden text-red-600 font-bold text-xs uppercase mb-3"></p>
+      <div class="flex gap-3 mt-4">
+        <button onclick="confirmDeleteClip()" id="btn-del-confirm" class="flex-1 py-3 bg-red-500 text-white nb bs-sm font-black text-sm uppercase ba hover:bg-red-700">
+          <span class="material-symbols-outlined align-text-bottom mr-1">delete</span>DELETE
+        </button>
+        <button onclick="closeModal('modal-delete')" class="px-5 py-3 nb bs-sm font-black text-sm uppercase ba">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DELETE ALL MODAL ──────────────────────────────────────────────────────── -->
+<div id="modal-delete-all" class="modal-overlay hidden" onclick="onOverlayClick(event,'modal-delete-all')">
+  <div class="bg-white nb bs w-full max-w-sm" onclick="event.stopPropagation()">
+    <div class="px-6 py-4 border-b-3 border-black bg-red-600">
+      <h2 class="font-black text-lg uppercase text-white">Delete All Clips</h2>
+    </div>
+    <div class="p-6">
+      <p class="font-bold text-sm mb-1">Permanently delete ALL encrypted clips?</p>
+      <p class="font-mono text-xs text-gray-500 mb-3">This action cannot be undone. All video evidence will be lost.</p>
+      <label class="block font-black text-xs uppercase tracking-widest mb-2">Admin Password</label>
+      <input type="password" id="del-all-pw" placeholder="Enter admin password to confirm"
+             class="w-full px-3 py-2 text-sm font-bold focus:outline-none mb-1" onkeydown="if(event.key==='Enter')confirmDeleteAll()"/>
+      <p id="del-all-pw-error" class="hidden text-red-600 font-bold text-xs uppercase mb-3"></p>
+      <div class="flex gap-3 mt-4">
+        <button onclick="confirmDeleteAll()" id="btn-del-all-confirm" class="flex-1 py-3 bg-red-600 text-white nb bs-sm font-black text-sm uppercase ba hover:bg-red-800">
+          DELETE ALL
+        </button>
+        <button onclick="closeModal('modal-delete-all')" class="px-5 py-3 nb bs-sm font-black text-sm uppercase ba">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCRIPTS ──────────────────────────────────────────────────────────────── -->
+<script src="/ui/assets/js/xla.js"></script>
+<script>
+let allClips = [];
+let pendingDeleteId = null;
+let activeDecryptId = null;
+let activeBlobUrl   = null;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  if (!guardAdmin()) return;
+  await loadClips();
+})();
+
+// ─── Load clips ───────────────────────────────────────────────────────────────
+async function loadClips() {
+  document.getElementById('loading-state').classList.remove('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('clips-grid').classList.add('hidden');
+  try {
+    const raw = await apiGet('/clips');
+    const data = (raw && typeof raw.clips !== 'undefined') ? raw : (await raw.json().catch(() => raw));
+    allClips = Array.isArray(data.clips) ? data.clips : [];
+    renderClips(allClips);
+  } catch(e) {
+    toast('Failed to load clips: ' + e.message, 'err');
+    document.getElementById('loading-state').innerHTML =
+      `<p class="font-black text-sm uppercase text-red-500">Error: ${e.message}</p>`;
+  }
+}
+
+function renderClips(clips) {
+  document.getElementById('loading-state').classList.add('hidden');
+  document.getElementById('clip-count-badge').textContent = `${clips.length} CLIP${clips.length !== 1 ? 'S' : ''}`;
+
+  if (!clips.length) {
+    document.getElementById('empty-state').classList.remove('hidden');
+    document.getElementById('clips-grid').classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('empty-state').classList.add('hidden');
+  const grid = document.getElementById('clips-grid');
+  grid.classList.remove('hidden');
+  grid.innerHTML = '';
+
+  clips.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'clip-card';
+    card.dataset.id   = c.clip_id;
+    card.dataset.name = (c.name || '').toLowerCase();
+    card.dataset.date = (c.created_at || '').toLowerCase();
+
+    const thumbSrc = `${BASE}/clips/${encodeURIComponent(c.clip_id)}/thumbnail`;
+    const name  = c.name || c.clip_id || 'Unknown Clip';
+    const date  = c.created_at ? fmtDate(c.created_at) : '—';
+    const dur   = c.duration_s != null ? fmtDur(c.duration_s) : '—';
+
+    card.innerHTML = `
+      <div class="clip-thumb">
+        <img src="${thumbSrc}" alt="Thumbnail" loading="lazy"
+             onerror="this.parentElement.innerHTML='<div class=\\'no-thumb\\'><span class=\\'material-symbols-outlined text-3xl text-gray-600\\'>movie</span></div>'"/>
+        <div class="enc-badge"><span class="material-symbols-outlined" style="font-size:9px;vertical-align:middle">lock</span> AES-256</div>
+      </div>
+      <div class="font-black text-sm uppercase leading-tight truncate" title="${esc(name)}">${esc(name)}</div>
+      <div class="font-mono text-[10px] text-gray-500 mt-1">${date}</div>
+      <div class="font-mono text-[10px] text-gray-400 mt-0.5">${dur !== '—' ? dur + ' · ' : ''}Encrypted</div>
+      <div class="flex gap-2 mt-3 border-t-2 border-black pt-3">
+        <button onclick="openDecrypt('${esc(c.clip_id)}', '${esc(name)}')"
+                class="flex-1 py-2 nb2 bs-sm font-black text-[11px] uppercase ba flex items-center justify-center gap-1 hover:bg-primary">
+          <span class="material-symbols-outlined text-[13px]">lock_open</span>DECRYPT
+        </button>
+        <button onclick="openDeleteClip('${esc(c.clip_id)}', '${esc(name)}')"
+                class="px-3 py-2 nb2 bs-sm font-black text-[11px] uppercase ba flex items-center justify-center hover:bg-red-500 hover:text-white">
+          <span class="material-symbols-outlined text-[13px]">delete</span>
+        </button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ─── Search ────────────────────────────────────────────────────────────────────
+function filterClips() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  const filtered = q
+    ? allClips.filter(c => (c.name||c.clip_id||'').toLowerCase().includes(q) || (c.created_at||'').toLowerCase().includes(q))
+    : allClips;
+  renderClips(filtered);
+}
+
+// ─── Decrypt ──────────────────────────────────────────────────────────────────
+function openDecrypt(id, name) {
+  activeDecryptId = id;
+  // Revoke old blob
+  if (activeBlobUrl) { URL.revokeObjectURL(activeBlobUrl); activeBlobUrl = null; }
+
+  document.getElementById('decrypt-clip-info').textContent = `Clip: ${name}`;
+  document.getElementById('decrypt-pw-section').classList.remove('hidden');
+  document.getElementById('decrypt-player-section').classList.add('hidden');
+  document.getElementById('decrypt-error').classList.add('hidden');
+
+  // Pre-fill session password
+  const saved = sessionStorage.getItem('xla_pw');
+  document.getElementById('decrypt-pw').value = saved ? atob(saved) : '';
+
+  openModal('modal-decrypt');
+  setTimeout(() => document.getElementById('decrypt-pw').focus(), 100);
+}
+
+async function submitDecrypt() {
+  const btn = document.getElementById('btn-decrypt-do');
+  const errEl = document.getElementById('decrypt-error');
+  errEl.classList.add('hidden');
+
+  const pw = document.getElementById('decrypt-pw').value.trim();
+  if (!pw) { errEl.textContent = 'Password required'; errEl.classList.remove('hidden'); return; }
+
+  setBtnLoading(btn, true, 'DECRYPTING...');
+  try {
+    const res = await apiPost(`/clips/${encodeURIComponent(activeDecryptId)}/decrypt`, {
+      password: pw,
+      token: getToken(),
+    });
+
+    // res may be a Response (video/mp4) not JSON
+    const blob = await res.blob();
+    activeBlobUrl = URL.createObjectURL(blob);
+
+    const vid = document.getElementById('decrypt-video');
+    vid.src = activeBlobUrl;
+    document.getElementById('decrypt-download').href = activeBlobUrl;
+    document.getElementById('decrypt-download').download = activeDecryptId + '.mp4';
+
+    document.getElementById('decrypt-pw-section').classList.add('hidden');
+    document.getElementById('decrypt-player-section').classList.remove('hidden');
+    vid.play();
+    toast('Clip decrypted', 'ok');
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    toast(e.message, 'err');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+function closeDecryptModal() {
+  closeModal('modal-decrypt');
+  const vid = document.getElementById('decrypt-video');
+  vid.pause();
+  vid.src = '';
+  if (activeBlobUrl) { URL.revokeObjectURL(activeBlobUrl); activeBlobUrl = null; }
+  activeDecryptId = null;
+}
+
+// ─── Delete clip ──────────────────────────────────────────────────────────────
+function openDeleteClip(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('del-clip-name').textContent = name;
+  const saved = sessionStorage.getItem('xla_pw');
+  document.getElementById('del-pw').value = saved ? atob(saved) : '';
+  document.getElementById('del-pw-error').classList.add('hidden');
+  openModal('modal-delete');
+  setTimeout(() => document.getElementById('del-pw').focus(), 100);
+}
+async function confirmDeleteClip() {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('btn-del-confirm');
+  const errEl = document.getElementById('del-pw-error');
+  const pw = document.getElementById('del-pw').value.trim();
+  if (!pw) { errEl.textContent = 'Password required'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  setBtnLoading(btn, true, 'DELETING...');
+  try {
+    await apiDelete(`/clips/${encodeURIComponent(pendingDeleteId)}`, { password: pw, token: getToken() });
+    closeModal('modal-delete');
+    toast('Clip deleted', 'ok');
+    pendingDeleteId = null;
+    await loadClips();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    toast(e.message, 'err');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+// ─── Delete all ───────────────────────────────────────────────────────────────
+function openDeleteAll() {
+  if (!allClips.length) { toast('No clips to delete', 'info'); return; }
+  const saved = sessionStorage.getItem('xla_pw');
+  document.getElementById('del-all-pw').value = saved ? atob(saved) : '';
+  document.getElementById('del-all-pw-error').classList.add('hidden');
+  openModal('modal-delete-all');
+  setTimeout(() => document.getElementById('del-all-pw').focus(), 100);
+}
+async function confirmDeleteAll() {
+  const btn = document.getElementById('btn-del-all-confirm');
+  const errEl = document.getElementById('del-all-pw-error');
+  const pw = document.getElementById('del-all-pw').value.trim();
+  if (!pw) { errEl.textContent = 'Password required'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  setBtnLoading(btn, true, 'DELETING...');
+  try {
+    await apiDelete('/clips', { password: pw, token: getToken() });
+    closeModal('modal-delete-all');
+    toast('All clips deleted', 'ok');
+    await loadClips();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    toast(e.message, 'err');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function onOverlayClick(e, id) { if (e.target === e.currentTarget) { if(id==='modal-decrypt') closeDecryptModal(); else closeModal(id); } }
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleString('en-GB', { day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit' }); } catch { return iso; }
+}
+function fmtDur(s) {
+  if (s < 60) return `${Math.round(s)}s`;
+  return `${Math.floor(s/60)}m${Math.floor(s%60)}s`;
+}
+</script>
+</body>
+</html>

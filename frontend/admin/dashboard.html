@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA Admin — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&display=swap" rel="stylesheet"/>
+  <script id="tw">tailwind.config={theme:{extend:{colors:{primary:"#FAFF00"},fontFamily:{display:["Plus Jakarta Sans"],mono:["Space Mono"]},borderRadius:{DEFAULT:"0px",lg:"0px",full:"9999px"}}}}</script>
+  <style>
+    .nb{border:3px solid #000}.nb2{border:2px solid #000}.bs{box-shadow:6px 6px 0 #000}.bs-sm{box-shadow:3px 3px 0 #000}
+    .ba{transition:all .1s}.ba:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000!important}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:2px solid transparent;transition:all .15s}
+    .nav-item:hover{background:#FAFF00;border-color:#000;box-shadow:3px 3px 0 #000}
+    .nav-item.active{background:#FAFF00;border:2px solid #000;box-shadow:3px 3px 0 #000}
+    .nav-soon{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.35;cursor:not-allowed}
+    .stat-card{background:#fff;border:3px solid #000;padding:18px 20px}
+    .log-line{font-family:"Space Mono",monospace;font-size:11px;padding:2px 0;border-bottom:1px solid #1f2937}
+    select,input[type=text],input[type=number],input[type=password]{border:2px solid #000!important;border-radius:0!important;background:#fff;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#000}
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex overflow-hidden">
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="w-[220px] min-h-screen bg-white border-r-4 border-black flex flex-col shrink-0">
+  <!-- Brand -->
+  <div class="p-5 border-b-3 border-black bg-primary">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-2xl font-black">security</span>
+      <div>
+        <div class="font-black text-lg uppercase leading-none">XLA</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest opacity-70">Admin Panel</div>
+      </div>
+    </div>
+  </div>
+  <!-- Nav -->
+  <nav class="flex-1 p-3 space-y-1 mt-2">
+    <a href="/ui/admin/dashboard.html" class="nav-item active">
+      <span class="material-symbols-outlined text-[18px]">dashboard</span>Dashboard
+    </a>
+    <a href="/ui/admin/face-registry.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">face</span>Face Registry
+    </a>
+    <a href="/ui/admin/secure-archive.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">lock</span>Secure Archive
+    </a>
+    <div class="my-3 border-t-2 border-black opacity-20"></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">analytics</span>Analytics <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">videocam</span>Cameras <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">policy</span>Privacy Rules <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">history</span>Admin Logs <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+  </nav>
+  <!-- User Switch + Logout -->
+  <div class="p-3 border-t-3 border-black space-y-2">
+    <button onclick="switchToUser()" class="w-full flex items-center gap-2 px-4 py-3 bg-primary nb font-black text-xs uppercase bs-sm ba">
+      <span class="material-symbols-outlined text-[16px]">shield_person</span>User View
+    </button>
+    <button onclick="doLogout()" class="w-full flex items-center gap-2 px-4 py-3 bg-black text-white font-black text-xs uppercase bs-sm ba hover:bg-red-600">
+      <span class="material-symbols-outlined text-[16px]">logout</span>Logout
+    </button>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <header class="bg-white border-b-4 border-black px-8 py-4 flex items-center justify-between shrink-0">
+    <div>
+      <h1 class="text-2xl font-black uppercase tracking-tight">Dashboard</h1>
+      <p class="font-mono text-xs text-gray-500 uppercase tracking-widest">Real-time surveillance management</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="pipeline-badge" class="px-4 py-2 font-black text-xs uppercase nb bs-sm bg-gray-100">
+        <span class="material-symbols-outlined text-[14px] align-text-bottom mr-1">circle</span>OFFLINE
+      </div>
+      <div class="px-4 py-2 bg-primary nb font-black text-xs uppercase">ADMIN</div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <div class="grid grid-cols-12 gap-6">
+
+      <!-- ── LEFT: Feed + Stats ── -->
+      <div class="col-span-8 flex flex-col gap-5">
+
+        <!-- Video Feed -->
+        <div class="nb bs bg-black relative" style="aspect-ratio:16/9;overflow:hidden;">
+          <!-- Offline Overlay -->
+          <div id="feed-offline" class="absolute inset-0 flex flex-col items-center justify-center bg-black z-10">
+            <span class="material-symbols-outlined text-6xl text-gray-600">videocam_off</span>
+            <p class="font-black text-white uppercase mt-4 tracking-widest">SYSTEM OFFLINE</p>
+            <p class="font-mono text-[11px] text-gray-500 mt-1">Start the pipeline to begin streaming</p>
+          </div>
+          <!-- MJPEG Stream -->
+          <img id="stream-img" src="" alt="Live Feed"
+               class="w-full h-full object-cover hidden"
+               onerror="this.classList.add('hidden'); document.getElementById('feed-offline').classList.remove('hidden')"/>
+          <!-- Live Indicator -->
+          <div id="live-badge" class="hidden absolute top-4 left-4 z-20 flex items-center gap-2 bg-red-600 text-white px-3 py-1 font-black text-xs uppercase nb">
+            <span class="animate-pulse size-2 bg-white rounded-full inline-block"></span>LIVE
+          </div>
+          <!-- FPS Badge -->
+          <div id="fps-badge" class="hidden absolute top-4 right-4 z-20 bg-black text-primary px-3 py-1 font-mono text-xs font-bold nb">
+            <span id="badge-fps">0.0</span> FPS
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="grid grid-cols-4 gap-4">
+          <div class="stat-card bs-sm">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">Faces Detected</div>
+            <div id="stat-faces" class="text-4xl font-black">0</div>
+          </div>
+          <div class="stat-card bs-sm">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">FPS</div>
+            <div id="stat-fps" class="text-4xl font-black">0.0</div>
+          </div>
+          <div class="stat-card bs-sm">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">Uptime</div>
+            <div id="stat-uptime" class="text-4xl font-black">0s</div>
+          </div>
+          <div class="stat-card bs-sm">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">Registered</div>
+            <div id="stat-reg" class="text-4xl font-black">0</div>
+          </div>
+        </div>
+
+        <!-- System Log -->
+        <div class="nb bs bg-[#0d1117]">
+          <div class="flex items-center justify-between px-5 py-3 border-b-2 border-gray-800">
+            <span class="font-black text-xs uppercase tracking-widest text-white">System Log</span>
+            <button onclick="clearLog()" class="font-mono text-[10px] text-gray-500 hover:text-white uppercase">CLEAR</button>
+          </div>
+          <div id="log-body" class="p-4 h-[160px] overflow-y-auto space-y-0.5 font-mono text-[11px] text-green-400"></div>
+        </div>
+
+      </div>
+
+      <!-- ── RIGHT: Control Panel ── -->
+      <div class="col-span-4 flex flex-col gap-4">
+
+        <!-- Panel header -->
+        <div class="bg-primary nb bs px-5 py-3">
+          <div class="font-black text-lg uppercase tracking-tight">Control Panel</div>
+          <div class="font-mono text-[10px] uppercase tracking-widest opacity-60">Pipeline Configuration</div>
+        </div>
+
+        <!-- Camera Source -->
+        <div class="nb bs-sm bg-white p-4">
+          <label class="block font-black text-xs uppercase tracking-widest mb-2 flex items-center justify-between">
+            <span><span class="material-symbols-outlined text-[14px] align-text-bottom mr-1">videocam</span>Camera Source</span>
+            <button onclick="loadCameras()" title="Refresh camera list" class="flex items-center gap-1 px-2 py-0.5 bg-primary nb font-black text-[10px] uppercase bs-sm ba hover:bg-yellow-300">
+              <span class="material-symbols-outlined text-[13px]">refresh</span>Scan
+            </button>
+          </label>
+          <select id="cam-select" class="w-full px-3 py-2 text-sm font-bold nb2 focus:outline-none">
+            <option value="">Loading cameras...</option>
+          </select>
+        </div>
+
+        <!-- Resolution / Performance -->
+        <div class="nb bs-sm bg-white p-4">
+          <label class="block font-black text-xs uppercase tracking-widest mb-2">
+            <span class="material-symbols-outlined text-[14px] align-text-bottom mr-1">hd</span>Resolution / Performance
+          </label>
+          <select id="res-select" class="w-full px-3 py-2 text-sm font-bold nb2 focus:outline-none">
+            <option value="480x360">360p — 480×360 (Fastest ≈25–30 FPS)</option>
+            <option value="640x480" selected>480p — 640×480 (Fast ≈15–20 FPS)</option>
+            <option value="960x540">540p — 960×540 (Balanced ≈8–12 FPS)</option>
+            <option value="1280x720">720p — 1280×720 (HD ≈3–5 FPS)</option>
+          </select>
+        </div>
+
+        <!-- Anonymization Mode -->
+        <div class="nb bs-sm bg-white p-4">
+          <label class="block font-black text-xs uppercase tracking-widest mb-2">
+            <span class="material-symbols-outlined text-[14px] align-text-bottom mr-1">blur_on</span>Anonymization Mode
+          </label>
+          <select id="mode-select" class="w-full px-3 py-2 text-sm font-bold nb2 focus:outline-none">
+            <option value="blur">Blur (Gaussian)</option>
+            <option value="pixelate">Pixelate (16×16)</option>
+            <option value="solid">Blackbox (Solid)</option>
+            <option value="neckup">Neck-Up Blur</option>
+            <option value="silhouette">Silhouette</option>
+            <option value="obliterate">Obliterate</option>
+            <option value="headcloak">Head Cloak</option>
+            <option value="none">None (Debug)</option>
+          </select>
+        </div>
+
+        <!-- Privacy Target -->
+        <div class="nb bs-sm bg-white p-4">
+          <label class="block font-black text-xs uppercase tracking-widest mb-2">
+            <span class="material-symbols-outlined text-[14px] align-text-bottom mr-1">target</span>Privacy Target
+          </label>
+          <select id="target-select" onchange="applySelectiveModeIfRunning()" class="w-full px-3 py-2 text-sm font-bold nb2 focus:outline-none">
+            <option value="disabled">All Detected Faces</option>
+            <option value="stranger">Strangers Only</option>
+            <option value="family">VIP / Family Excluded</option>
+            <option value="registered_only">Registered Members Only</option>
+          </select>
+        </div>
+
+        <!-- Auto Record (Clip Recording) -->
+        <div class="nb bs-sm bg-white p-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="font-black text-xs uppercase tracking-widest flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">fiber_smart_record</span>Auto Record
+            </label>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="shield-toggle" class="sr-only peer" onchange="toggleShield()"/>
+              <div class="w-11 h-6 bg-gray-200 peer-checked:bg-primary nb2 peer-checked:border-black transition-all after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-black after:w-5 after:h-5 after:transition-all peer-checked:after:translate-x-5"></div>
+            </label>
+          </div>
+          <p class="font-mono text-[10px] text-gray-500 uppercase mb-2">12s encrypted clip on face detection</p>
+          <div id="shield-pw-row" class="hidden">
+            <input type="password" id="shield-pw" placeholder="Admin password (auto-filled from session)"
+                   class="w-full px-3 py-2 text-sm font-bold focus:outline-none"/>
+            <p id="shield-pw-hint" class="font-mono text-[9px] text-gray-400 uppercase mt-1">Uses your login password by default</p>
+          </div>
+        </div>
+
+        <!-- Start / Stop Buttons -->
+        <button id="btn-start" onclick="startPipeline()" class="w-full py-4 bg-primary nb bs font-black text-base uppercase tracking-widest ba hover:bg-yellow-300">
+          <span class="material-symbols-outlined align-text-bottom mr-2">play_arrow</span>START PIPELINE
+        </button>
+        <button id="btn-stop" onclick="stopPipeline()" class="w-full py-3 bg-black text-white nb bs-sm font-black text-sm uppercase tracking-widest ba hover:bg-red-600 hidden">
+          <span class="material-symbols-outlined align-text-bottom mr-2">stop</span>STOP ALL SYSTEMS
+        </button>
+
+        <!-- Hot-reload config (visible when running) -->
+        <div id="hot-panel" class="hidden nb bs-sm bg-white p-4">
+          <div class="font-black text-xs uppercase tracking-widest mb-3 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">tune</span>Live Config Update
+          </div>
+          <div class="space-y-2">
+            <select id="hot-mode" class="w-full px-3 py-2 text-xs font-bold nb2 focus:outline-none">
+              <option value="blur">Blur</option><option value="pixelate">Pixelate</option>
+              <option value="solid">Blackbox</option><option value="neckup">Neck-Up</option>
+              <option value="silhouette">Silhouette</option><option value="obliterate">Obliterate</option>
+              <option value="headcloak">Head Cloak</option><option value="none">None</option>
+            </select>
+            <button onclick="hotUpdate()" class="w-full py-2 bg-black text-primary font-black text-xs uppercase nb bs-sm ba">
+              APPLY NOW
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ─── SCRIPTS ──────────────────────────────────────────────────────────────── -->
+<script src="/ui/assets/js/xla.js"></script>
+<script>
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  if (!guardAdmin()) return;
+
+  logLine('XLA Admin Dashboard initialised', '#FAFF00');
+  await loadCameras();
+
+  // Init auto-record toggle based on session state
+  initAutoRecord();
+
+  // Check if pipeline is already running
+  try {
+    const s = await apiGet('/pipeline/status');
+    if (s.running) activatePipelineUI(s);
+  } catch(e) { logLine('Status check: ' + e.message, '#ef4444'); }
+
+  // Start polling
+  setInterval(pollStatus, 2000);
+})();
+
+// ─── Camera loading ───────────────────────────────────────────────────────────
+async function loadCameras() {
+  try {
+    const data = await apiGet('/cameras');
+    const cams = Array.isArray(data) ? data : (data.cameras || []);
+    const sel = document.getElementById('cam-select');
+    sel.innerHTML = '';
+    if (!cams.length) {
+      sel.innerHTML = '<option value="0">Default Camera (0)</option>';
+      return;
+    }
+    cams.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.choice;
+      opt.dataset.index   = c.index;
+      opt.dataset.backend = c.backend || 'dshow';
+      opt.textContent = `[${c.choice}] ${c.name || c.source}${c.resolution ? ' (' + c.resolution + ')' : ''}`;
+      sel.appendChild(opt);
+    });
+    logLine(`Loaded ${cams.length} camera(s)`, '#60a5fa');
+  } catch(e) {
+    document.getElementById('cam-select').innerHTML = '<option value="0">Default Camera (0)</option>';
+    logLine('Camera load failed: ' + e.message, '#ef4444');
+  }
+}
+
+// ─── Pipeline control ─────────────────────────────────────────────────────────
+async function startPipeline() {
+  const btn = document.getElementById('btn-start');
+  setBtnLoading(btn, true, 'STARTING...');
+  try {
+    // Auto-stop any already-running pipeline before restarting
+    try {
+      const existing = await apiGet('/pipeline/status');
+      if (existing.running) {
+        logLine('Stopping existing pipeline\u2026', '#fbbf24');
+        await apiDelete('/pipeline/stop');
+        await new Promise(r => setTimeout(r, 600));
+      }
+    } catch (_) {}
+
+    const camSel     = document.getElementById('cam-select');
+    const camOpt     = camSel.options[camSel.selectedIndex];
+    const camSource  = camOpt ? (camOpt.dataset.index  || camSel.value) : '0';
+    const camBackend = camOpt ? (camOpt.dataset.backend || 'dshow')     : 'dshow';
+    const anonMode   = document.getElementById('mode-select').value;
+    const selective  = document.getElementById('target-select').value;
+    const resParts   = (document.getElementById('res-select').value || '640x480').split('x');
+    const camW       = parseInt(resParts[0]) || 640;
+    const camH       = parseInt(resParts[1]) || 480;
+    const recording  = document.getElementById('shield-toggle').checked;
+    let   adminPw    = null;
+
+    if (recording) {
+      const fieldPw   = document.getElementById('shield-pw').value.trim();
+      const sessionPw = sessionStorage.getItem('xla_pw');
+      adminPw = fieldPw || (sessionPw ? atob(sessionPw) : null);
+      if (!adminPw) {
+        toast('Enter admin password for encrypted recording', 'err');
+        setBtnLoading(btn, false);
+        return;
+      }
+    }
+
+    await apiPost('/pipeline/start', {
+      source:                String(camSource),
+      backend:               camBackend,
+      camera_width:          camW,
+      camera_height:         camH,
+      anonymize_mode:        anonMode,
+      selective_mode:        selective,
+      enable_clip_recording: recording,
+      admin_password:        adminPw,
+      clip_duration_s:       12.0,
+      clip_pre_buffer_s:     3.0,
+      clip_cooldown_s:       15.0,
+    });
+
+    logLine(`Pipeline started \u2192 cam=${camSource}(${camBackend}) mode=${anonMode} selective=${selective}${recording ? ' \u25cf REC' : ''}`, '#4ade80');
+
+    // Give pipeline a moment to initialise then fetch status
+    await new Promise(r => setTimeout(r, 1200));
+    const s = await apiGet('/pipeline/status');
+    activatePipelineUI(s);
+    toast('Pipeline started', 'ok');
+  } catch(e) {
+    toast(e.message, 'err');
+    logLine('Start failed: ' + e.message, '#ef4444');
+    setBtnLoading(btn, false);
+  }
+}
+
+async function stopPipeline() {
+  const btn = document.getElementById('btn-stop');
+  setBtnLoading(btn, true, 'STOPPING...');
+  try {
+    await apiDelete('/pipeline/stop');
+    deactivatePipelineUI();
+    toast('Pipeline stopped', 'info');
+    logLine('Pipeline stopped by admin', '#f59e0b');
+  } catch(e) {
+    toast(e.message, 'err');
+    logLine('Stop failed: ' + e.message, '#ef4444');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+// ─── Hot update (mode change without restart) ─────────────────────────────────
+async function hotUpdate() {
+  try {
+    const mode = document.getElementById('hot-mode').value;
+    const selective = document.getElementById('target-select').value;
+    await apiPatch('/pipeline/config', {
+      anonymize_mode: mode,
+      selective_mode: selective,
+    });
+    toast(`Mode → ${mode} | Target → ${selective}`, 'ok');
+    logLine(`Live config updated: anonymize_mode=${mode}, selective_mode=${selective}`, '#a78bfa');
+  } catch(e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function applySelectiveModeIfRunning() {
+  const stopBtn = document.getElementById('btn-stop');
+  if (stopBtn.classList.contains('hidden')) return;
+
+  const sel = document.getElementById('target-select').value;
+  const targetSelect = document.getElementById('target-select');
+  targetSelect.disabled = true;
+  try {
+    await apiPatch('/pipeline/config', { selective_mode: sel });
+    toast(`Privacy target → ${sel}`, 'ok');
+    logLine(`Live config updated: selective_mode=${sel}`, '#f59e0b');
+  } catch(e) {
+    toast(e.message, 'err');
+    logLine('Selective mode update failed: ' + e.message, '#ef4444');
+  } finally {
+    targetSelect.disabled = false;
+  }
+}
+
+// ─── Status polling ───────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const s = await apiGet('/pipeline/status');
+    document.getElementById('stat-faces').textContent  = s.faces_detected ?? 0;
+    document.getElementById('stat-fps').textContent    = (s.fps ?? 0).toFixed(1);
+    document.getElementById('stat-uptime').textContent = fmtUptime(s.uptime_s ?? 0);
+    document.getElementById('stat-reg').textContent    = s.registered_count ?? 0;
+    document.getElementById('badge-fps').textContent   = (s.fps ?? 0).toFixed(1);
+
+    if (s.running) {
+      activatePipelineUI(s);
+      const clips = s.clips_saved != null ? ` | Clips:${s.clips_saved}` : '';
+      logLine(
+        `FPS:${(s.fps||0).toFixed(1)} | Faces:${s.faces_detected||0} | Uptime:${fmtUptime(s.uptime_s||0)} | Mode:${s.anonymize_mode||'-'}${clips}`,
+        '#4ade80'
+      );
+    } else {
+      deactivatePipelineUI();
+    }
+  } catch(e) { /* ignore polling errors silently */ }
+}
+
+// ─── UI state helpers ─────────────────────────────────────────────────────────
+function activatePipelineUI(s) {
+  // Show stream
+  const img     = document.getElementById('stream-img');
+  const offline = document.getElementById('feed-offline');
+  if (img.src !== (BASE + '/stream/mjpeg')) img.src = BASE + '/stream/mjpeg';
+  img.classList.remove('hidden');
+  offline.classList.add('hidden');
+
+  // Live badge
+  document.getElementById('live-badge').classList.remove('hidden');
+  document.getElementById('fps-badge').classList.remove('hidden');
+
+  // Status badge
+  const badge = document.getElementById('pipeline-badge');
+  badge.className = 'px-4 py-2 font-black text-xs uppercase nb bs-sm bg-primary';
+  badge.innerHTML = '<span class="material-symbols-outlined text-[14px] align-text-bottom mr-1 animate-pulse">radio_button_checked</span>LIVE';
+
+  // Buttons
+  document.getElementById('btn-start').classList.add('hidden');
+  document.getElementById('btn-stop').classList.remove('hidden');
+  document.getElementById('hot-panel').classList.remove('hidden');
+
+  // Sync hot-mode dropdown
+  if (s && s.anonymize_mode) document.getElementById('hot-mode').value = s.anonymize_mode;
+  if (s && s.selective_mode) document.getElementById('target-select').value = s.selective_mode;
+}
+
+function deactivatePipelineUI() {
+  const img     = document.getElementById('stream-img');
+  const offline = document.getElementById('feed-offline');
+  img.src = '';
+  img.classList.add('hidden');
+  offline.classList.remove('hidden');
+
+  document.getElementById('live-badge').classList.add('hidden');
+  document.getElementById('fps-badge').classList.add('hidden');
+
+  const badge = document.getElementById('pipeline-badge');
+  badge.className = 'px-4 py-2 font-black text-xs uppercase nb bs-sm bg-gray-100';
+  badge.innerHTML = '<span class="material-symbols-outlined text-[14px] align-text-bottom mr-1">circle</span>OFFLINE';
+
+  document.getElementById('btn-start').classList.remove('hidden');
+  document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('hot-panel').classList.add('hidden');
+
+  document.getElementById('btn-start').innerHTML = '<span class="material-symbols-outlined align-text-bottom mr-2">play_arrow</span>START PIPELINE';
+  document.getElementById('btn-start').disabled = false;
+}
+
+function toggleShield() {
+  const on = document.getElementById('shield-toggle').checked;
+  document.getElementById('shield-pw-row').classList.toggle('hidden', !on);
+}
+
+function initAutoRecord() {
+  const hasPw = !!sessionStorage.getItem('xla_pw');
+  const toggle = document.getElementById('shield-toggle');
+  const pwRow  = document.getElementById('shield-pw-row');
+  const hint   = document.getElementById('shield-pw-hint');
+  if (hasPw) {
+    toggle.checked = true;
+    pwRow.classList.remove('hidden');
+    document.getElementById('shield-pw').placeholder = 'Override session password (optional)';
+    hint.textContent = '\u2713 Session password stored \u2014 auto-fill active';
+    hint.className = 'font-mono text-[9px] uppercase mt-1 text-green-600';
+  } else {
+    toggle.checked = false;
+    pwRow.classList.add('hidden');
+  }
+}
+
+// ─── Log helper ───────────────────────────────────────────────────────────────
+function logLine(msg, color = '#e5e7eb') {
+  const body = document.getElementById('log-body');
+  if (!body) return;
+  const ts   = new Date().toLocaleTimeString('en', { hour12: false });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.style.color = color;
+  line.textContent = `[${ts}] ${msg}`;
+  body.appendChild(line);
+  // Limit to 200 lines
+  while (body.children.length > 200) body.removeChild(body.firstChild);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearLog() {
+  const body = document.getElementById('log-body');
+  if (body) body.innerHTML = '';
+}
+
+function fmtUptime(s) {
+  if (s < 60) return `${Math.floor(s)}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m${Math.floor(s%60)}s`;
+  return `${Math.floor(s/3600)}h${Math.floor((s%3600)/60)}m`;
+}
+</script>
+</body>
+</html>
