@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA — Live Portal</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&display=swap" rel="stylesheet"/>
+  <script>tailwind.config={theme:{extend:{colors:{primary:"#FAFF00"},fontFamily:{display:["Plus Jakarta Sans"],mono:["Space Mono"]},borderRadius:{DEFAULT:"0px",lg:"0px",full:"9999px"}}}}</script>
+  <style>
+    .nb{border:3px solid #000}.nb2{border:2px solid #000}.bs{box-shadow:6px 6px 0 #000}.bs-sm{box-shadow:3px 3px 0 #000}
+    .ba{transition:all .1s}.ba:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000!important}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:2px solid transparent;transition:all .15s}
+    .nav-item:hover{background:#FAFF00;border-color:#000;box-shadow:3px 3px 0 #000}
+    .nav-item.active{background:#FAFF00;border:2px solid #000;box-shadow:3px 3px 0 #000}
+    .stat-row{display:grid;gap:12px}
+    .status-card{background:#fff;border:3px solid #000;box-shadow:3px 3px 0 #000;padding:16px 18px}
+    .log-line{font-family:"Space Mono",monospace;font-size:10px;padding:2px 0;border-bottom:1px solid #1f2937}
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#000}
+    .badge-active{background:#FAFF00;border:2px solid #000;color:#000}
+    .badge-inactive{background:#ff4444;border:2px solid #000;color:#fff}
+    @keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 #faff0060}50%{box-shadow:0 0 0 8px transparent}}
+    .live-pulse{animation:pulse-border 2s ease-in-out infinite}
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex overflow-hidden">
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="w-[200px] min-h-screen bg-white border-r-4 border-black flex flex-col shrink-0">
+  <div class="p-5 border-b-3 border-black bg-black">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-2xl font-black text-primary">security</span>
+      <div>
+        <div class="font-black text-lg uppercase leading-none text-white">XLA</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest text-gray-400">User Portal</div>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1 mt-2">
+    <a href="/ui/user/live-portal.html" class="nav-item active">
+      <span class="material-symbols-outlined text-[18px]">live_tv</span>Live View
+    </a>
+    <a href="/ui/user/clips.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">video_library</span>Clips
+    </a>
+    <a href="/ui/user/support.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">help_center</span>Support
+    </a>
+  </nav>
+  <div class="p-3 border-t-3 border-black space-y-2">
+    <button onclick="switchToAdmin()" class="w-full flex items-center gap-2 px-4 py-2 bg-primary nb font-black text-xs uppercase bs-sm ba">
+      <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>Admin Panel
+    </button>
+    <button onclick="doLogout()" class="w-full flex items-center gap-2 px-4 py-2 bg-black text-white font-black text-xs uppercase bs-sm ba hover:bg-red-600">
+      <span class="material-symbols-outlined text-[16px]">logout</span>Logout
+    </button>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+  <div id="engine-banner" class="border-b-4 border-black px-8 py-3 flex items-center gap-4 bg-primary">
+    <span class="material-symbols-outlined font-black text-xl animate-pulse">shield</span>
+    <span class="font-black text-sm uppercase tracking-widest">Privacy Engine Active — Your feed is being anonymized in real-time</span>
+    <div id="banner-dot" class="ml-auto flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
+      <span class="size-2 bg-black rounded-full inline-block animate-pulse"></span>MONITORING
+    </div>
+  </div>
+
+  <!-- Offline Banner (hidden when live) -->
+  <div id="offline-banner" class="hidden border-b-4 border-black px-8 py-3 flex items-center gap-4 bg-gray-200">
+    <span class="material-symbols-outlined text-xl text-gray-500">shield_with_heart</span>
+    <span class="font-black text-sm uppercase tracking-widest text-gray-500">Privacy Engine Offline — No active surveillance session</span>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <div class="grid grid-cols-12 gap-6">
+
+      <!-- ── LEFT: Feed ── -->
+      <div class="col-span-8 flex flex-col gap-5">
+        <div class="nb bs bg-black relative live-pulse" style="aspect-ratio:16/9;overflow:hidden;">
+          <!-- Offline state -->
+          <div id="feed-offline" class="absolute inset-0 flex flex-col items-center justify-center bg-black z-10">
+            <span class="material-symbols-outlined text-6xl text-gray-600">videocam_off</span>
+            <p class="font-black text-white uppercase mt-4 tracking-widest">SYSTEM OFFLINE</p>
+            <p class="font-mono text-[11px] text-gray-500 mt-2">Contact your administrator to start the privacy pipeline</p>
+          </div>
+          <!-- MJPEG -->
+          <img id="stream-img" src="" alt="Privacy-protected live feed" class="w-full h-full object-cover hidden"
+               onerror="this.classList.add('hidden'); document.getElementById('feed-offline').classList.remove('hidden')"/>
+          <!-- Live overlay -->
+          <div id="live-overlay" class="hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-20">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="size-2 bg-red-500 rounded-full animate-pulse"></span>
+                <span class="font-mono text-xs text-white font-bold uppercase">LIVE — Protected Feed</span>
+              </div>
+              <div class="flex items-center gap-3 text-white font-mono text-xs">
+                <span><span id="ov-fps">0.0</span> FPS</span>
+                <span><span id="ov-faces">0</span> Faces</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode info bar -->
+        <div id="mode-bar" class="hidden nb bs-sm bg-white flex items-center gap-4 px-5 py-3">
+          <span class="font-mono text-[10px] uppercase text-gray-500">Anonymization Mode:</span>
+          <span id="mode-label" class="font-black text-sm uppercase px-3 py-1 bg-primary nb2">—</span>
+          <span class="font-mono text-[10px] uppercase text-gray-500 ml-4">Target:</span>
+          <span id="target-label" class="font-black text-sm uppercase px-3 py-1 nb2 bg-white">—</span>
+          <div class="ml-auto font-mono text-[10px] uppercase text-gray-400">View-only — Contact admin to change settings</div>
+        </div>
+
+        <!-- Real-time log -->
+        <div class="nb bs bg-[#0d1117]">
+          <div class="flex items-center justify-between px-5 py-3 border-b-2 border-gray-800">
+            <span class="font-black text-xs uppercase tracking-widest text-white">Activity Log</span>
+            <span class="font-mono text-[10px] text-gray-600 uppercase">View-only</span>
+          </div>
+          <div id="log-body" class="p-4 h-[130px] overflow-y-auto space-y-0.5 font-mono text-[10px] text-green-400"></div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: Status Panel ── -->
+      <div class="col-span-4 flex flex-col gap-4">
+
+        <!-- Overall status -->
+        <div id="system-status-card" class="nb bs bg-black text-white p-5">
+          <div class="font-mono text-[10px] uppercase tracking-widest text-gray-400 mb-3">System Status</div>
+          <div id="status-indicator" class="flex items-center gap-3 mb-4">
+            <div id="status-dot" class="size-4 bg-gray-600 rounded-full border-2 border-gray-500"></div>
+            <span id="status-text" class="font-black text-lg uppercase">OFFLINE</span>
+          </div>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center py-2 border-b border-gray-800">
+              <span class="font-mono text-xs text-gray-400 uppercase">Uptime</span>
+              <span id="info-uptime" class="font-black text-sm text-white">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-800">
+              <span class="font-mono text-xs text-gray-400 uppercase">Faces Detected</span>
+              <span id="info-faces" class="font-black text-sm text-white">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-800">
+              <span class="font-mono text-xs text-gray-400 uppercase">Stream FPS</span>
+              <span id="info-fps" class="font-black text-sm text-white">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="font-mono text-xs text-gray-400 uppercase">Recording</span>
+              <span id="info-recording" class="font-black text-xs">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Privacy Protocol -->
+        <div class="nb bs-sm bg-white p-4">
+          <div class="font-black text-xs uppercase tracking-widest mb-3 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">policy</span>Privacy Protocol
+          </div>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-mono text-[11px] uppercase text-gray-500">Anonymize</span>
+              <span id="proto-anon" class="font-black text-xs uppercase px-2 py-0.5 bg-gray-100 nb2">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-mono text-[11px] uppercase text-gray-500">Selective</span>
+              <span id="proto-selective" class="font-black text-xs uppercase px-2 py-0.5 bg-gray-100 nb2">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-mono text-[11px] uppercase text-gray-500">Registered</span>
+              <span id="proto-reg" class="font-black text-xs uppercase">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="nb bs-sm bg-white p-3">
+            <div class="font-mono text-[9px] uppercase text-gray-500 mb-1">Faces Now</div>
+            <div id="quick-faces" class="text-3xl font-black">0</div>
+          </div>
+          <div class="nb bs-sm bg-white p-3">
+            <div class="font-mono text-[9px] uppercase text-gray-500 mb-1">Known</div>
+            <div id="quick-known" class="text-3xl font-black">0</div>
+          </div>
+        </div>
+
+        <!-- Help note -->
+        <div class="nb2 bg-primary p-4">
+          <p class="font-black text-xs uppercase mb-1">View-only Mode</p>
+          <p class="font-mono text-[10px] text-gray-700">You are viewing the privacy-protected stream. Only admins can modify pipeline settings.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/ui/assets/js/xla.js"></script>
+<script>
+let isRunning = false;
+
+(async function init() {
+  if (!guardUser()) return;
+  await pollStatus();
+  setInterval(pollStatus, 2500);
+})();
+
+async function pollStatus() {
+  try {
+    const s = await apiGet('/pipeline/status');
+
+    if (s.running !== isRunning) {
+      isRunning = s.running;
+      if (isRunning) activateFeed(); else deactivateFeed();
+    }
+
+    if (s.running) {
+      // Update stats
+      document.getElementById('ov-fps').textContent    = (s.fps || 0).toFixed(1);
+      document.getElementById('ov-faces').textContent  = s.faces_detected || 0;
+      document.getElementById('info-uptime').textContent   = fmtUptime(s.uptime_s || 0);
+      document.getElementById('info-faces').textContent    = s.faces_detected || 0;
+      document.getElementById('info-fps').textContent      = (s.fps || 0).toFixed(1);
+      document.getElementById('quick-faces').textContent   = s.faces_detected || 0;
+      document.getElementById('quick-known').textContent   = s.registered_count || 0;
+      document.getElementById('proto-anon').textContent    = s.anonymize_mode || '—';
+      document.getElementById('proto-selective').textContent = s.selective_mode || '—';
+      document.getElementById('proto-reg').textContent     = s.registered_count ?? '—';
+      document.getElementById('mode-label').textContent    = s.anonymize_mode || '—';
+      document.getElementById('target-label').textContent  = s.selective_mode || '—';
+
+      logLine(`FPS:${(s.fps||0).toFixed(1)} Faces:${s.faces_detected||0} Uptime:${fmtUptime(s.uptime_s||0)}`);
+    }
+  } catch(e) {
+    if (isRunning) { isRunning = false; deactivateFeed(); }
+  }
+}
+
+function activateFeed() {
+  const img = document.getElementById('stream-img');
+  img.src = BASE + '/stream/mjpeg?' + Date.now();
+  img.classList.remove('hidden');
+  document.getElementById('feed-offline').classList.add('hidden');
+  document.getElementById('live-overlay').classList.remove('hidden');
+  document.getElementById('mode-bar').classList.remove('hidden');
+
+  document.getElementById('engine-banner').classList.remove('hidden');
+  document.getElementById('offline-banner').classList.add('hidden');
+
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className  = 'size-4 bg-primary rounded-full border-2 border-primary animate-pulse';
+  text.textContent = 'LIVE';
+  text.className   = 'font-black text-lg uppercase text-primary';
+
+  document.getElementById('info-recording').innerHTML =
+    '<span class="px-2 py-0.5 bg-primary text-black font-black text-xs nb2">ACTIVE</span>';
+}
+
+function deactivateFeed() {
+  const img = document.getElementById('stream-img');
+  img.src = '';
+  img.classList.add('hidden');
+  document.getElementById('feed-offline').classList.remove('hidden');
+  document.getElementById('live-overlay').classList.add('hidden');
+  document.getElementById('mode-bar').classList.add('hidden');
+
+  document.getElementById('engine-banner').classList.add('hidden');
+  document.getElementById('offline-banner').classList.remove('hidden');
+
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className  = 'size-4 bg-gray-600 rounded-full border-2 border-gray-500';
+  text.textContent = 'OFFLINE';
+  text.className   = 'font-black text-lg uppercase';
+
+  document.getElementById('info-uptime').textContent = '—';
+  document.getElementById('info-faces').textContent  = '—';
+  document.getElementById('info-fps').textContent    = '—';
+  document.getElementById('info-recording').textContent = '—';
+  document.getElementById('quick-faces').textContent = '0';
+  document.getElementById('quick-known').textContent = '0';
+}
+
+function logLine(msg) {
+  const body = document.getElementById('log-body');
+  const ts   = new Date().toLocaleTimeString('en', { hour12: false });
+  const line = document.createElement('div');
+  line.className = 'log-line text-green-400';
+  line.textContent = `[${ts}] ${msg}`;
+  body.appendChild(line);
+  while (body.children.length > 100) body.removeChild(body.firstChild);
+  body.scrollTop = body.scrollHeight;
+}
+
+function fmtUptime(s) {
+  if (s < 60) return `${Math.floor(s)}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m${Math.floor(s%60)}s`;
+  return `${Math.floor(s/3600)}h${Math.floor((s%3600)/60)}m`;
+}
+</script>
+</body>
+</html>

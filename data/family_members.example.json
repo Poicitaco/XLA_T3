@@ -1,0 +1,11 @@
+{
+  "model_name": "buffalo_l",
+  "embedding_dim": 512,
+  "members": [
+    {
+      "member_id": "alice",
+      "name": "Alice",
+      "embeddings": []
+    }
+  ]
+}

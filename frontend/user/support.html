@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA — Support Center</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&display=swap" rel="stylesheet"/>
+  <script>tailwind.config={theme:{extend:{colors:{primary:"#FAFF00"},fontFamily:{display:["Plus Jakarta Sans"],mono:["Space Mono"]},borderRadius:{DEFAULT:"0px",lg:"0px",full:"9999px"}}}}</script>
+  <style>
+    .nb{border:3px solid #000}.nb2{border:2px solid #000}.bs{box-shadow:6px 6px 0 #000}.bs-sm{box-shadow:3px 3px 0 #000}
+    .ba{transition:all .1s}.ba:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000!important}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:2px solid transparent;transition:all .15s}
+    .nav-item:hover{background:#FAFF00;border-color:#000;box-shadow:3px 3px 0 #000}
+    .nav-item.active{background:#FAFF00;border:2px solid #000;box-shadow:3px 3px 0 #000}
+    select,input[type=text],input[type=email],textarea{border:2px solid #000!important;border-radius:0!important;background:#fff;font-family:"Plus Jakarta Sans",sans-serif;font-weight:600}
+    .health-card{background:#fff;border:3px solid #000;box-shadow:5px 5px 0 #000;padding:20px 22px}
+    .faq-item{border:3px solid #000;background:#fff;overflow:hidden}
+    .faq-q{cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:16px 20px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em;user-select:none;}
+    .faq-q:hover{background:#FAFF00}
+    .faq-a{padding:0 20px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;font-size:13px;line-height:1.6;color:#374151}
+    .faq-a.open{max-height:300px;padding:0 20px 16px}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#000}
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex overflow-hidden">
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="w-[200px] min-h-screen bg-white border-r-4 border-black flex flex-col shrink-0">
+  <div class="p-5 border-b-3 border-black bg-black">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-2xl font-black text-primary">security</span>
+      <div>
+        <div class="font-black text-lg uppercase leading-none text-white">XLA</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest text-gray-400">User Portal</div>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1 mt-2">
+    <a href="/ui/user/live-portal.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">live_tv</span>Live View
+    </a>
+    <a href="/ui/user/clips.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">video_library</span>Clips
+    </a>
+    <a href="/ui/user/support.html" class="nav-item active">
+      <span class="material-symbols-outlined text-[18px]">help_center</span>Support
+    </a>
+  </nav>
+  <div class="p-3 border-t-3 border-black space-y-2">
+    <button onclick="switchToAdmin()" class="w-full flex items-center gap-2 px-4 py-2 bg-primary nb font-black text-xs uppercase bs-sm ba">
+      <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>Admin Panel
+    </button>
+    <button onclick="doLogout()" class="w-full flex items-center gap-2 px-4 py-2 bg-black text-white font-black text-xs uppercase bs-sm ba hover:bg-red-600">
+      <span class="material-symbols-outlined text-[16px]">logout</span>Logout
+    </button>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <header class="bg-white border-b-4 border-black px-8 py-4 flex items-center justify-between shrink-0">
+    <div>
+      <h1 class="text-2xl font-black uppercase tracking-tight">Support Center</h1>
+      <p class="font-mono text-xs text-gray-500 uppercase tracking-widest">System health &amp; help resources</p>
+    </div>
+  </header>
+
+  <div class="flex-1 overflow-y-auto p-8">
+
+    <!-- ── System Health Cards ── -->
+    <div class="mb-8">
+      <h2 class="font-black text-xs uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[16px]">monitor_heart</span>System Health
+      </h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+        <!-- Privacy Shield -->
+        <div class="health-card">
+          <div class="flex items-start justify-between mb-3">
+            <span class="material-symbols-outlined text-2xl">shield</span>
+            <span id="h-shield-badge" class="px-2 py-0.5 font-black text-[10px] uppercase nb2 bg-gray-100">—</span>
+          </div>
+          <div class="font-mono text-[10px] uppercase text-gray-500 mb-1">Privacy Shield</div>
+          <div id="h-shield-val" class="font-black text-lg uppercase">—</div>
+        </div>
+
+        <!-- Encryption -->
+        <div class="health-card">
+          <div class="flex items-start justify-between mb-3">
+            <span class="material-symbols-outlined text-2xl">lock</span>
+            <span class="px-2 py-0.5 font-black text-[10px] uppercase nb2 bg-primary">READY</span>
+          </div>
+          <div class="font-mono text-[10px] uppercase text-gray-500 mb-1">Encryption</div>
+          <div class="font-black text-lg uppercase">AES-256</div>
+        </div>
+
+        <!-- System Uptime -->
+        <div class="health-card">
+          <div class="flex items-start justify-between mb-3">
+            <span class="material-symbols-outlined text-2xl">timer</span>
+            <span id="h-uptime-badge" class="px-2 py-0.5 font-black text-[10px] uppercase nb2 bg-gray-100">—</span>
+          </div>
+          <div class="font-mono text-[10px] uppercase text-gray-500 mb-1">Uptime</div>
+          <div id="h-uptime-val" class="font-black text-lg uppercase">—</div>
+        </div>
+
+        <!-- Anonymization -->
+        <div class="health-card">
+          <div class="flex items-start justify-between mb-3">
+            <span class="material-symbols-outlined text-2xl">blur_on</span>
+            <span id="h-anon-badge" class="px-2 py-0.5 font-black text-[10px] uppercase nb2 bg-gray-100">—</span>
+          </div>
+          <div class="font-mono text-[10px] uppercase text-gray-500 mb-1">Anonymization</div>
+          <div id="h-anon-val" class="font-black text-base uppercase truncate">—</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Main content: Ticket form + FAQ ── -->
+    <div class="grid grid-cols-12 gap-8">
+
+      <!-- Ticket Form -->
+      <div class="col-span-5">
+        <h2 class="font-black text-xs uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">chat</span>Submit a Ticket
+        </h2>
+        <div class="nb bs bg-white p-6 space-y-5">
+          <div>
+            <label class="block font-black text-xs uppercase tracking-widest mb-1">Your Name</label>
+            <input type="text" id="t-name" placeholder="Full name" class="w-full px-3 py-2 text-sm font-semibold focus:outline-none"/>
+          </div>
+          <div>
+            <label class="block font-black text-xs uppercase tracking-widest mb-1">Email</label>
+            <input type="email" id="t-email" placeholder="you@example.com" class="w-full px-3 py-2 text-sm font-semibold focus:outline-none"/>
+          </div>
+          <div>
+            <label class="block font-black text-xs uppercase tracking-widest mb-1">Issue Category</label>
+            <select id="t-cat" class="w-full px-3 py-2 text-sm font-semibold focus:outline-none nb2">
+              <option value="">Select a category...</option>
+              <option value="stream">Stream / Video Issues</option>
+              <option value="privacy">Privacy Concerns</option>
+              <option value="clips">Clips / Recordings</option>
+              <option value="access">Access &amp; Permissions</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-black text-xs uppercase tracking-widest mb-1">Description</label>
+            <textarea id="t-desc" rows="4" placeholder="Describe your issue in detail..."
+                      class="w-full px-3 py-2 text-sm font-semibold focus:outline-none resize-none"></textarea>
+          </div>
+          <button onclick="submitTicket()" id="btn-ticket"
+                  class="w-full py-3 bg-primary nb bs-sm font-black text-sm uppercase ba hover:bg-yellow-300 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">send</span>SUBMIT TICKET
+          </button>
+          <p class="font-mono text-[10px] text-gray-400 uppercase text-center">Support is UI-only. Contact your system admin directly for urgent issues.</p>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="col-span-7">
+        <h2 class="font-black text-xs uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">quiz</span>Frequently Asked Questions
+        </h2>
+        <div class="space-y-2" id="faq-list">
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>What does the Privacy Shield do?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              The Privacy Shield enables automatic clip recording when a face is detected. All recordings are encrypted using AES-256-GCM encryption. Only the administrator who set up the system can decrypt and view these clips.
+            </div>
+          </div>
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>Why are faces blurred in the live feed?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              XLA automatically applies face anonymization to protect individuals' privacy. The anonymization mode (blur, pixelate, solid, etc.) is configured by the system administrator. Only registered family members may be excluded depending on the current privacy target setting.
+            </div>
+          </div>
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>How do I view encrypted clips?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              Clips in the Clips section show the blurred/anonymized version directly in the browser. The fully-encrypted originals can only be decrypted by the system administrator through the Secure Archive panel using the admin password.
+            </div>
+          </div>
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>What camera sources are supported?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              XLA supports any camera accessible to the host system — USB webcams, built-in cameras, IP cameras via RTSP, and video files. Camera selection is available from the Admin Dashboard. The system auto-detects all available sources on startup.
+            </div>
+          </div>
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>Can I register my face to avoid anonymization?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              Yes. Ask your system administrator to register your face in the Face Registry. Once registered, you can be excluded from anonymization when the privacy target is set to "VIP / Family Excluded" mode. The system uses face embeddings for recognition.
+            </div>
+          </div>
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>Is my data stored on external servers?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              No. XLA runs entirely on-premises. All video streams, face embeddings, and encrypted clips are stored locally on the host machine. No data is transmitted to external servers. The system operates fully offline.
+            </div>
+          </div>
+
+          <div class="faq-item bs-sm">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>The stream shows "System Offline". What should I do?</span>
+              <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+            </div>
+            <div class="faq-a">
+              This means the privacy pipeline is not currently running. Contact your system administrator to start the pipeline from the Admin Dashboard. Once started, the live feed will appear automatically — no page reload is required.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="/ui/assets/js/xla.js"></script>
+<script>
+(async function init() {
+  if (!guardUser()) return;
+  await pollHealth();
+  setInterval(pollHealth, 5000);
+})();
+
+async function pollHealth() {
+  try {
+    const s = await apiGet('/pipeline/status');
+    const running = s.running;
+
+    // Shield status
+    document.getElementById('h-shield-val').textContent  = running ? 'ACTIVE' : 'OFFLINE';
+    document.getElementById('h-shield-badge').textContent = running ? 'ON' : 'OFF';
+    document.getElementById('h-shield-badge').className =
+      `px-2 py-0.5 font-black text-[10px] uppercase nb2 ${running ? 'bg-primary' : 'bg-gray-100'}`;
+
+    // Uptime
+    const uptime = s.uptime_s || 0;
+    document.getElementById('h-uptime-val').textContent  = running ? fmtUptime(uptime) : '—';
+    document.getElementById('h-uptime-badge').textContent = running ? 'LIVE' : 'N/A';
+    document.getElementById('h-uptime-badge').className =
+      `px-2 py-0.5 font-black text-[10px] uppercase nb2 ${running ? 'bg-green-400' : 'bg-gray-100'}`;
+
+    // Anonymization
+    document.getElementById('h-anon-val').textContent  = s.anonymize_mode || '—';
+    document.getElementById('h-anon-badge').textContent = s.anonymize_mode ? 'ON' : '—';
+    document.getElementById('h-anon-badge').className =
+      `px-2 py-0.5 font-black text-[10px] uppercase nb2 ${s.anonymize_mode ? 'bg-primary' : 'bg-gray-100'}`;
+  } catch(e) {
+    // Pipeline unavailable
+    ['h-shield-val','h-uptime-val','h-anon-val'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+  }
+}
+
+function submitTicket() {
+  const name  = document.getElementById('t-name').value.trim();
+  const email = document.getElementById('t-email').value.trim();
+  const cat   = document.getElementById('t-cat').value;
+  const desc  = document.getElementById('t-desc').value.trim();
+
+  if (!name || !email || !cat || !desc) {
+    toast('Please fill in all fields', 'err');
+    return;
+  }
+  if (!email.includes('@')) {
+    toast('Please enter a valid email address', 'err');
+    return;
+  }
+
+  // UI-only: simulate submission
+  const btn = document.getElementById('btn-ticket');
+  setBtnLoading(btn, true, 'SUBMITTING...');
+  setTimeout(() => {
+    setBtnLoading(btn, false);
+    toast('Ticket submitted! Your admin will be in touch.', 'ok');
+    document.getElementById('t-name').value  = '';
+    document.getElementById('t-email').value = '';
+    document.getElementById('t-cat').value   = '';
+    document.getElementById('t-desc').value  = '';
+  }, 1200);
+}
+
+function toggleFaq(el) {
+  const answer = el.nextElementSibling;
+  const icon   = el.querySelector('.material-symbols-outlined');
+  const isOpen = answer.classList.contains('open');
+
+  // Close all
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-q .material-symbols-outlined').forEach(i => {
+    i.style.transform = 'rotate(0deg)';
+  });
+
+  if (!isOpen) {
+    answer.classList.add('open');
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+
+function fmtUptime(s) {
+  if (s < 60) return `${Math.floor(s)}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m`;
+  return `${Math.floor(s/3600)}h${Math.floor((s%3600)/60)}m`;
+}
+</script>
+</body>
+</html>

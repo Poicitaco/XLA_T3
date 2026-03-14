@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA Face Privacy System — Login</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "primary": "#FAFF00" },
+        fontFamily: { "display": ["Plus Jakarta Sans"], "mono": ["Space Mono"] },
+        borderRadius: { "DEFAULT": "0px", "lg": "0px", "full": "9999px" }
+      }}
+    }
+  </script>
+  <style>
+    .nb   { border: 3px solid #000; }
+    .nb2  { border: 2px solid #000; }
+    .bs   { box-shadow: 6px 6px 0px 0px #000; }
+    .bs-sm{ box-shadow: 3px 3px 0px 0px #000; }
+    .btn-act { transition: all .1s ease; }
+    .btn-act:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 #000 !important; }
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex flex-col items-center justify-center p-8">
+
+  <!-- Logo / Brand -->
+  <div class="flex items-center gap-4 mb-12">
+    <div class="size-16 bg-primary nb bs flex items-center justify-center">
+      <span class="material-symbols-outlined text-3xl font-black">security</span>
+    </div>
+    <div>
+      <h1 class="text-5xl font-black uppercase tracking-tighter leading-none">XLA PRIVACY</h1>
+      <p class="font-mono text-xs font-bold uppercase tracking-[0.25em] opacity-60 mt-1">Face Privacy System // v4.2.0</p>
+    </div>
+  </div>
+
+  <!-- Setup warning (hidden by default) -->
+  <div id="setup-banner" class="hidden w-full max-w-2xl mb-6 p-5 bg-orange-400 nb bs font-black text-sm uppercase">
+    <span class="material-symbols-outlined align-middle mr-2">warning</span>
+    Admin not configured. Set up a password below before logging in.
+  </div>
+
+  <!-- Setup Panel (hidden by default) -->
+  <div id="setup-panel" class="hidden w-full max-w-2xl mb-8 p-8 bg-white nb bs">
+    <h2 class="text-2xl font-black uppercase mb-6">First Time Setup — Admin Password</h2>
+    <div class="flex gap-4">
+      <input id="setup-pw" type="password" placeholder="NEW ADMIN PASSWORD (min 8 chars)"
+             class="flex-1 nb2 bg-white px-4 py-3 font-bold text-sm focus:outline-none focus:ring-0 uppercase tracking-wider bs-sm"/>
+      <button onclick="doSetup()" class="px-8 py-3 bg-primary nb bs btn-act font-black uppercase text-sm">
+        SET PASSWORD
+      </button>
+    </div>
+    <p id="setup-err" class="hidden mt-3 text-red-600 font-bold text-sm uppercase"></p>
+  </div>
+
+  <!-- Login Cards -->
+  <div id="login-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
+
+    <!-- Admin Card -->
+    <div class="bg-white nb bs p-8 flex flex-col gap-6">
+      <div class="flex items-center gap-3">
+        <div class="size-12 bg-black nb flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary text-xl font-black">admin_panel_settings</span>
+        </div>
+        <div>
+          <h2 class="text-xl font-black uppercase leading-none">Admin Access</h2>
+          <p class="text-[11px] font-bold text-slate-500 uppercase mt-0.5">Full system control</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <input id="admin-pw" type="password" placeholder="ADMIN PASSWORD"
+               class="w-full nb2 bg-white px-4 py-3 font-bold text-sm focus:outline-none focus:ring-0 uppercase tracking-wider bs-sm"
+               onkeydown="if(event.key==='Enter') doAdminLogin()"/>
+        <p id="admin-err" class="hidden text-red-600 font-bold text-xs uppercase"></p>
+        <button id="admin-btn" onclick="doAdminLogin()"
+                class="w-full py-4 bg-primary nb bs btn-act font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3">
+          <span class="material-symbols-outlined text-lg">lock_open</span>
+          LOGIN AS ADMIN
+        </button>
+      </div>
+    </div>
+
+    <!-- User Card -->
+    <div class="bg-white nb bs p-8 flex flex-col gap-6">
+      <div class="flex items-center gap-3">
+        <div class="size-12 bg-primary nb flex items-center justify-center">
+          <span class="material-symbols-outlined text-black text-xl font-black">shield_person</span>
+        </div>
+        <div>
+          <h2 class="text-xl font-black uppercase leading-none">User Portal</h2>
+          <p class="text-[11px] font-bold text-slate-500 uppercase mt-0.5">View-only live feed</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="nb2 bs-sm bg-[#f4f4f0] p-4 text-xs font-bold uppercase space-y-1">
+          <p class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600">check_circle</span> Watch anonymized live stream</p>
+          <p class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600">check_circle</span> Browse blurred video clips</p>
+          <p class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-slate-400">cancel</span> No system controls</p>
+        </div>
+        <button onclick="doUserLogin()"
+                class="w-full py-4 bg-white nb bs btn-act font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-primary transition-colors">
+          <span class="material-symbols-outlined text-lg">visibility</span>
+          ENTER USER VIEW
+        </button>
+      </div>
+    </div>
+  </div><!-- /login-cards -->
+
+  <p class="mt-10 font-mono text-[10px] font-bold uppercase tracking-widest opacity-40 text-center">
+    XLA FACE PRIVACY SYSTEM — PROTECTED ACCESS POINT
+  </p>
+
+  <script src="/ui/assets/js/xla.js"></script>
+  <script>
+    // ── Inline API & auth (since this page is at root, xla.js may not yet be loaded properly) ──
+    async function _post(path, body) {
+      const res = await fetch(BASE + path, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+      return data;
+    }
+
+    async function checkAdmin() {
+      try {
+        const data = await fetch(BASE + '/admin/status').then(r => r.json());
+        if (!data.admin_setup) {
+          document.getElementById('setup-banner').classList.remove('hidden');
+          document.getElementById('setup-panel').classList.remove('hidden');
+        }
+      } catch (e) {
+        // Backend offline – still allow UI to render
+        console.warn('Backend unreachable:', e.message);
+      }
+    }
+
+    async function doSetup() {
+      const pw = document.getElementById('setup-pw').value.trim();
+      const errEl = document.getElementById('setup-err');
+      errEl.classList.add('hidden');
+      if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.classList.remove('hidden'); return; }
+      try {
+        await _post('/admin/setup', { password: pw });
+        document.getElementById('setup-banner').classList.add('hidden');
+        document.getElementById('setup-panel').classList.add('hidden');
+        showToast('Admin password set. You can now log in.', 'ok');
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    async function doAdminLogin() {
+      const pw = document.getElementById('admin-pw').value.trim();
+      const errEl = document.getElementById('admin-err');
+      const btn   = document.getElementById('admin-btn');
+      errEl.classList.add('hidden');
+      if (!pw) { errEl.textContent = 'Password is required.'; errEl.classList.remove('hidden'); return; }
+      btn.textContent = 'VERIFYING...'; btn.disabled = true;
+      try {
+        const data = await _post('/admin/verify', { password: pw });
+        sessionStorage.setItem('xla_token', data.token);
+        sessionStorage.setItem('xla_expires', data.expires_at);
+        sessionStorage.setItem('xla_role', 'admin');
+        // Store password temporarily for clip-recording (AES key), cleared on logout
+        sessionStorage.setItem('xla_pw', btoa(pw));
+        window.location.href = '/ui/admin/dashboard.html';
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+        btn.textContent = 'LOGIN AS ADMIN'; btn.disabled = false;
+      }
+    }
+
+    function doUserLogin() {
+      sessionStorage.setItem('xla_role', 'user');
+      sessionStorage.removeItem('xla_token');
+      window.location.href = '/ui/user/live-portal.html';
+    }
+
+    function showToast(msg, type) {
+      const colors = { ok: 'bg-green-400 text-black', err: 'bg-red-500 text-white', info: 'bg-white text-black' };
+      const el = document.createElement('div');
+      el.className = `fixed bottom-6 right-6 z-[9999] px-6 py-4 font-black text-sm uppercase border-4 border-black shadow-[6px_6px_0px_0px_#000] ${colors[type]||colors.info}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // Redirect if already logged in
+    (function() {
+      const role = sessionStorage.getItem('xla_role');
+      if (role === 'admin' && sessionStorage.getItem('xla_token')) {
+        window.location.href = '/ui/admin/dashboard.html';
+      } else if (role === 'user') {
+        window.location.href = '/ui/user/live-portal.html';
+      }
+    })();
+
+    checkAdmin();
+  </script>
+</body>
+</html>

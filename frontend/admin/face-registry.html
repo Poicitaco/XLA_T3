@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA Admin — Face Registry</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&display=swap" rel="stylesheet"/>
+  <script>tailwind.config={theme:{extend:{colors:{primary:"#FAFF00"},fontFamily:{display:["Plus Jakarta Sans"],mono:["Space Mono"]},borderRadius:{DEFAULT:"0px",lg:"0px",full:"9999px"}}}}</script>
+  <style>
+    .nb{border:3px solid #000}.nb2{border:2px solid #000}.bs{box-shadow:6px 6px 0 #000}.bs-sm{box-shadow:3px 3px 0 #000}
+    .ba{transition:all .1s}.ba:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000!important}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:2px solid transparent;transition:all .15s}
+    .nav-item:hover{background:#FAFF00;border-color:#000;box-shadow:3px 3px 0 #000}
+    .nav-item.active{background:#FAFF00;border:2px solid #000;box-shadow:3px 3px 0 #000}
+    .nav-soon{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.35;cursor:not-allowed}
+    select,input[type=text],input[type=number],input[type=password],input[type=file]{border:2px solid #000!important;border-radius:0!important;background:#fff}
+    .member-card{background:#fff;border:3px solid #000;box-shadow:5px 5px 0 #000;padding:20px;display:flex;flex-direction:column;gap:12px}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#000}
+    .avatar{width:72px;height:72px;background:#FAFF00;border:3px solid #000;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;font-family:"Plus Jakarta Sans",sans-serif;color:#000;flex-shrink:0}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+    .drop-zone{border:3px dashed #000;background:#f4f4f0;padding:32px;text-align:center;cursor:pointer;transition:background .15s}
+    .drop-zone.drag-over{background:#FAFF00}
+    .preview-img{width:56px;height:56px;object-fit:cover;border:2px solid #000}
+    .file-preview-strip{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:140px;overflow-y:auto}
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex overflow-hidden">
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="w-[220px] min-h-screen bg-white border-r-4 border-black flex flex-col shrink-0">
+  <div class="p-5 border-b-3 border-black bg-primary">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-2xl font-black">security</span>
+      <div>
+        <div class="font-black text-lg uppercase leading-none">XLA</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest opacity-70">Admin Panel</div>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1 mt-2">
+    <a href="/ui/admin/dashboard.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">dashboard</span>Dashboard
+    </a>
+    <a href="/ui/admin/face-registry.html" class="nav-item active">
+      <span class="material-symbols-outlined text-[18px]">face</span>Face Registry
+    </a>
+    <a href="/ui/admin/secure-archive.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">lock</span>Secure Archive
+    </a>
+    <div class="my-3 border-t-2 border-black opacity-20"></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">analytics</span>Analytics <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">videocam</span>Cameras <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">policy</span>Privacy Rules <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+    <div class="nav-soon"><span class="material-symbols-outlined text-[16px]">history</span>Admin Logs <span class="ml-auto text-[9px] bg-black text-white px-1">SOON</span></div>
+  </nav>
+  <div class="p-3 border-t-3 border-black space-y-2">
+    <button onclick="switchToUser()" class="w-full flex items-center gap-2 px-4 py-3 bg-primary nb font-black text-xs uppercase bs-sm ba">
+      <span class="material-symbols-outlined text-[16px]">shield_person</span>User View
+    </button>
+    <button onclick="doLogout()" class="w-full flex items-center gap-2 px-4 py-3 bg-black text-white font-black text-xs uppercase bs-sm ba hover:bg-red-600">
+      <span class="material-symbols-outlined text-[16px]">logout</span>Logout
+    </button>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <header class="bg-white border-b-4 border-black px-8 py-4 flex items-center justify-between shrink-0">
+    <div>
+      <h1 class="text-2xl font-black uppercase tracking-tight">Face Registry</h1>
+      <p class="font-mono text-xs text-gray-500 uppercase tracking-widest">Manage registered members &amp; embeddings</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="member-count-badge" class="px-4 py-2 nb bs-sm font-black text-xs uppercase bg-white">0 MEMBERS</div>
+      <button onclick="openModal('modal-register')" class="flex items-center gap-2 px-5 py-3 bg-primary nb bs font-black text-sm uppercase ba hover:bg-yellow-300">
+        <span class="material-symbols-outlined text-[18px]">person_add</span>Register New Member
+      </button>
+    </div>
+  </header>
+
+  <!-- Search bar -->
+  <div class="px-8 pt-5 pb-0 shrink-0">
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-[20px]">search</span>
+      <input type="text" id="search-input" placeholder="SEARCH MEMBERS BY NAME OR ID..."
+             oninput="filterMembers()" class="w-full pl-10 pr-4 py-2 nb2 font-bold text-sm focus:outline-none bg-white"/>
+    </div>
+  </div>
+
+  <!-- Member grid -->
+  <div id="member-grid" class="flex-1 overflow-y-auto px-8 py-5">
+    <!-- Loading state -->
+    <div id="loading-state" class="flex flex-col items-center justify-center h-40 gap-4">
+      <span class="material-symbols-outlined text-5xl text-gray-300 animate-spin">settings</span>
+      <p class="font-black text-sm uppercase text-gray-400">Loading members...</p>
+    </div>
+    <!-- Empty state (hidden by default) -->
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center h-40 gap-4 nb bs-sm bg-white p-12">
+      <span class="material-symbols-outlined text-5xl text-gray-300">group_off</span>
+      <p class="font-black text-sm uppercase text-gray-400">No members registered yet</p>
+      <button onclick="openModal('modal-register')" class="flex items-center gap-2 px-5 py-3 bg-primary nb bs-sm font-black text-sm uppercase ba">
+        <span class="material-symbols-outlined text-[18px]">person_add</span>Register First Member
+      </button>
+    </div>
+    <!-- Cards container -->
+    <div id="cards-container" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+  </div>
+</main>
+
+<!-- ─── REGISTER MODAL ────────────────────────────────────────────────────────── -->
+<div id="modal-register" class="modal-overlay hidden" onclick="onOverlayClick(event,'modal-register')">
+  <div class="bg-white nb bs w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-4 border-b-3 border-black bg-primary">
+      <h2 class="font-black text-lg uppercase">Register New Member</h2>
+      <button onclick="closeModal('modal-register')" class="font-black text-xl hover:opacity-60">&times;</button>
+    </div>
+    <form id="reg-form" onsubmit="submitRegister(event)" class="p-6 space-y-5">
+      <div>
+        <label class="block font-black text-xs uppercase tracking-widest mb-1">Member ID *</label>
+        <input type="text" id="reg-id" required placeholder="e.g. member_001" class="w-full px-3 py-2 text-sm font-bold focus:outline-none"/>
+        <p class="font-mono text-[10px] text-gray-400 mt-1">Unique identifier, no spaces</p>
+      </div>
+      <div>
+        <label class="block font-black text-xs uppercase tracking-widest mb-1">Display Name *</label>
+        <input type="text" id="reg-name" required placeholder="e.g. John Doe" class="w-full px-3 py-2 text-sm font-bold focus:outline-none"/>
+      </div>
+      <div>
+        <label class="block font-black text-xs uppercase tracking-widest mb-2">Face Photos (20–30 recommended)</label>
+        <div class="drop-zone nb" id="drop-zone" onclick="document.getElementById('reg-files').click()"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <span class="material-symbols-outlined text-3xl text-gray-400 block mx-auto mb-2">upload_file</span>
+          <p class="font-black text-sm uppercase text-gray-500">Click or drag &amp; drop photos here</p>
+          <p class="font-mono text-[10px] text-gray-400 mt-1">JPG, PNG, WEBP — multiple files supported</p>
+        </div>
+        <input type="file" id="reg-files" multiple accept="image/*" class="hidden" onchange="onFilesSelected()"/>
+        <div id="file-preview" class="file-preview-strip"></div>
+        <div id="file-count" class="font-mono text-[10px] text-gray-500 mt-1 hidden"></div>
+      </div>
+      <!-- Progress -->
+      <div id="reg-progress" class="hidden">
+        <div class="flex justify-between font-mono text-[10px] uppercase mb-1">
+          <span>Uploading...</span><span id="prog-pct">0%</span>
+        </div>
+        <div class="nb2 h-4 bg-gray-100 overflow-hidden">
+          <div id="prog-bar" class="h-full bg-primary transition-all" style="width:0%"></div>
+        </div>
+      </div>
+      <!-- Error -->
+      <div id="reg-error" class="hidden px-4 py-3 bg-red-100 nb2 border-red-500 font-bold text-sm text-red-700"></div>
+      <div class="flex gap-3 pt-2">
+        <button type="submit" id="btn-reg-submit" class="flex-1 py-3 bg-primary nb bs-sm font-black text-sm uppercase ba hover:bg-yellow-300">
+          <span class="material-symbols-outlined align-text-bottom mr-1">save</span>REGISTER MEMBER
+        </button>
+        <button type="button" onclick="closeModal('modal-register')" class="px-5 py-3 bg-black text-white nb bs-sm font-black text-sm uppercase ba">
+          CANCEL
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── EDIT MODAL ────────────────────────────────────────────────────────────── -->
+<div id="modal-edit" class="modal-overlay hidden" onclick="onOverlayClick(event,'modal-edit')">
+  <div class="bg-white nb bs w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-4 border-b-3 border-black bg-primary">
+      <h2 class="font-black text-lg uppercase">Edit Member</h2>
+      <button onclick="closeModal('modal-edit')" class="font-black text-xl hover:opacity-60">&times;</button>
+    </div>
+    <div class="p-6 space-y-5">
+      <input type="hidden" id="edit-id"/>
+      <div>
+        <label class="block font-black text-xs uppercase tracking-widest mb-1">Display Name</label>
+        <input type="text" id="edit-name" class="w-full px-3 py-2 text-sm font-bold focus:outline-none"/>
+      </div>
+      <div>
+        <label class="block font-black text-xs uppercase tracking-widest mb-1">Recognition Threshold (0–1)</label>
+        <input type="number" id="edit-threshold" min="0" max="1" step="0.01" placeholder="0.45"
+               class="w-full px-3 py-2 text-sm font-bold focus:outline-none"/>
+        <p class="font-mono text-[10px] text-gray-400 mt-1">Lower = stricter matching</p>
+      </div>
+      <div id="edit-error" class="hidden px-4 py-3 bg-red-100 nb2 border-red-500 font-bold text-sm text-red-700"></div>
+      <div class="flex gap-3">
+        <button onclick="submitEdit()" id="btn-edit-submit" class="flex-1 py-3 bg-primary nb bs-sm font-black text-sm uppercase ba hover:bg-yellow-300">
+          SAVE CHANGES
+        </button>
+        <button onclick="closeModal('modal-edit')" class="px-5 py-3 bg-black text-white nb bs-sm font-black text-sm uppercase ba">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DELETE CONFIRM MODAL ─────────────────────────────────────────────────── -->
+<div id="modal-delete" class="modal-overlay hidden" onclick="onOverlayClick(event,'modal-delete')">
+  <div class="bg-white nb bs w-full max-w-sm" onclick="event.stopPropagation()">
+    <div class="px-6 py-4 border-b-3 border-black bg-red-500">
+      <h2 class="font-black text-lg uppercase text-white">Confirm Delete</h2>
+    </div>
+    <div class="p-6">
+      <p class="font-bold text-sm mb-1">Remove member <strong id="del-name-display" class="font-black"></strong>?</p>
+      <p class="font-mono text-xs text-gray-500 mb-5">This will permanently delete all face embeddings and cannot be undone.</p>
+      <div class="flex gap-3">
+        <button onclick="confirmDelete()" id="btn-del-confirm" class="flex-1 py-3 bg-red-500 text-white nb bs-sm font-black text-sm uppercase ba hover:bg-red-700">
+          <span class="material-symbols-outlined align-text-bottom mr-1">delete</span>DELETE
+        </button>
+        <button onclick="closeModal('modal-delete')" class="px-5 py-3 nb bs-sm font-black text-sm uppercase ba">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCRIPTS ──────────────────────────────────────────────────────────────── -->
+<script src="/ui/assets/js/xla.js"></script>
+<script>
+let allMembers = [];
+let pendingDeleteId = null;
+let selectedFiles  = [];
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  if (!guardAdmin()) return;
+  await loadMembers();
+})();
+
+// ─── Load members ─────────────────────────────────────────────────────────────
+async function loadMembers() {
+  try {
+    const data = await apiGet('/members');
+    allMembers = Array.isArray(data) ? data : (data.members || []);
+    renderCards(allMembers);
+  } catch(e) {
+    toast('Failed to load members: ' + e.message, 'err');
+    document.getElementById('loading-state').innerHTML =
+      `<p class="font-black text-sm uppercase text-red-500">Load failed: ${e.message}</p>`;
+  }
+}
+
+function renderCards(members) {
+  const loading = document.getElementById('loading-state');
+  const empty   = document.getElementById('empty-state');
+  const cards   = document.getElementById('cards-container');
+
+  loading.classList.add('hidden');
+
+  document.getElementById('member-count-badge').textContent = `${members.length} MEMBER${members.length !== 1 ? 'S' : ''}`;
+
+  if (!members.length) {
+    empty.classList.remove('hidden');
+    cards.classList.add('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  cards.classList.remove('hidden');
+  cards.innerHTML = '';
+
+  members.forEach(m => {
+    const initial = (m.name || m.member_id || '?')[0].toUpperCase();
+    const embCount = m.embedding_count ?? m.photo_count ?? '—';
+    const card = document.createElement('div');
+    card.className = 'member-card';
+    card.dataset.id   = m.member_id;
+    card.dataset.name = (m.name || '').toLowerCase();
+    card.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="avatar">${initial}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-black text-base uppercase leading-tight truncate">${esc(m.name || m.member_id)}</div>
+          <div class="font-mono text-[10px] text-gray-500 mt-0.5 truncate">ID: ${esc(m.member_id)}</div>
+          <div class="flex items-center gap-1 mt-2">
+            <span class="text-[10px] font-black bg-primary px-2 py-0.5 nb2">${embCount} EMBEDDINGS</span>
+            <span class="text-[10px] font-black bg-green-400 px-2 py-0.5 nb2">ACTIVE</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 border-t-2 border-black pt-3">
+        <button onclick="openEdit('${esc(m.member_id)}', '${esc(m.name||'')}', '${m.threshold||''}')"
+                class="flex-1 py-2 nb2 bs-sm font-black text-xs uppercase ba flex items-center justify-center gap-1 hover:bg-primary">
+          <span class="material-symbols-outlined text-[14px]">edit</span>EDIT
+        </button>
+        <button onclick="openDelete('${esc(m.member_id)}', '${esc(m.name||m.member_id)}')"
+                class="flex-1 py-2 nb2 bs-sm font-black text-xs uppercase ba flex items-center justify-center gap-1 hover:bg-red-500 hover:text-white">
+          <span class="material-symbols-outlined text-[14px]">delete</span>DELETE
+        </button>
+      </div>`;
+    cards.appendChild(card);
+  });
+}
+
+// ─── Search filter ─────────────────────────────────────────────────────────────
+function filterMembers() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  const filtered = q
+    ? allMembers.filter(m => (m.name||'').toLowerCase().includes(q) || (m.member_id||'').toLowerCase().includes(q))
+    : allMembers;
+  renderCards(filtered);
+}
+
+// ─── Register ─────────────────────────────────────────────────────────────────
+async function submitRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-reg-submit');
+  const errEl = document.getElementById('reg-error');
+  errEl.classList.add('hidden');
+
+  const id   = document.getElementById('reg-id').value.trim();
+  const name = document.getElementById('reg-name').value.trim();
+
+  if (!id || !name) { return showRegError('Member ID and Name are required'); }
+  if (!selectedFiles.length) { return showRegError('Please select at least one face photo'); }
+
+  setBtnLoading(btn, true, 'UPLOADING...');
+  document.getElementById('reg-progress').classList.remove('hidden');
+
+  try {
+    const fd = new FormData();
+    fd.append('member_id', id);
+    fd.append('name', name);
+    selectedFiles.forEach(f => fd.append('images', f, f.name));
+
+    // Simulate progress (true upload progress requires XHR)
+    let pct = 0;
+    const tick = setInterval(() => {
+      pct = Math.min(pct + 8, 85);
+      updateProgress(pct);
+    }, 200);
+
+    await apiForm('/members', fd);
+    clearInterval(tick);
+    updateProgress(100);
+
+    setTimeout(async () => {
+      closeModal('modal-register');
+      resetRegForm();
+      toast(`${name} registered successfully`, 'ok');
+      await loadMembers();
+    }, 400);
+  } catch(err) {
+    showRegError(err.message);
+    updateProgress(0);
+    document.getElementById('reg-progress').classList.add('hidden');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+function showRegError(msg) {
+  const el = document.getElementById('reg-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+function updateProgress(pct) {
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+}
+function resetRegForm() {
+  document.getElementById('reg-form').reset();
+  selectedFiles = [];
+  document.getElementById('file-preview').innerHTML = '';
+  document.getElementById('file-count').classList.add('hidden');
+  document.getElementById('reg-progress').classList.add('hidden');
+  document.getElementById('reg-error').classList.add('hidden');
+  updateProgress(0);
+}
+
+// File picker helpers
+function onFilesSelected() {
+  const input = document.getElementById('reg-files');
+  selectedFiles = Array.from(input.files);
+  updateFilePreviews();
+}
+function onDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function onDragLeave(e) { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  selectedFiles = [...selectedFiles, ...files];
+  updateFilePreviews();
+}
+function updateFilePreviews() {
+  const strip = document.getElementById('file-preview');
+  const count = document.getElementById('file-count');
+  strip.innerHTML = '';
+  selectedFiles.slice(0, 20).forEach(f => {
+    const img = document.createElement('img');
+    img.className = 'preview-img';
+    img.src = URL.createObjectURL(f);
+    strip.appendChild(img);
+  });
+  if (selectedFiles.length > 20) {
+    const more = document.createElement('div');
+    more.className = 'flex items-center justify-center w-14 h-14 nb2 bg-gray-100 font-black text-xs';
+    more.textContent = `+${selectedFiles.length - 20}`;
+    strip.appendChild(more);
+  }
+  count.textContent = `${selectedFiles.length} photo${selectedFiles.length !== 1 ? 's' : ''} selected`;
+  count.classList.remove('hidden');
+}
+
+// ─── Edit ─────────────────────────────────────────────────────────────────────
+function openEdit(id, name, threshold) {
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-threshold').value = threshold || '';
+  document.getElementById('edit-error').classList.add('hidden');
+  openModal('modal-edit');
+}
+async function submitEdit() {
+  const btn = document.getElementById('btn-edit-submit');
+  const errEl = document.getElementById('edit-error');
+  errEl.classList.add('hidden');
+
+  const id        = document.getElementById('edit-id').value;
+  const name      = document.getElementById('edit-name').value.trim();
+  const threshold = document.getElementById('edit-threshold').value.trim();
+
+  if (!name) { errEl.textContent = 'Name is required'; errEl.classList.remove('hidden'); return; }
+
+  setBtnLoading(btn, true, 'SAVING...');
+  try {
+    const payload = { name };
+    if (threshold) payload.threshold = parseFloat(threshold);
+    await apiPatch(`/members/${encodeURIComponent(id)}`, payload);
+    closeModal('modal-edit');
+    toast('Member updated', 'ok');
+    await loadMembers();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+// ─── Delete ─────────────────────────────────────────────────────────────────
+function openDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('del-name-display').textContent = name;
+  openModal('modal-delete');
+}
+async function confirmDelete() {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('btn-del-confirm');
+  setBtnLoading(btn, true, 'DELETING...');
+  try {
+    await apiDelete(`/members/${encodeURIComponent(pendingDeleteId)}`);
+    closeModal('modal-delete');
+    toast('Member removed', 'ok');
+    pendingDeleteId = null;
+    await loadMembers();
+  } catch(e) {
+    toast(e.message, 'err');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function onOverlayClick(e, id) { if (e.target === e.currentTarget) closeModal(id); }
+</script>
+</body>
+</html>

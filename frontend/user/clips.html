@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XLA — Clips History</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&display=swap" rel="stylesheet"/>
+  <script>tailwind.config={theme:{extend:{colors:{primary:"#FAFF00"},fontFamily:{display:["Plus Jakarta Sans"],mono:["Space Mono"]},borderRadius:{DEFAULT:"0px",lg:"0px",full:"9999px"}}}}</script>
+  <style>
+    .nb{border:3px solid #000}.nb2{border:2px solid #000}.bs{box-shadow:6px 6px 0 #000}.bs-sm{box-shadow:3px 3px 0 #000}
+    .ba{transition:all .1s}.ba:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000!important}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:2px solid transparent;transition:all .15s}
+    .nav-item:hover{background:#FAFF00;border-color:#000;box-shadow:3px 3px 0 #000}
+    .nav-item.active{background:#FAFF00;border:2px solid #000;box-shadow:3px 3px 0 #000}
+    select,input[type=text]{border:2px solid #000!important;border-radius:0!important;background:#fff}
+    .clip-card{background:#fff;border:3px solid #000;box-shadow:5px 5px 0 #000;overflow:hidden;display:flex;flex-direction:column}
+    .clip-thumb{width:100%;aspect-ratio:16/9;background:#111;position:relative;overflow:hidden;border-bottom:3px solid #000}
+    .clip-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .no-thumb{display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#1a1a1a}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#000}
+  </style>
+</head>
+<body class="bg-[#f4f4f0] font-display min-h-screen flex overflow-hidden">
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="w-[200px] min-h-screen bg-white border-r-4 border-black flex flex-col shrink-0">
+  <div class="p-5 border-b-3 border-black bg-black">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-2xl font-black text-primary">security</span>
+      <div>
+        <div class="font-black text-lg uppercase leading-none text-white">XLA</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest text-gray-400">User Portal</div>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1 mt-2">
+    <a href="/ui/user/live-portal.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">live_tv</span>Live View
+    </a>
+    <a href="/ui/user/clips.html" class="nav-item active">
+      <span class="material-symbols-outlined text-[18px]">video_library</span>Clips
+    </a>
+    <a href="/ui/user/support.html" class="nav-item">
+      <span class="material-symbols-outlined text-[18px]">help_center</span>Support
+    </a>
+  </nav>
+  <div class="p-3 border-t-3 border-black space-y-2">
+    <button onclick="switchToAdmin()" class="w-full flex items-center gap-2 px-4 py-2 bg-primary nb font-black text-xs uppercase bs-sm ba">
+      <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>Admin Panel
+    </button>
+    <button onclick="doLogout()" class="w-full flex items-center gap-2 px-4 py-2 bg-black text-white font-black text-xs uppercase bs-sm ba hover:bg-red-600">
+      <span class="material-symbols-outlined text-[16px]">logout</span>Logout
+    </button>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <header class="bg-white border-b-4 border-black px-8 py-4 flex items-center justify-between shrink-0">
+    <div>
+      <h1 class="text-2xl font-black uppercase tracking-tight">Clips</h1>
+      <p class="font-mono text-xs text-gray-500 uppercase tracking-widest">Privacy-blurred video recordings</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="count-badge" class="px-4 py-2 nb bs-sm font-black text-xs uppercase bg-white">0 CLIPS</div>
+      <button onclick="loadClips()" class="flex items-center gap-2 px-4 py-2 nb bs-sm font-black text-xs uppercase ba hover:bg-primary">
+        <span class="material-symbols-outlined text-[16px]">refresh</span>Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Search + sort toolbar -->
+  <div class="px-8 pt-5 pb-0 shrink-0 flex gap-3">
+    <div class="relative flex-1">
+      <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-[20px]">search</span>
+      <input type="text" id="search-input" placeholder="SEARCH BY NAME OR DATE..."
+             oninput="filterClips()" class="w-full pl-10 pr-4 py-2 font-bold text-sm focus:outline-none"/>
+    </div>
+    <select id="sort-select" onchange="filterClips()" class="px-3 py-2 font-bold text-sm focus:outline-none nb2">
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+      <option value="name">Name A–Z</option>
+    </select>
+  </div>
+
+  <!-- Clips grid -->
+  <div class="flex-1 overflow-y-auto px-8 py-5">
+    <div id="loading-state" class="flex flex-col items-center justify-center h-40 gap-4">
+      <span class="material-symbols-outlined text-5xl text-gray-300 animate-spin">settings</span>
+      <p class="font-black text-sm uppercase text-gray-400">Loading clips...</p>
+    </div>
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center h-40 nb bs-sm bg-white p-12 gap-4">
+      <span class="material-symbols-outlined text-5xl text-gray-300">videocam_off</span>
+      <p class="font-black text-sm uppercase text-gray-400">No clips recorded yet</p>
+      <p class="font-mono text-[11px] text-gray-400 text-center">Clips are created automatically when the Privacy Shield is active</p>
+    </div>
+    <div id="clips-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+  </div>
+</main>
+
+<!-- ─── VIDEO PLAYER MODAL ──────────────────────────────────────────────────── -->
+<div id="modal-player" class="modal-overlay hidden" onclick="onOverlayClick(event)">
+  <div class="bg-white nb bs w-full max-w-3xl" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-4 border-b-3 border-black bg-black">
+      <h2 id="player-title" class="font-black text-base uppercase text-white truncate flex-1 mr-4">—</h2>
+      <button onclick="closePlayer()" class="font-black text-xl text-white hover:text-primary">&times;</button>
+    </div>
+    <div class="p-5">
+      <video id="stream-video" controls class="w-full nb bs-sm bg-black" style="max-height:420px">
+        Your browser does not support video.
+      </video>
+      <div id="player-meta" class="mt-3 flex gap-4 font-mono text-[11px] text-gray-500 uppercase"></div>
+    </div>
+    <!-- Privacy note -->
+    <div class="mx-5 mb-5 px-4 py-3 bg-primary nb2 flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">shield</span>
+      <span class="font-black text-xs uppercase">This recording has face anonymization applied</span>
+    </div>
+  </div>
+</div>
+
+<script src="/ui/assets/js/xla.js"></script>
+<script>
+let allClips = [];
+
+(async function init() {
+  if (!guardUser()) return;
+  await loadClips();
+})();
+
+async function loadClips() {
+  try {
+    const raw = await apiGet('/clips');
+    // apiGet returns parsed JSON or raw Response — handle both
+    const data = (raw && typeof raw.clips !== 'undefined') ? raw : (await raw.json().catch(() => raw));
+    allClips = Array.isArray(data.clips) ? data.clips : [];
+    filterClips();
+  } catch(e) {
+    toast('Failed to load clips: ' + e.message, 'err');
+    document.getElementById('loading-state').innerHTML =
+      `<p class="font-black text-sm uppercase text-red-500">Error: ${e.message}</p>`;
+  }
+}
+
+function filterClips() {
+  const q    = document.getElementById('search-input').value.toLowerCase().trim();
+  const sort = document.getElementById('sort-select').value;
+
+  let filtered = q
+    ? allClips.filter(c => (c.name||c.clip_id||'').toLowerCase().includes(q) || (c.created_at||'').includes(q))
+    : [...allClips];
+
+  if (sort === 'newest') filtered.sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+  else if (sort === 'oldest') filtered.sort((a,b) => (a.created_at||'').localeCompare(b.created_at||''));
+  else if (sort === 'name') filtered.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+  renderClips(filtered);
+}
+
+function renderClips(clips) {
+  document.getElementById('loading-state').classList.add('hidden');
+  document.getElementById('count-badge').textContent = `${allClips.length} CLIP${allClips.length !== 1 ? 'S' : ''}`;
+
+  if (!clips.length) {
+    document.getElementById('empty-state').classList.remove('hidden');
+    document.getElementById('clips-grid').classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('empty-state').classList.add('hidden');
+  const grid = document.getElementById('clips-grid');
+  grid.classList.remove('hidden');
+  grid.innerHTML = '';
+
+  clips.forEach(c => {
+    const id    = c.clip_id;
+    const name  = c.name || c.clip_id || 'Clip';
+    const date  = c.created_at ? fmtDate(c.created_at) : '—';
+    const dur   = c.duration_s != null ? fmtDur(c.duration_s) : null;
+    const thumb = `${BASE}/clips/${encodeURIComponent(id)}/thumbnail`;
+
+    const card = document.createElement('div');
+    card.className = 'clip-card';
+    card.innerHTML = `
+      <div class="clip-thumb">
+        <img src="${thumb}" loading="lazy"
+             onerror="this.parentElement.innerHTML='<div class=\\'no-thumb\\'><span class=\\'material-symbols-outlined text-3xl text-gray-600\\'>movie</span></div>'"/>
+        ${dur ? `<div class="absolute bottom-2 right-2 bg-black text-white font-mono text-[10px] px-2 py-0.5">${dur}</div>` : ''}
+      </div>
+      <div class="p-3 flex flex-col gap-1 flex-1">
+        <div class="font-black text-sm uppercase truncate" title="${esc(name)}">${esc(name)}</div>
+        <div class="font-mono text-[10px] text-gray-500">${date}</div>
+        <div class="flex items-center gap-1 mt-1">
+          <span class="text-[9px] font-black bg-gray-100 px-2 py-0.5 nb2">BLURRED</span>
+        </div>
+      </div>
+      <button onclick="openPlayer('${esc(id)}', '${esc(name)}', '${esc(date)}', '${dur||''}')"
+              class="w-full py-3 bg-primary nb2 border-t-3 border-black font-black text-xs uppercase ba flex items-center justify-center gap-2 hover:bg-yellow-300">
+        <span class="material-symbols-outlined text-[16px]">play_circle</span>VIEW VIDEO
+      </button>`;
+    grid.appendChild(card);
+  });
+}
+
+function openPlayer(id, name, date, dur) {
+  const videoSrc = `${BASE}/clips/${encodeURIComponent(id)}/video`;
+  document.getElementById('player-title').textContent = name;
+  document.getElementById('player-meta').innerHTML =
+    `<span>${date}</span>${dur ? `<span>Duration: ${dur}</span>` : ''}<span>Anonymized Recording</span>`;
+
+  const vid = document.getElementById('stream-video');
+  vid.src = videoSrc;
+  openModal('modal-player');
+  vid.play();
+}
+
+function closePlayer() {
+  const vid = document.getElementById('stream-video');
+  vid.pause();
+  vid.src = '';
+  closeModal('modal-player');
+}
+
+function onOverlayClick(e) {
+  if (e.target === e.currentTarget) closePlayer();
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); } catch { return iso; }
+}
+function fmtDur(s) {
+  if (s < 60) return `${Math.round(s)}s`;
+  return `${Math.floor(s/60)}m${Math.floor(s%60)}s`;
+}
+</script>
+</body>
+</html>

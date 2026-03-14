@@ -1,0 +1,50 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ─── Virtual environment ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── Sensitive runtime data ───────────────────────────────────────────────────
+# Admin credentials (generated on first run)
+data/admin_credentials.json
+
+# Registered member face embeddings (contains biometric data)
+data/family_members.json
+
+# Member face photo datasets (personal photos)
+data/members/*/
+
+# ─── Recorded clips ───────────────────────────────────────────────────────────
+# Blurred MP4 clips
+data/clips/blurred/*.mp4
+
+# Encrypted original clips
+data/clips/secure/*.enc
+
+# Clip metadata index
+data/clips/clips.json
+
+# ─── ML Models (large binary files) ──────────────────────────────────────────
+# Uncomment if you want to exclude the model (5 MB, tracked by default)
+# models/*.pt
+
+# ─── IDE & OS ─────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.DS_Store
+Thumbs.db
+
+# ─── Test / debug artifacts ───────────────────────────────────────────────────
+*.mp4
+*.enc
+*.log
+*_output.txt
