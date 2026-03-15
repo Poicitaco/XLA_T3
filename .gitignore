@@ -1,50 +1,29 @@
-# ─── Python ───────────────────────────────────────────────────────────────────
+﻿# Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-*.egg
 
-# ─── Virtual environment ──────────────────────────────────────────────────────
+# Environments
 .venv/
 venv/
-env/
 
-# ─── Sensitive runtime data ───────────────────────────────────────────────────
-# Admin credentials (generated on first run)
+# Editor settings
+.vscode/
+
+# Secrets and local config
+.env
+.env.*
+
+# Private app data
 data/admin_credentials.json
-
-# Registered member face embeddings (contains biometric data)
 data/family_members.json
-
-# Member face photo datasets (personal photos)
 data/members/*/
 
-# ─── Recorded clips ───────────────────────────────────────────────────────────
-# Blurred MP4 clips
+# Runtime artifacts
 data/clips/blurred/*.mp4
-
-# Encrypted original clips
 data/clips/secure/*.enc
-
-# Clip metadata index
 data/clips/clips.json
 
-# ─── ML Models (large binary files) ──────────────────────────────────────────
-# Uncomment if you want to exclude the model (5 MB, tracked by default)
-# models/*.pt
-
-# ─── IDE & OS ─────────────────────────────────────────────────────────────────
-.vscode/settings.json
-.idea/
-*.DS_Store
-Thumbs.db
-
-# ─── Test / debug artifacts ───────────────────────────────────────────────────
+# Logs and binary outputs
+*.log
 *.mp4
 *.enc
-*.log
-*_output.txt
