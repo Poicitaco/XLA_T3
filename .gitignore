@@ -13,17 +13,5 @@ venv/
 .env
 .env.*
 
-# Private app data
-data/admin_credentials.json
-data/family_members.json
-data/members/*/
-
-# Runtime artifacts
-data/clips/blurred/*.mp4
-data/clips/secure/*.enc
-data/clips/clips.json
-
 # Logs and binary outputs
 *.log
-*.mp4
-*.enc
