@@ -1,0 +1,105 @@
+\begin{thebibliography}{10}
+
+\bibitem{zooming2018}
+Dmitri Bitouk, Neeraj Kumar, Sim Dhillon, Peter Belhumeur, and Shree Nayar.
+\newblock Face swapping: Automatically replacing faces in photographs.
+\newblock In {\em ACM SIGGRAPH}, 2008.
+
+\bibitem{deng2019arcface}
+Jiankang Deng, Jia Guo, Niannan Xue, and Stefanos Zafeiriou.
+\newblock Arcface: Additive angular margin loss for deep face recognition.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 4690--4699, 2019.
+
+\bibitem{gdpr2016}
+{European Parliament and Council of the European Union}.
+\newblock Regulation ({EU}) 2016/679 — {General Data Protection Regulation
+  (GDPR)}.
+\newblock Official Journal of the European Union, 2016.
+\newblock Effective May 25, 2018.
+
+\bibitem{guo2021insightface}
+Jiazhi Guo, Xiangyu Zhu, Yang Yang, Fan Yang, Zhen Lei, and Stan~Z. Li.
+\newblock Towards fast, accurate and stable 3d dense face alignment.
+\newblock {\em arXiv preprint arXiv:2009.09960}, 2021.
+
+\bibitem{lfw2007}
+Gary~B. Huang, Manu Ramesh, Tamara Berg, and Erik Learned-Miller.
+\newblock Labeled faces in the wild: A database for studying face recognition
+  in unconstrained environments.
+\newblock Technical Report 07-49, University of Massachusetts, Amherst, 2007.
+
+\bibitem{hasler2019deepprivacy}
+Håkon Hukkelås, Rudolf Mester, and Frank Lindseth.
+\newblock {DeepPrivacy}: A generative adversarial network for face
+  anonymization.
+\newblock In {\em Proceedings of International Symposium on Visual Computing
+  (ISVC)}, pages 565--578, 2019.
+
+\bibitem{ihs2021}
+{IHS Markit}.
+\newblock World market for video surveillance equipment 2021.
+\newblock Technical report, IHS Markit Technology, 2021.
+
+\bibitem{bipa2008}
+{Illinois General Assembly}.
+\newblock Biometric information privacy act ({BIPA}) — 740 {ILCS} 14.
+\newblock Illinois Compiled Statutes, 2008.
+
+\bibitem{ultralytics2024}
+Glenn Jocher, Jing Qiu, and Ayush Chaurasia.
+\newblock {Ultralytics YOLO} (version 11).
+\newblock \url{https://github.com/ultralytics/ultralytics}, 2024.
+\newblock Accessed: March 2026.
+
+\bibitem{timing_attack}
+Paul~C. Kocher.
+\newblock Timing attacks on implementations of {Diffie-Hellman}, {RSA}, {DSS},
+  and other systems.
+\newblock In {\em Proceedings of the 16th Annual International Cryptology
+  Conference (CRYPTO)}, pages 104--113, 1996.
+
+\bibitem{nist_aes}
+{National Institute of Standards and Technology}.
+\newblock {FIPS PUB 197}: Advanced encryption standard ({AES}).
+\newblock Technical Report FIPS 197, NIST, Gaithersburg, MD, 2001.
+
+\bibitem{opencv}
+{OpenCV team}.
+\newblock {OpenCV}: Open source computer vision library (version 4.8).
+\newblock \url{https://opencv.org}, 2023.
+\newblock Accessed: March 2026.
+
+\bibitem{percival2009scrypt}
+Colin Percival and Simon Josefsson.
+\newblock The scrypt password-based key derivation function.
+\newblock In {\em Proceedings of the BSDCan Conference}, 2009.
+\newblock RFC 7914 (2016).
+
+\bibitem{fastapi}
+Sebastián Ramírez.
+\newblock {FastAPI} --- modern, fast web framework for building apis with
+  python 3.8+.
+\newblock \url{https://fastapi.tiangolo.com}, 2019.
+\newblock Accessed: March 2026.
+
+\bibitem{redmon2016yolo}
+Joseph Redmon, Santosh Divvala, Ross Girshick, and Ali Farhadi.
+\newblock You only look once: Unified, real-time object detection.
+\newblock In {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 779--788, 2016.
+
+\bibitem{schroff2015facenet}
+Florian Schroff, Dmitry Kalenichenko, and James Philbin.
+\newblock {FaceNet}: A unified embedding for face recognition and clustering.
+\newblock In {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 815--823, 2015.
+
+\bibitem{taigman2014}
+Yaniv Taigman, Ming Yang, Marc'Aurelio Ranzato, and Lior Wolf.
+\newblock {DeepFace}: Closing the gap to human-level performance in face
+  verification.
+\newblock In {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 1701--1708, 2014.
+
+\end{thebibliography}

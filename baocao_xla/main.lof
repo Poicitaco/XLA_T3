@@ -1,0 +1,11 @@
+\babel@toc {vietnamese}{}\relax 
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Sự kết nối nhân quả giữa các bước trong pipeline (mỗi bước giải quyết vấn đề của bước trước)}}{30}{figure.caption.5}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Kiến trúc ba lớp của hệ thống XLA Face Privacy System}}{33}{figure.caption.6}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Pipeline xử lý video thời gian thực}}{34}{figure.caption.7}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Thiết kế lưu trữ kép: blurred công khai và encrypted admin-only}}{35}{figure.caption.8}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces State machine của ClipRecorder}}{46}{figure.caption.12}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Kiến trúc đa luồng với drop-frame queue, đảm bảo pipeline không bao giờ block}}{50}{figure.caption.14}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces So sánh 6 chế độ ẩn danh hoá trên cùng một khung hình thực tế. Từ trái-trên: blur, pixelate, headcloak; dưới: obliterate, solid, silhouette.}}{61}{figure.caption.30}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Giao diện Admin Dashboard hiển thị luồng video trực tiếp với chế độ blur đang hoạt động.}}{61}{figure.caption.31}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Giao diện User Portal --- Live View. Khuôn mặt đã được ẩn danh hoá, người dùng thường không thể xem bản gốc.}}{62}{figure.caption.32}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces So sánh FPS theo chế độ và preset (CPU-only, 100 frame). Xanh lá = hiệu suất cao, đỏ = thấp. Đường 25 FPS là ngưỡng real-time tối thiểu.}}{62}{figure.caption.33}%

@@ -1,0 +1,540 @@
+% ============================================================
+%  CHƯƠNG 2: CƠ SỞ LÝ THUYẾT
+% ============================================================
+\section{Cơ sở lý thuyết}
+\label{sec:cosoly}
+
+\subsection{Phát hiện khuôn mặt}
+\label{subsec:phatdien}
+
+\subsubsection{Tổng quan bài toán phát hiện đối tượng}
+\label{subsubsec:toanbai}
+
+Phát hiện khuôn mặt (face detection) là bước đầu tiên và nền tảng của mọi hệ thống xử lý thị giác liên quan đến con người. Đây là một bài toán con đặc biệt của \textit{phát hiện đối tượng} (object detection), với mục tiêu xác định vị trí tất cả các khuôn mặt người trong một ảnh hoặc khung hình và đánh dấu chúng bằng bounding box $[x, y, w, h]$ cùng điểm tin cậy (confidence score) $p \in [0, 1]$.
+
+\medskip
+Sự khó khăn của bài toán đến từ nhiều yếu tố: biến đổi về kích thước và tỉ lệ (scale variations), hướng nhìn (pose/occlusion), ánh sáng (illumination), biểu cảm (expression), và đặc biệt là tốc độ xử lý cần đáp ứng cho ứng dụng thời gian thực (real-time).
+
+\subsubsection{Kiến trúc YOLO và lịch sử phát triển}
+\label{subsubsec:yolo}
+
+\textbf{YOLO} (You Only Look Once) \cite{redmon2016yolo} là dòng kiến trúc phát hiện đối tượng một giai đoạn (one-stage detector) nổi tiếng nhất trong lịch sử thị giác máy tính. Ý tưởng cốt lõi là xử lý toàn bộ ảnh trong \textit{một lần forward pass duy nhất} qua mạng neural, thay vì chia thành nhiều giai đoạn như các mô hình hai giai đoạn (R-CNN, Faster R-CNN...).
+
+\medskip
+Về mặt toán học, YOLO chia ảnh đầu vào thành lưới $S \times S$ ô (grid cell). Mỗi ô dự đoán $B$ bounding box và xác suất $P(\text{Object}) \cdot P(\text{Class}_i | \text{Object})$. Hàm mục tiêu (loss function) là tổng có trọng số của:
+\begin{equation}
+    \mathcal{L} = \lambda_{\text{coord}} \mathcal{L}_{\text{coord}} + \mathcal{L}_{\text{obj}} + \lambda_{\text{noobj}}\mathcal{L}_{\text{noobj}} + \mathcal{L}_{\text{cls}}
+\end{equation}
+trong đó $\mathcal{L}_{\text{coord}}$ là sai số toạ độ bounding box, $\mathcal{L}_{\text{obj}}$ là sai số objectness, và $\mathcal{L}_{\text{cls}}$ là sai số phân loại lớp.
+
+\medskip
+Sau nhiều phiên bản (YOLOv2 đến YOLOv8), Ultralytics tiếp tục phát triển và ra mắt \textbf{YOLOv11} \cite{ultralytics2024} là phiên bản mới nhất với nhiều cải tiến đáng kể:
+\begin{itemize}
+    \item Backbone \textit{C3k2} mới --- kết hợp kiến trúc CSP (Cross Stage Partial) và cơ chế attention hiệu quả hơn.
+    \item Module \textit{C2PSA} (Cross Stage Partial with Position-Sensitive Attention) tích hợp spatial attention để tập trung vào các vùng quan trọng.
+    \item Giảm số tham số và FLOPs so với YOLOv8 cùng cấp độ trong khi duy trì hoặc cải thiện độ chính xác.
+    \item Hỗ trợ đa nền tảng: CPU, CUDA, Apple MPS, OpenVINO, TensorRT.
+\end{itemize}
+
+\subsubsection{Tại sao chọn YOLO thay vì các phương pháp khác?}
+\label{subsubsec:whyyolo}
+
+Để biện hộ cho lựa chọn YOLOv11, ta cần đánh giá các phương án thay thế khả dụng qua bảng so sánh (Bảng~\ref{tab:detector_compare}):
+
+\begin{table}[H]
+\centering
+\caption{So sánh các phương pháp phát hiện khuôn mặt}
+\label{tab:detector_compare}
+{\small
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Phương pháp} & \textbf{Tc độ CPU} & \textbf{Chính xác} & \textbf{Nghiêng/che} & \textbf{Model} & \textbf{Đánh giá} \\
+\hline
+Haar Cascade (OpenCV) & Rất cao & Thấp & Kém & $<1$\,MB & Lỗi thời \\
+\hline
+HOG + SVM (dlib) & Cao & TB & Trung bình & 5\,MB & Giới hạn \\
+\hline
+MTCNN & TB & Cao & Tốt & 2\,MB & Chậm \\
+\hline
+RetinaFace & Thấp & Rất cao & Rất tốt & 30\,MB & Nặng \\
+\hline
+\textbf{YOLOv11n-face} & \textbf{Cao} & \textbf{Cao} & \textbf{Tốt} & \textbf{5\,MB} & \textbf{Tối ưu} \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textbf{Phân tích chi tiết lý do lựa chọn:}
+
+\textbf{(a) Loại trừ Haar Cascade:} Phương pháp cổ điển dựa trên Viola-Jones (2001) sử dụng đặc trưng Haar — tổng giá trị pixel trong các vùng hình chữ nhật. Mặc dù rất nhanh, độ chính xác thấp với khuôn mặt nghiêng, che khuất, hoặc ánh sáng bất thường. Trong hệ thống giám sát thực tế, khuôn mặt thường ở nhiều góc độ khác nhau — Haar Cascade sẽ bỏ sót quá nhiều.
+
+\textbf{(b) Loại trừ HOG+SVM (dlib):} Sử dụng Histogram of Oriented Gradients. Chú trọng vào gradient cạnh — hoạt động kém khi người dùng quay mặt quá $45°$. Không phù hợp cho video giám sát nơi góc nhìn biến đổi liên tục.
+
+\textbf{(c) Loại trừ MTCNN:} Multi-task CNN có kiến trúc 3 tầng (P-Net, R-Net, O-Net). Dù chính xác cao, MTCNN yêu cầu 3 lần forward pass --- làm tốc độ bị giảm đáng kể trên CPU.
+
+\textbf{(d) Loại trừ RetinaFace:} Độ chính xác đỉnh cao nhưng kích thước model lớn (30MB), tốc độ chậm trên CPU. Không phù hợp cho yêu cầu real-time không GPU.
+
+\textbf{(e) Chọn YOLOv11n-face:} Cân bằng hoàn hảo: kiến trúc one-stage (một lần forward pass), backbone C3k2 nhẹ, fine-tuned cho khuôn mặt. Đây là lựa chọn tối ưu Pareto --- tốt nhất trên tiêu chí \textit{tốc độ/độ chính xác/kích thước} đồng thời.
+
+\subsubsection{YOLOv11n-face: Cấu hình và lý giải tham số}
+\label{subsubsec:yolov11face}
+
+Hệ thống sử dụng mô hình \textbf{YOLOv11n-face} với các tham số được lựa chọn có cơ sở:
+
+\begin{itemize}
+    \item \textbf{\texttt{conf\_threshold = 0.35}}: \textit{Tại sao 0.35 không phải 0.5?} Ngưỡng cao hơn (0.5+) bỏ sót khuôn mặt nhỏ hoặc bị che một phần --- nguy hiểm vì sẽ không ẩn danh hoá. Ngưỡng thấp hơn (0.2) tạo nhiều false positive, làm chậm pipeline. Thực nghiệm cho thấy 0.35 cân bằng tốt nhất giữa recall cao và precision đủ dùng.
+    
+    \item \textbf{\texttt{iou\_threshold = 0.5}}: Ngưỡng IoU cho Non-Maximum Suppression. Giá trị 0.5 là chuẩn PASCAL VOC --- giúp loại bỏ các detection trùng lặp trong khi vẫn giữ được các khuôn mặt ở gần nhau (ví dụ: hai người đứng cạnh nhau).
+    
+    \item \textbf{\texttt{imgsz = 512}}: \textit{Tại sao 512 không phải 640?} Resolution 640 tăng FLOPs lên $\approx 56\%$ (do FLOPs tỉ lệ bậc hai với kích thước). Với khuôn mặt, 512 đủ để phát hiện mặt nhỏ nhất trong khung hình thực tế. Preset \texttt{fast} dùng 416 để đẩy tốc độ tối đa.
+\end{itemize}
+
+\medskip
+Bounding box đầu ra ở định dạng $[x_\text{tl}, y_\text{tl}, w, h]$ (góc trên-trái, chiều rộng, chiều cao) trong không gian pixel gốc, sau NMS. Công thức IoU dùng trong NMS:
+\begin{equation}
+    \text{IoU}(B_1, B_2) = \frac{|B_1 \cap B_2|}{|B_1 \cup B_2|} = \frac{|B_1 \cap B_2|}{|B_1| + |B_2| - |B_1 \cap B_2|}
+    \label{eq:iou_nms}
+\end{equation}
+
+\subsection{Nhận diện khuôn mặt}
+\label{subsec:nhandien}
+
+\subsubsection{Pipeline nhận diện khuôn mặt}
+\label{subsubsec:pipeline_recognition}
+
+Nhận diện khuôn mặt (face recognition) là bài toán xác định danh tính của người có mặt trong ảnh. Không như phát hiện khuôn mặt (chỉ cần biết mặt ở đâu), nhận diện đòi hỏi so sánh khuôn mặt với một cơ sở dữ liệu tham chiếu để trả lời câu hỏi \textit{``Đây là ai?''}
+
+\medskip
+Pipeline nhận diện khuôn mặt hiện đại gồm bốn giai đoạn chính:
+
+\begin{enumerate}[1.]
+    \item \textbf{Phát hiện} (Detection): Xác định vị trí bounding box của từng khuôn mặt trong ảnh (YOLOv11n-face).
+    \item \textbf{Căn chỉnh} (Alignment): Hiệu chỉnh góc nghiêng và kích thước khuôn mặt về một khuôn mẫu chuẩn (InsightFace thực hiện nội bộ).
+    \item \textbf{Trích xuất đặc trưng} (Feature Extraction): Chạy mạng neural để biến khuôn mặt thành vector đặc trưng (embedding) trong không gian nhiều chiều.
+    \item \textbf{So khớp} (Matching): Tính khoảng cách giữa embedding truy vấn và các embedding trong cơ sở dữ liệu để tìm kết quả gần nhất.
+\end{enumerate}
+
+\subsubsection{Face Embedding và không gian đặc trưng}
+\label{subsubsec:embedding}
+
+\textbf{Face embedding} là ánh xạ từ ảnh khuôn mặt sang một điểm trong không gian vector $\mathbb{R}^d$, trong đó $d$ là số chiều embedding. Các khuôn mặt của cùng một người hội tụ về cùng một vùng trong không gian này, còn khuôn mặt của người khác nhau phân ly xa nhau.
+
+\medskip
+Mô hình \textbf{buffalo\_l} của InsightFace \cite{guo2021insightface} sử dụng kiến trúc \textbf{ResNet100} kết hợp hàm mục tiêu \textbf{ArcFace} \cite{deng2019arcface}:
+\begin{equation}
+    \mathcal{L}_{\text{ArcFace}} = -\frac{1}{N}\sum_{i=1}^{N} \log \frac{e^{s(\cos(\theta_{y_i} + m))}}{e^{s(\cos(\theta_{y_i} + m))} + \sum_{j \neq y_i} e^{s \cos\theta_j}}
+\end{equation}
+trong đó $\theta_{y_i}$ là góc giữa embedding và weight vector của lớp đúng, $m$ là margin góc cộng vào (additive angular margin), $s$ là hệ số tỉ lệ. ArcFace tạo ra không gian embedding phân tách rõ ràng hơn các hàm mục tiêu softmax truyền thống.
+
+\medskip
+Kết quả là mỗi khuôn mặt được biểu diễn bởi vector $\mathbf{e} \in \mathbb{R}^{512}$ --- không gian 512 chiều --- được chuẩn hoá về độ dài đơn vị: $\|\mathbf{e}\| = 1$.
+
+\subsubsection{Cosine Similarity và ngưỡng nhận diện}
+\label{subsubsec:cosine}
+
+Để so sánh hai embedding $\mathbf{a}, \mathbf{b} \in \mathbb{R}^{512}$, hệ thống sử dụng \textbf{Cosine Similarity}:
+\begin{equation}
+    \text{sim}(\mathbf{a}, \mathbf{b}) = \frac{\mathbf{a} \cdot \mathbf{b}}{\|\mathbf{a}\| \cdot \|\mathbf{b}\|} = \mathbf{a} \cdot \mathbf{b} \quad (\text{vì } \|\mathbf{a}\| = \|\mathbf{b}\| = 1)
+    \label{eq:cosine}
+\end{equation}
+
+Giá trị nằm trong $[-1, 1]$: bằng 1 là hoàn toàn giống nhau, bằng 0 là vuông góc (không liên quan), bằng -1 là hoàn toàn trái ngược. Với face embedding, giá trị $\text{sim} > \tau$ (ngưỡng threshold $\tau$) thì kết luận là cùng người.
+
+\medskip
+Trong hệ thống, mỗi thành viên có ngưỡng nhận diện riêng $\tau_i$ (mặc định 0{,}35), cho phép điều chỉnh theo mức độ tin cậy mong muốn. Với $N$ thành viên, mỗi người có $K$ embedding mẫu, bài toán nhận diện là:
+\begin{equation}
+    \hat{i} = \arg\max_{i \in \{1,\ldots,N\}} \left[\max_{k=1}^{K} \text{sim}(\mathbf{e}_{\text{query}}, \mathbf{e}_{i,k})\right]
+    \label{eq:recognition}
+\end{equation}
+và kết luận nhận ra người $\hat{i}$ nếu giá trị cosine similarity lớn nhất vượt ngưỡng $\tau_{\hat{i}}$; ngược lại là \textit{người lạ} (stranger).
+
+\medskip
+Để tối ưu tốc độ với nhiều thành viên, hệ thống vectorize phép tính bằng ma trận embedding:
+\begin{equation}
+    \mathbf{S} = \mathbf{E}_{\text{DB}} \cdot \mathbf{e}_{\text{query}}^T \in \mathbb{R}^{M}
+\end{equation}
+trong đó $\mathbf{E}_{\text{DB}} \in \mathbb{R}^{M \times 512}$ là ma trận embedding của toàn bộ $M$ mẫu trong cơ sở dữ liệu.
+
+\subsubsection{Tại sao chọn InsightFace buffalo\_l thay vì các phương án khác?}
+\label{subsubsec:whyinsightface}
+
+\begin{table}[H]
+\centering
+\caption{So sánh các thư viện nhận diện khuôn mặt}
+\label{tab:recognizer_compare}
+{\small
+\begin{tabular}{|l|c|c|c|p{3.8cm}|}
+\hline
+\textbf{Thư viện / Model} & \textbf{LFW Acc.} & \textbf{Dim} & \textbf{Tc độ CPU} & \textbf{Ghi chú} \\
+\hline
+DeepFace (Keras) & 97.35\% & 4096 & Chậm & Nặng, nhiều dependency \\
+\hline
+OpenFace & 93.30\% & 128 & Trung bình & Cũ, ít maintain \\
+\hline
+FaceNet (TF) & 99.65\% & 128 & Chậm & Cần TensorFlow nặng \\
+\hline
+dlib face\_rec & 99.38\% & 128 & Trung bình & 128-dim hạn chế \\
+\hline
+\textbf{InsightFace buffalo\_l} & \textbf{99.83\%} & \textbf{512} & \textbf{Trung bình} & \textbf{Chính xác nhất, SOA} \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+Lý do chọn InsightFace buffalo\_l:
+\begin{enumerate}[1.]
+    \item \textbf{Độ chính xác cao nhất hiện có (99.83\% LFW):} Nhờ ArcFace loss + ResNet100 --- margin góc cộng tạo ra không gian embedding phân tách rõ ràng hơn hẳn softmax thông thường.
+    \item \textbf{Embedding 512 chiều:} Nhiều chiều hơn cho phép phân tách tốt hơn trong không gian vector, đặc biệt khi số lượng người nhận diện tăng. So sánh: 128-dim (FaceNet, dlib) có thể gặp ``collision'' khi số người > 100.
+    \item \textbf{Tích hợp face alignment tự động:} Căn chỉnh 5-landmark nội bộ, không cần preprocessing riêng.
+    \item \textbf{Tách biệt detection và recognition:} Cho phép dùng YOLOv11 detect (nhanh hơn RetinaFace tích hợp trong buffalo\_l) rồi chỉ dùng InsightFace để extract embedding --- tối ưu tốt nhất cả hai.
+\end{enumerate}
+
+\subsubsection{InsightFace buffalo\_l --- Kiến trúc kỹ thuật}
+\label{subsubsec:insightface}
+
+\textbf{InsightFace} \cite{guo2021insightface} là thư viện mã nguồn mở hàng đầu cho phân tích khuôn mặt. Mô hình \textbf{buffalo\_l} (large variant) cung cấp:
+
+\begin{itemize}
+    \item \textbf{Recognition model}: ArcFace + ResNet100, embedding 512 chiều. Đạt \textbf{99.83\%} trên LFW benchmark \cite{lfw2007}.
+    \item \textbf{Detection model}: SCRFD (tích hợp nội bộ, chỉ dùng khi không có detector ngoài).
+    \item \textbf{Face alignment}: 5-landmark (hai mắt, mũi, hai khoé miệng) để chuẩn hoá góc nghiêng.
+\end{itemize}
+
+\medskip
+\textbf{Quy trình xử lý tối ưu trong hệ thống:} Thay vì dùng toàn bộ buffalo\_l pipeline (detect + align + embed), hệ thống \textit{tách biệt} hai bước:
+\begin{enumerate}[1.]
+    \item YOLOv11n-face detect khuôn mặt và trả về bounding box (nhanh hơn SCRFD).
+    \item Crop ROI từ bounding box, gửi trực tiếp vào InsightFace chỉ để extract embedding (skip detection bước 2).
+\end{enumerate}
+Điều này tiết kiệm $\approx 30\%$ thời gian so với dùng InsightFace full pipeline vì tránh chạy detector hai lần.
+
+\subsection{Kỹ thuật ẩn danh hoá khuôn mặt}
+\label{subsec:anondanh}
+
+\subsubsection{Tổng quan các kỹ thuật ẩn danh hoá}
+\label{subsubsec:anon_overview}
+
+Ẩn danh hoá khuôn mặt (face anonymization) trong video là quá trình biến đổi vùng ảnh chứa khuôn mặt theo cách ngăn chặn nhận diện tự động hoặc thủ công, trong khi vẫn bảo tồn thông tin cảnh quan (context) đủ để đoạn video có ý nghĩa. Có thể phân loại thành:
+
+\begin{itemize}
+    \item \textbf{Kỹ thuật làm mờ/biến dạng} (distortion-based): Gaussian blur, pixelate, scramble. Làm giản thông tin nhưng không xóa khỏi khung hình. Nhanh, đơn giản, nhưng một số kỹ thuật (pixelate) có thể bị dehaze bằng các kỹ thuật siêu phân giải.
+    \item \textbf{Kỹ thuật che phủ} (masking-based): Solid, obliterate, headcloak, neckup, silhouette. Xóa hoàn toàn thông tin khuôn mặt bằng mặt nạ đồng nhất hay bóng đen.
+    \item \textbf{Kỹ thuật mã hoá thuận nghịch} (reversible encryption): Face lock với AES-GCM, cho phép khôi phục khuôn mặt gốc với khoá đúng.
+\end{itemize}
+
+\subsubsection{Tại sao Gaussian Blur và không phải Box Blur hay Median Blur?}
+\label{subsubsec:whygaussian}
+
+Để hiểu lựa chọn Gaussian Blur, cần phân tích bản chất toán học của các bộ lọc làm mờ:
+
+\begin{itemize}
+    \item \textbf{Box Blur (Bộ lọc đồng nhất):} Nhân tích chập là ma trận hằng số $H = \frac{1}{k^2}\mathbf{1}_{k \times k}$. Nhanh nhưng tạo ra hiện tượng ``banding'' (bậc thang) do trọng số bằng nhau tại trung tâm và biên kernel.
+    
+    \item \textbf{Median Blur:} Thay pixel bằng giá trị trung vị trong cửa sổ. Không tuyến tính, chậm hơn ($\mathcal{O}(k^2 \log k)$ vs $\mathcal{O}(k^2)$), không áp dụng được với tích chập FFT. 
+    
+    \item \textbf{Gaussian Blur:} Nhân Gaussian 2D:
+    \begin{equation}
+        G_\sigma(x,y) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}
+    \end{equation}
+    Là bộ lọc tần số thấp (low-pass filter) lý tưởng --- giảm dần trọng số từ trung tâm ra biên, loại bỏ tần số cao (cạnh, góc) nhưng giữ nguyên tần số thấp (màu nền, hình dạng tổng thể). Đây là lý do khuôn mặt bị mờ nhưng vùng xung quanh vẫn nhận diện được.
+\end{itemize}
+
+\textbf{Lý do chọn Gaussian:} Gaussian là chuẩn vàng (gold standard) trong xử lý ảnh vì: (1) tuân theo phân phối chuẩn --- tự nhiên nhất về mặt xác suất; (2) separable filter --- tách được thành hai tích chập 1D, giảm từ $\mathcal{O}(k^2)$ xuống $\mathcal{O}(2k)$ FLOPs; (3) tạo ra blur mịn tự nhiên, không tạo artifact giống Box Blur.
+
+\textbf{Tối ưu hóa implementaion:} Thay vì áp Gaussian blur trực tiếp trên ROI đầy đủ, hệ thống dùng \textbf{downsample-blur-upsample}:
+\begin{equation}
+    I_{\text{out}} = \text{Upsample}_{\text{bilinear}}\Big(\text{GaussianBlur}_{k=31}\big(\text{Resize}(I_{\text{roi}}, \text{scale}=0.2)\big)\Big)
+\end{equation}
+Thu nhỏ ROI về $20\%$ trước khi blur → làm việc trên ảnh nhỏ hơn 25 lần ($0.2^2 = 0.04$) → nhanh hơn 25 lần so với blur trực tiếp trên ROI gốc.
+
+\subsubsection{Gaussian Blur --- Phân tích toán học đầy đủ}
+\label{subsubsec:gaussianblur}
+
+Tích chập của ảnh với nhân Gaussian 2D:
+\begin{equation}
+    I_{\text{blurred}}(x,y) = (I * G_\sigma)(x,y) = \sum_{m=-r}^{r}\sum_{n=-r}^{r} I(x-m, y-n) \cdot G_\sigma(m,n)
+\end{equation}
+trong đó $r = \lfloor k/2 \rfloor$ với $k$ là kích thước kernel (số lẻ, mặc định $k=31$). Nhân Gaussian được chuẩn hóa: $\sum_{m,n} G_\sigma(m,n) = 1$ để bảo toàn độ sáng trung bình.
+
+\medskip
+Với kernel separable, tích chập 2D tách thành:
+\begin{equation}
+    I * G_\sigma = (I *_x g_\sigma) *_y g_\sigma
+\end{equation}
+trong đó $g_\sigma(x) = \frac{1}{\sqrt{2\pi}\sigma} e^{-x^2/(2\sigma^2)}$ là Gaussian 1D. OpenCV tự động áp dụng tối ưu hóa này.
+
+\subsubsection{Điểm yếu bảo mật của Pixelate --- Phân tích sâu}
+\label{subsubsec:pixelate}
+
+Pixel hóa chia vùng mặt thành các ô vuông kích thước $B \times B$ (mặc định $B = 16$):
+\begin{equation}
+    I_{\text{pixel}}[p, q] = \frac{1}{B^2} \sum_{i=iB}^{(i+1)B-1} \sum_{j=jB}^{(j+1)B-1} I[i, j] \quad \forall (p,q) \in \text{ô}\,(i \cdot B, j \cdot B)
+\end{equation}
+
+\textbf{Tại sao pixelate vẫn được hỗ trợ dù biết điểm yếu?} Pixelate có hai vai trò:
+\begin{enumerate}[1.]
+    \item \textit{Ẩn danh hoá tốc độ cao:} Là chế độ nhanh nhất (72 FPS), phù hợp khi cần tốc độ tối đa và yêu cầu bảo mật thấp (ví dụ: live stream nội bộ không công khai).
+    \item \textit{Baseline so sánh:} Cần có trong bộ thử nghiệm để so sánh hiệu quả bảo mật với các chế độ khác.
+\end{enumerate}
+
+\textbf{Điểm yếu quan trọng:} Kết quả thực nghiệm (Chương 5) cho thấy sau pixelate, cosine similarity giữa embedding gốc và embedding của ảnh pixel hóa vẫn đạt \textbf{0,98} --- gần như bằng ảnh gốc. Điều này vì pixelate chỉ giảm resolution không gian nhưng vẫn giữ nguyên phân phối màu sắc và cấu trúc tổng thể khuôn mặt. Các mô hình face recognition hiện đại được huấn luyện để chịu đựng nhiễu, bao gồm cả pixelate ở $B \leq 32$.
+
+\textbf{Bài học hệ thống:} Pixelate \textit{không đủ} để bảo vệ danh tính khỏi nhận diện tự động. Đây là phát hiện quan trọng của đề tài, được trình bày chi tiết trong Chương 5.
+
+\subsubsection{Headcloak và Neckup}
+\label{subsubsec:headcloak}
+
+\textbf{Headcloak} là kỹ thuật đặc biệt của hệ thống, che phủ toàn bộ vùng đầu (bao gồm tóc, tai, cằm) bằng hình chữ nhật đen. Khác với blur chỉ xử lý bounding box khuôn mặt trực tiếp từ detector, headcloak mở rộng hộp khuôn mặt về tứ phía theo tỉ lệ được tính toán để bao phủ đầy đủ khu vực đầu:
+
+\begin{itemize}
+    \item Padding trái/phải: $0.35 + 0.35 \times r$ lần chiều rộng khuôn mặt
+    \item Padding trên: $0.70 + 0.50 \times r$ lần chiều cao khuôn mặt
+    \item Padding dưới: $0.25 + 0.25 \times r$ lần chiều cao khuôn mặt
+\end{itemize}
+
+trong đó $r = \texttt{head\_ratio} \in [0, 1]$ điều chỉnh mức độ bao phủ.
+
+\medskip
+\textbf{Neckup} tương tự nhưng bao phủ cả cổ, phù hợp khi khuôn mặt có góc nghiêng rõ và cổ lộ ra trong frame.
+
+\subsubsection{Silhouette}
+\label{subsubsec:silhouette}
+
+\textbf{Silhouette} là chế độ ẩn danh hoá mạnh nhất trong hệ thống. Nó không chỉ che mặt mà che toàn bộ vùng đầu-vai-thân trên bằng một khối đen, tạo ra bóng kẻ (silhouette) của người. Mức độ mở rộng:
+
+\begin{itemize}
+    \item Padding trái/phải: $0.75 + 0.50 \times r$ lần chiều rộng
+    \item Padding trên: $0.95 + 0.65 \times r$ lần chiều cao
+    \item Padding dưới: $1.25 + 0.95 \times r$ lần chiều cao
+\end{itemize}
+
+Kết quả security evaluation (Chương 5) xác nhận silhouette là chế độ duy nhất \textbf{ngăn hoàn toàn} nhận diện khuôn mặt (cosine similarity chỉ còn 0{,}23--0{,}25), nhưng đổi lại hiệu suất thấp nhất do phải tô màu vùng rất lớn.
+
+\subsubsection{Obliterate}
+\label{subsubsec:obliterate}
+
+\textbf{Obliterate} là chế độ lai kết hợp nhiều kỹ thuật: vùng khuôn mặt được thay thế bằng màu nền trung bình của ảnh gốc với nhiễu nhỏ và các khối nhiễu scramble ngẫu nhiên. Khác với solid (màu đen thuần), obliterate cố gắng hòa vào nền, tạo cảm giác khuôn mặt \textit{không tồn tại} trong khung hình thay vì bị che đen rõ ràng. Ở preset \texttt{strong/strict}, obliterate có thể ngăn nhận diện (cosine similarity 0{,}58--0{,}60).
+
+\subsection{Mật mã học ứng dụng}
+\label{subsec:matma}
+
+\subsubsection{Tại sao AES-256-GCM thay vì AES-CBC hay ChaCha20?}
+\label{subsubsec:whyaesgcm}
+
+\begin{table}[H]
+\centering
+\caption{So sánh các chế độ mã hoá đối xứng}
+\label{tab:cipher_compare}
+{\small
+\begin{tabular}{|l|c|c|c|p{3.8cm}|}
+\hline
+\textbf{Chế độ} & \textbf{Xác thực} & \textbf{Phát hiện giả mạo} & \textbf{Tốc độ} & \textbf{Đánh giá} \\
+\hline
+AES-ECB & Không & Không & Nhanh nhất & Nguy hiểm: lộ pattern \\
+\hline
+AES-CBC & Không & Không & Nhanh & Không biết nếu bị tamper \\
+\hline
+AES-CTR & Không & Không & Nhanh & Không xác thực \\
+\hline
+ChaCha20-Poly1305 & Có & Có & Nhanh (ARM) & Tốt nhưng ít phổ biến \\
+\hline
+\textbf{AES-256-GCM} & \textbf{Có} & \textbf{Có} & \textbf{Nhanh (AES-NI)} & \textbf{Chuẩn công nghiệp} \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textbf{Tại sao không dùng AES-CBC?} Vấn đề nghiêm trọng nhất là AES-CBC \textit{không xác thực} ciphertext. Kẻ tấn công có thể thay đổi bits trong ciphertext và CBC vẫn giải mã thành công (ra plaintext sai nhưng không báo lỗi). Với video giám sát, điều này có nghĩa là ai đó có thể chỉnh sửa video mã hoá mà admin không biết.
+
+\textbf{Tại sao AES-256-GCM thắng?} GCM = CTR (mã hoá) + GHASH (Galois multiplication, xác thực). Authentication tag $T$ được tính toán qua toàn bộ ciphertext --- bất kỳ thay đổi 1 bit nào trong $C$ sẽ làm $T$ không khớp với xác suất $1 - 2^{-128}$.
+
+\subsubsection{AES-256-GCM --- Phân tích toán học}
+\label{subsubsec:aesgcm}
+
+\textbf{AES} (Advanced Encryption Standard) \cite{nist_aes} với khoá 256-bit. Chế độ~\textbf{GCM} (Galois/\allowbreak{}Counter Mode) biến AES thành hệ AEAD:
+
+{\small
+\begin{align}
+    (C, T) &= \mathrm{Enc}_{K}(N, M, A) \\
+    M \text{ hoặc } \bot &= \mathrm{Dec}_{K}(N, C, T, A)
+\end{align}
+}
+trong đó $K$ là khoá AES-256-GCM (khoá 256-bit), $N$ (nonce 96-bit --- duy nhất mỗi thông điệp), $M$ (plaintext), $A$ (associated data), $C$ (ciphertext), $T$ (authentication tag 128-bit). Nếu bị giả mạo: $\bot$ (decrypt thất bại).
+
+\medskip
+\textbf{Định dạng file mã hoá trong hệ thống:}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{32 byte} & \textbf{12 byte} & \textbf{n byte} \\
+\hline
+Salt (PBKDF2) & Nonce (GCM) & Ciphertext + GCM tag (16 byte cuối) \\
+\hline
+\end{tabular}
+\end{center}
+
+Salt được lưu cùng file để PBKDF2 có thể tái tạo khoá từ mật khẩu. Mỗi clip có salt ngẫu nhiên riêng --- hai clip có cùng mật khẩu vẫn có khoá AES khác nhau hoàn toàn.
+
+\subsubsection{Tại sao cần PBKDF2 và tại sao 390.000 vòng lặp?}
+\label{subsubsec:pbkdf2}
+
+\textbf{Vấn đề entropy thấp của mật khẩu:} Mật khẩu người dùng thường có entropy $\approx 30$--$50$ bits (so với khoá AES-256 có $256$ bits entropy). Nếu dùng trực tiếp làm khoá AES (sau hash SHA256), kẻ tấn công chỉ cần duyệt không gian mật khẩu con người (từ điển + biến thể), không cần phá khoá AES-256.
+
+\textbf{Giải pháp PBKDF2:} Kéo dài thời gian dẫn xuất khoá bằng cách lặp nhiều vòng:
+\begin{equation}
+    K = \text{PBKDF2-HMAC-SHA256}(\text{password}, \text{salt}, c=390\,000, \text{dkLen}=32)
+\end{equation}
+\begin{equation}
+    T_i = \bigoplus_{j=1}^{c} \text{HMAC-SHA256}\big(\text{password},\; U_{j-1}\big)
+\end{equation}
+trong đó $U_0 = \text{salt} \| \text{INT}(i)$, $U_j = \text{HMAC-SHA256}(\text{password}, U_{j-1})$.
+
+\textbf{Tại sao chính xác 390.000 vòng?} Đây là khuyến nghị OWASP 2023 cho PBKDF2-SHA256. Với $c = 390\,000$:
+\begin{itemize}
+    \item Trên CPU phổ thông ($\approx 200\,000$ PBKDF2/giây), mỗi lần thử mật khẩu tốn $\approx 2,0$ giây.
+    \item Với 8 lõi song song: $4\,800\,000$ thử/giờ.
+    \item Mật khẩu 8 ký tự chữ-số ($62^8 \approx 2 \times 10^{14}$ khả năng): cần $\approx$ 12 năm để brute-force.
+\end{itemize}
+
+\textbf{Salt ngẫu nhiên 32 byte mỗi clip:} Ngăn tấn công rainbow table --- hai clip có cùng mật khẩu nhưng salt khác nhau sẽ có hai bộ hash hoàn toàn khác nhau.
+
+\subsubsection{PBKDF2-SHA256 --- Bảo vệ mật khẩu admin}
+\label{subsubsec:pbkdf2_admin}
+
+Ngoài mã hoá clip, PBKDF2 còn được dùng để \textbf{lưu trữ mật khẩu admin} an toàn:
+\begin{itemize}
+    \item Hệ thống \textit{không bao giờ} lưu mật khẩu plaintext.
+    \item Chỉ lưu: $(\text{salt}_{32B}, \; h = \text{PBKDF2}(\text{pwd}, \text{salt}, 390\,000))$
+    \item So sánh dùng \texttt{hmac.compare\_digest(h\_stored, h\_computed)} theo constant-time để chống timing attack \cite{timing_attack}.
+\end{itemize}
+
+\subsubsection{Scrypt (Cho Face Lock)}
+\label{subsubsec:scrypt}
+
+Module \textbf{FaceRegionLocker} (xem §\ref{subsec:facelockmod}) sử dụng \textbf{Scrypt} \cite{percival2009scrypt} thay vì PBKDF2 để dẫn xuất khoá từ passphrase người dùng:
+
+\begin{equation}
+    K = \text{Scrypt}(\text{passphrase}, \text{salt}, N=2^{14}, r=8, p=1, \text{dkLen}=32)
+\end{equation}
+
+Scrypt được thiết kế \textit{memory-hard} --- đòi hỏi bộ nhớ lớn ngoài thời gian CPU --- khiến tấn công bằng phần cứng chuyên dụng (FPGA, ASIC) kém hiệu quả hơn nhiều so với PBKDF2 thuần CPU. Với $N = 2^{14} = 16384$ và $r = 8$, Scrypt yêu cầu $\approx 16$ MB bộ nhớ cho mỗi phép dẫn xuất khoá.
+
+\subsection{Công nghệ xây dựng hệ thống}
+\label{subsec:congnghe}
+
+\subsubsection{FastAPI và mô hình bất đồng bộ}
+\label{subsubsec:fastapi}
+
+\textbf{FastAPI} \cite{fastapi} là framework Python hiện đại để xây dựng REST API, được chọn vì:
+\begin{itemize}
+    \item \textbf{Hiệu suất cao}: Dựa trên \texttt{asyncio} và Starlette, hỗ trợ đồng thời hàng nghìn request không đồng bộ.
+    \item \textbf{Type hints}: Dùng Python type hints và Pydantic để validation tự động, sinh OpenAPI docs tự động.
+    \item \textbf{WebSocket native}: Hỗ trợ WebSocket và SSE (Server-Sent Events) tích hợp.
+    \item \textbf{CORS middleware}: Dễ cấu hình cho frontend SPA.
+\end{itemize}
+
+\subsubsection{Các giao thức streaming video}
+\label{subsubsec:streaming}
+
+Hệ thống hỗ trợ 4 giao thức streaming, mỗi cái phù hợp với ngữ cảnh khác nhau:
+
+\begin{itemize}
+    \item \textbf{MJPEG} (Motion JPEG): Gửi chuỗi ảnh JPEG qua HTTP multipart response. Hỗ trợ trực tiếp trên thẻ \texttt{<img src="...">} của HTML mà không cần JavaScript. Phù hợp nhất cho live view đơn giản.
+    \item \textbf{SSE} (Server-Sent Events): HTTP long-polling một chiều server→client. Frame được encode base64 và gửi qua EventSource API. Hỗ trợ tự động reconnect.
+    \item \textbf{WebSocket}: Kết nối song công (full-duplex). Hỗ trợ cả định dạng binary (raw JPEG bytes) và JSON (base64 + metadata). Độ trễ thấp nhất trong 4 giao thức.
+    \item \textbf{Polling}: Client chủ động gọi \texttt{GET /stream/frame} định kỳ để lấy frame mới nhất (base64 JSON). Đơn giản nhất, phù hợp cho dashboard không cần real-time cao.
+\end{itemize}
+
+\subsubsection{OpenCV và xử lý ảnh}
+\label{subsubsec:opencv}
+
+\textbf{OpenCV} \cite{opencv} (Open Source Computer Vision Library) là thư viện xử lý ảnh/video được sử dụng xuyên suốt hệ thống cho: đọc/ghi video từ camera, resize/crop ảnh, áp dụng Gaussian blur, encode/decode JPEG, vẽ bounding box và text overlay. Được viết bằng C++ với binding Python, OpenCV cân bằng tốt giữa tốc độ và dễ sử dụng.
+
+\subsubsection{Làm mịn bounding box theo thời gian --- Tại sao cần thiết?}
+\label{subsubsec:bbox_smooth}
+
+\textbf{Vấn đề jitter:} Detector chạy mỗi $N$ frame trả về box hơi khác nhau giữa các lần --- do nhiễu nhỏ trong ảnh đầu vào (motion blur, compression artifact). Điều này tạo ra hiệu ứng ``nhảy'' của vùng ẩn danh hoá, rất khó chịu khi xem video.
+
+\textbf{Giải pháp EMA (Exponential Moving Average):}
+\begin{equation}
+    \mathbf{b}_t^{\text{smooth}} = \alpha \cdot \mathbf{b}_t^{\text{detect}} + (1 - \alpha) \cdot \mathbf{b}_{t-1}^{\text{smooth}}
+\end{equation}
+với $\alpha = 0{,}7$. EMA là ``bộ nhớ trọng số hàm mũ'': frame hiện tại có trọng số lớn nhất, các frame trước giảm dần theo $\alpha^k$.
+
+\textbf{Tại sao EMA chứ không phải Moving Average đơn giản?} Moving average đơn giản (tính trung bình $k$ frame) có ``lag'' cố định và tốn bộ nhớ $O(k)$. EMA chỉ cần lưu 1 giá trị ($\mathbf{b}_{t-1}^{\text{smooth}}$) và lag giảm dần theo hàm mũ --- phù hợp cho ứng dụng real-time.
+
+\textbf{Tại sao $\alpha = 0.7$?} Giá trị cao hơn ($\alpha > 0.9$) → phản ứng nhanh với chuyển động thật nhưng vẫn jitter nhiều. Thấp hơn ($\alpha < 0.5$) → quá mượt nhưng lag lớn khi khuôn mặt di chuyển nhanh. $\alpha = 0.7$ tối ưu cho video giám sát thông thường (người đi bộ bình thường).
+
+\medskip
+Hệ thống cũng hỗ trợ \textbf{Kalman Filter} cho trường hợp cần dự đoán chuyển động liên tục:
+\begin{equation}
+    \hat{\mathbf{x}}_{t|t-1} = F \hat{\mathbf{x}}_{t-1|t-1}, \quad P_{t|t-1} = F P_{t-1|t-1} F^T + Q
+\end{equation}
+\begin{equation}
+    K_t = P_{t|t-1} H^T (H P_{t|t-1} H^T + R)^{-1}
+\end{equation}
+\begin{equation}
+    \hat{\mathbf{x}}_{t|t} = \hat{\mathbf{x}}_{t|t-1} + K_t (\mathbf{z}_t - H \hat{\mathbf{x}}_{t|t-1})
+\end{equation}
+trong đó $F$ là ma trận chuyển trạng thái (vị trí + vận tốc), $H$ là ma trận quan sát, $Q$ và $R$ là covariance của nhiễu hệ thống và nhiễu đo lường.
+
+\medskip
+Cả hai dùng IoU để ghép box giữa frame:
+\begin{equation}
+    \text{IoU}(\mathbf{b}_1, \mathbf{b}_2) = \frac{|B_1 \cap B_2|}{|B_1 \cup B_2|}
+    \label{eq:iou}
+\end{equation}
+
+\subsection{Tư duy hệ thống: Sự kết nối giữa các bước xử lý}
+\label{subsec:tuduyhetong}
+
+Để hiểu sâu hệ thống, cần thấy \textit{tại sao} các bước phải đặt theo thứ tự như vậy --- mỗi bước giải quyết vấn đề do bước trước để lại:
+
+\begin{enumerate}[1.]
+    \item \textbf{YOLOv11 (Detection) → BBoxSmoother:} Detector tạo ra jitter giữa các frame. Nếu đưa thẳng vào anonymizer, vùng ẩn danh hoá sẽ nhảy lung tung. BBoxSmoother phải đứng \textit{ngay sau} detector để làm mịn trước khi xử lý.
+    
+    \item \textbf{BBoxSmoother → InsightFace (Recognition):} Cần box ổn định để crop ROI nhất quán. Box jitter → ROI cắt ra mỗi frame lại khác nhau → embedding không ổn định → nhận diện sai. Smooth box trước → embedding ổn định hơn.
+    
+    \item \textbf{Recognition chạy asynchronous:} InsightFace tốn $\approx 50$--$100$ms/khuôn mặt trên CPU. Nếu chạy synchronous trong pipeline render, sẽ giảm FPS xuống dưới 10. Chạy trong thread riêng và trả kết quả qua queue cho phép pipeline render tiếp tục ở 30+ FPS trong khi recognition xử lý.
+    
+    \item \textbf{Nhận diện → Anonymizer:} Chỉ sau khi biết \textit{ai} ở trong frame, anonymizer mới quyết định \textit{có cần ẩn danh hoá không}. Thứ tự này là bắt buộc: không thể anonymize trước rồi mới nhận diện (đã ẩn danh thì không nhận ra được).
+    
+    \item \textbf{Anonymizer → ClipRecorder:} Frame đã ẩn danh hoá → lưu vào blurred MP4. Frame gốc (chưa xử lý) → mã hoá AES-GCM → lưu .enc. ClipRecorder nhận \textit{cả hai} frame ở mỗi thời điểm từ pipeline.
+    
+    \item \textbf{Encrypt → PBKDF2:} Mỗi clip cần khoá AES riêng. Khoá dẫn xuất từ mật khẩu admin qua PBKDF2 với salt mới mỗi clip. Không thể dùng khoá cố định vì nếu lộ một khoá thì toàn bộ archive bị compromised.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    pstep/.style={rectangle, rounded corners=4pt, minimum width=3.5cm, minimum height=0.85cm, align=center, draw=black, fill=blue!12},
+    problem/.style={rectangle, rounded corners=4pt, minimum width=3.5cm, minimum height=0.85cm, text centered, draw=red!60, fill=red!8, dashed},
+    arrow/.style={->, >=Stealth, thick},
+    sarrow/.style={->, >=Stealth, thick, red!70, dashed},
+    note/.style={font=\tiny, text=gray},
+]
+\node[pstep] (det) at (0, 0)   {YOLOv11n-face};
+\node[pstep] (smo) at (0,-2.0) {BBoxSmoother};
+\node[pstep] (rec) at (-3.5,-4.0) {InsightFace\\(async thread)};
+\node[pstep] (ano) at (3.5,-4.0)  {FaceAnonymizer};
+\node[pstep] (rec2) at (0,-6.0)   {Merge + Labels};
+\node[pstep] (enc) at (-3.5,-8.0) {ClipRecorder\\+ AES-256-GCM};
+\node[pstep] (str) at (3.5,-8.0)  {StreamBroadcaster};
+
+\draw[arrow] (det) -- (smo) node[midway,right]{\tiny bbox};
+\draw[arrow] (smo) -- (rec) node[near start,left]{\tiny stable box};
+\draw[arrow] (smo) -- (ano) node[near start,right]{\tiny stable box};
+\draw[arrow] (rec) -- (rec2) node[midway,left]{\tiny identity};
+\draw[arrow] (ano) -- (rec2) node[midway,right]{\tiny anon frame};
+\draw[arrow] (rec2) -- (enc) node[near start,left]{\tiny raw + anon};
+\draw[arrow] (rec2) -- (str) node[near start,right]{\tiny anon frame};
+
+% Why annotations
+\node[note, right=0.1cm of smo] {\textit{← Giải quyết jitter}};
+\node[note, below=0.05cm of rec] {\textit{Async: không block render}};
+\node[note, right=0.1cm of enc] {\textit{← Per-clip salt}};
+\end{tikzpicture}
+\caption{Sự kết nối nhân quả giữa các bước trong pipeline (mỗi bước giải quyết vấn đề của bước trước)}
+\label{fig:pipeline_causality}
+\end{figure}

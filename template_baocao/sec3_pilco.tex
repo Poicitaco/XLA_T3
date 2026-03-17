@@ -1,0 +1,194 @@
+\section{Khung thuật toán PILCO}
+\label{SEC_pilco}
+
+PILCO (\textit{Probabilistic Inference for Learning Control}) là một phương pháp tìm kiếm chính sách dựa trên mô hình (model-based policy search), trong đó mô hình động học được biểu diễn bằng Quá trình Gaussian để nắm bắt sự không chắc chắn về mô hình và đưa vào quá trình tối ưu hóa chính sách một cách có nguyên tắc \cite{Deisenroth_2015}.
+
+\subsection{Tổng quan khung thuật toán}
+\label{SUB_SEC_pilco_overview}
+
+PILCO hoạt động theo một vòng lặp gồm ba giai đoạn: \textbf{học mô hình}, \textbf{đánh giá chính sách} và \textbf{cải thiện chính sách}. Quá trình này được lặp lại sau mỗi lần tương tác với hệ thống thực. Thuật toán tổng quát được trình bày trong Thuật toán \ref{ALG_PILCO}.
+
+\begin{algorithm}[H]
+\caption{PILCO: Probabilistic Inference for Learning Control}
+\label{ALG_PILCO}
+\begin{algorithmic}[1]
+    \State \textbf{Đầu vào:} Hàm chi phí $c(\cdot)$, chân trời $T$, số bước lặp tối đa $N$
+    \State \textbf{Khởi tạo:} Áp dụng chính sách ngẫu nhiên, thu thập tập dữ liệu ban đầu $\mathcal{D}$
+    \For{$j = 1, 2, \dots, N$}
+        \State \textbf{// Giai đoạn 1: Học mô hình GP}
+        \State Học siêu tham số GP $\{\ell_i, \sigma_f, \sigma_w\}$ bằng cực đại hóa bằng chứng (evidence maximization)
+        \State \textbf{// Giai đoạn 2: Cải thiện chính sách}
+        \Repeat
+            \State Tính phân phối trạng thái dài hạn $p(x_1), p(x_2), \dots, p(x_T)$ (xem Mục \ref{SEC_predictions})
+            \State Tính chi phí dài hạn kỳ vọng $J^\pi(\theta) = \sum_{t=1}^{T} \mathbb{E}_{x_t}[c(x_t)]$
+            \State Tính gradient giải tích $\mathrm{d}J^\pi(\theta)/\mathrm{d}\theta$
+            \State Cập nhật tham số chính sách $\theta$ bằng CG/BFGS
+        \Until{hội tụ}
+        \State \textbf{// Giai đoạn 3: Tương tác với hệ thống}
+        \State Áp dụng chính sách $\pi^\theta$ lên hệ thống thực
+        \State Thu thập dữ liệu $(x_t, u_t, x_{t+1})$ và thêm vào $\mathcal{D}$
+    \EndFor
+    \State \textbf{Đầu ra:} Chính sách tối ưu $\pi^{\theta^*}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Đặc điểm nổi bật:} Toàn bộ quá trình đánh giá và cải thiện chính sách (dòng 7--13) được thực hiện hoàn toàn trên mô hình GP, không cần thêm bất kỳ tương tác vật lý nào. Điều này là nguồn gốc của hiệu quả dữ liệu vượt trội của PILCO.
+
+Hình \ref{FIG_pilco_loop} mô tả trực quan vòng lặp học của PILCO.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm and 2.2cm,
+    box/.style={rectangle, rounded corners=4pt, draw=black!70, fill=blue!10,
+                text width=3.0cm, align=center, minimum height=1.0cm, font=\small},
+    decision/.style={rectangle, rounded corners=4pt, draw=black!70, fill=orange!15,
+                text width=2.4cm, align=center, minimum height=0.9cm, font=\small},
+    arr/.style={-Latex, thick},
+    label/.style={font=\footnotesize, midway, above}
+]
+% Nodes
+\node[box]                      (env)      {Môi trường\\ thực ($f$)};
+\node[box, right=of env]        (data)     {Tập dữ liệu\\ $\mathcal{D}$};
+\node[box, right=of data]       (gp)       {Học mô hình\\ GP $\hat{f}$};
+\node[box, below=of gp]         (plan)     {Lập kế hoạch\\ (moment matching)};
+\node[box, left=of plan]        (policy)   {Cải thiện\\ chính sách $\pi^\theta$};
+\node[decision, left=of policy] (apply)    {Áp dụng\\ $\pi^\theta$};
+
+% Arrows
+\draw[arr] (env)    -- node[label]{$(x_t, u_t, x_{t+1})$} (data);
+\draw[arr] (data)   -- node[label]{} (gp);
+\draw[arr] (gp)     -- node[right, font=\footnotesize]{$\uparrow$ mô hình} (plan);
+\draw[arr] (plan)   -- node[above, font=\footnotesize]{$J^\pi(\theta)$, grad} (policy);
+\draw[arr] (policy) -- node[above, font=\footnotesize]{} (apply);
+\draw[arr] (apply)  -- ++(0,-1.2) -| node[below, font=\footnotesize]{dữ liệu mới} (env);
+\draw[arr, dashed] (apply) -- ++(-1.6,0) |- node[left, font=\footnotesize, pos=0.7]{} (data);
+\end{tikzpicture}
+\caption{Vòng lặp học của PILCO: môi trường cung cấp dữ liệu; GP học mô hình; moment matching ước tính chi phí dài hạn; gradient giải tích cải thiện chính sách; chính sách mới được áp dụng để thu thập thêm dữ liệu.}
+\label{FIG_pilco_loop}
+\end{figure}
+
+\subsection{Mô hình động học GP}
+\label{SUB_SEC_gp_model}
+
+\subsubsection{Cấu trúc tập dữ liệu}
+\label{SUB_SUB_SEC_dataset}
+
+Sau mỗi lần tương tác, hệ thống thu thập $n$ chuyển tiếp trạng thái. Mỗi mẫu huấn luyện là một cặp \textbf{(đầu vào, mục tiêu)}:
+\begin{itemize}
+    \item \textbf{Đầu vào}: cặp trạng thái--hành động $\tilde{x}_t = [x_t^\top, u_t^\top]^\top \in \mathbb{R}^{D+F}$, trong đó $D$ là chiều trạng thái, $F$ là chiều điều khiển.
+    \item \textbf{Mục tiêu}: sai phân trạng thái $\Delta_t = x_{t+1} - x_t \in \mathbb{R}^D$.
+\end{itemize}
+
+Cách biểu diễn bằng sai phân (thay vì đầu ra trực tiếp $x_{t+1}$) có ưu điểm là các giá trị mục tiêu nằm gần $\mathbf{0}$, giúp quá trình học GP ổn định hơn và kernel SE phù hợp hơn.
+
+\begin{nx}[Trực giác: tại sao dùng $\Delta x$ thay vì $x_{t+1}$?]
+\label{NX_delta_x_intuition}
+Nếu huấn luyện GP dự báo $x_{t+1}$ trực tiếp, ta gặp hai vấn đề: (1) giá trị mục tiêu có thể trải rộng trên miền lớn (ví dụ góc từ $-\pi$ đến $\pi$), khiến kernel SE khó nhận biết vùng dữ liệu; (2) khi hai trạng thái $x_t$ khậc nhau nhừng đến cùng đỜng $x_{t+1}$, GP cần hàm ít trơn hơn để nắm bắt. Ngược lại, sai phân $\Delta x = x_{t+1} - x_t$ thường nhỏ và tập trung quanh $\mathbf{0}$: hệ chưa có điều khiển thì ắt trạng thái hầu như đứng yên. Kernel SE khi đó hoạt động tốt nhất: nó giả định các đầu vào gần nhau cho ra đầu ra gần nhau, và sai phân nhỏ đúng là hàm trơn của $\tilde{x}_t$.
+\end{nx}
+
+\subsubsection{Mô hình GP độc lập trên từng chiều}
+\label{SUB_SUB_SEC_gp_independent}
+
+Vì $\Delta_t \in \mathbb{R}^D$ (nhiều chiều), nhóm tác giả huấn luyện \textbf{$D$ mô hình GP độc lập}, mỗi mô hình cho một chiều $a = 1, \dots, D$:
+\begin{equation}
+    \Delta_a \sim \mathcal{GP}(m_a(\tilde{x}), k_a(\tilde{x}, \tilde{x}')),
+    \label{gp_tung_chieu}
+\end{equation}
+với kernel SE (có thêm nhiễu) cho chiều $a$:
+\begin{equation}
+    k_a(\tilde{x}_p, \tilde{x}_q) = \sigma_{fa}^2 \exp\!\Bigl(-\tfrac{1}{2}(\tilde{x}_p - \tilde{x}_q)^\top \mathbf{L}_a^{-1} (\tilde{x}_p - \tilde{x}_q)\Bigr) + \delta_{pq}\,\sigma_{wa}^2,
+    \label{kernel_chieu_a}
+\end{equation}
+trong đó $\mathbf{L}_a = \mathrm{diag}([\ell_{a1}^2, \dots, \ell_{a,D+F}^2])$ là ma trận độ dài đặc trưng riêng cho chiều $a$.
+
+\subsubsection{Dự báo bước kế tiếp}
+\label{SUB_SUB_SEC_one_step_prediction}
+
+Cho trạng thái hiện tại $x_t$ và điều khiển $u_t$ (tất định, không có sự không chắc chắn), trạng thái kế tiếp được tính bằng cách cộng dự báo GP với trạng thái hiện tại:
+\begin{equation}
+    x_{t+1} = x_t + \Delta_t, \quad \Delta_t \mid \tilde{x}_t \sim \mathcal{N}(\mu_{\Delta}(\tilde{x}_t),\; \boldsymbol{\Sigma}_{\Delta}(\tilde{x}_t)),
+    \label{du_bao_buoc_ke}
+\end{equation}
+trong đó các moment được tính từ phương trình \eqref{gp_mean} và \eqref{gp_variance} của mỗi GP thành phần:
+\begin{align}
+    [\mu_{\Delta}(\tilde{x}_t)]_a &= \mathbf{k}_a^\top(\tilde{x}_t)\,\boldsymbol{\beta}_a, \label{mean_delta} \\
+    [\boldsymbol{\Sigma}_{\Delta}(\tilde{x}_t)]_{aa} &= k_a(\tilde{x}_t, \tilde{x}_t) - \mathbf{k}_a^\top(\tilde{x}_t)(\mathbf{K}_a + \sigma_{wa}^2 \mathbf{I})^{-1} \mathbf{k}_a(\tilde{x}_t), \label{var_delta}
+\end{align}
+với $\boldsymbol{\beta}_a = (\mathbf{K}_a + \sigma_{wa}^2 \mathbf{I})^{-1} \mathbf{y}_a$ và $[\boldsymbol{\Sigma}_{\Delta}(\tilde{x}_t)]_{ab} = 0$ với $a \neq b$ (các chiều được xem là độc lập có điều kiện).
+
+\subsubsection{Học siêu tham số}
+\label{SUB_SUB_SEC_hyperparameter_learning}
+
+Với mỗi GP chiều $a$, siêu tham số $\phi_a = \{\ell_{ai}, \sigma_{fa}, \sigma_{wa}\}$ được học bằng cách cực đại hóa \textit{log marginal likelihood} (hay \textit{log evidence}):
+\begin{equation}
+    \log p(\mathbf{y}_a \mid \tilde{\mathbf{X}}, \phi_a) = -\tfrac{1}{2}\mathbf{y}_a^\top (\mathbf{K}_a + \sigma_{wa}^2 \mathbf{I})^{-1} \mathbf{y}_a - \tfrac{1}{2}\log\lvert \mathbf{K}_a + \sigma_{wa}^2 \mathbf{I} \rvert - \tfrac{n}{2}\log(2\pi),
+    \label{log_evidence}
+\end{equation}
+được tối ưu thông qua gradient descent (L-BFGS-B) với nhiều điểm xuất phát ngẫu nhiên để tránh cực tiểu địa phương \cite{Rasmussen_Williams_2006}.
+
+\subsection{Đánh giá chính sách}
+\label{SUB_SEC_policy_eval}
+
+Mục tiêu của đánh giá chính sách là tính $J^\pi(\theta) = \sum_{t=1}^{T} \mathbb{E}_{x_t}[c(x_t)]$ với phân phối ban đầu $p(x_0) = \mathcal{N}(x_0 \mid \mu_0, \boldsymbol{\Sigma}_0)$.
+
+\subsubsection{Truyền phân phối qua thời gian}
+\label{SUB_SUB_SEC_distribution_propagation}
+
+Vấn đề cốt lõi: khi áp dụng mô hình GP với một phân phối đầu vào $p(x_t) = \mathcal{N}(x_t \mid m_t, \mathbf{S}_t)$ (không phải một điểm tất định), bài toán \textit{dự báo với đầu vào không chắc chắn} (prediction under uncertain inputs) trở nên khó vì đầu ra không còn là Gaussian.
+
+\textbf{Cách tiếp cận của PILCO:} Xấp xỉ phân phối xác suất dài hạn $p(x_t)$ bằng phân phối Gaussian $\mathcal{N}(x_t \mid m_t, \mathbf{S}_t)$ và truyền các moment qua từng bước. Quá trình này được giải thích chi tiết trong Mục \ref{SEC_predictions}.
+
+Về tổng thể, tại mỗi thời điểm $t$:
+\begin{enumerate}
+    \item Kết hợp trạng thái $p(x_t)$ với điều khiển $p(u_t) = p(\pi^\theta(x_t))$\\ thành phân phối joint $p(\tilde{x}_t)$.
+    \item Tính phân phối $p(\Delta_t)$ bằng cách tích phân GP trên $p(\tilde{x}_t)$.
+    \item Cộng $p(\Delta_t)$ với $p(x_t)$ để có $p(x_{t+1})$.
+    \item Tính $\mathbb{E}_{x_{t+1}}[c(x_{t+1})]$ bằng công thức giải tích (xem Mục \ref{SEC_cost}).
+\end{enumerate}
+
+\subsection{Gradient giải tích}
+\label{SUB_SEC_analytic_gradient}
+
+Đây là một trong những đóng góp kỹ thuật quan trọng nhất của PILCO: việc tính \textbf{gradient của chi phí dài hạn kỳ vọng theo tham số chính sách một cách giải tích} (không cần ước lượng Monte Carlo).
+
+\subsubsection{Công thức gradient}
+\label{SUB_SUB_SEC_gradient_formula}
+
+Chi phí dài hạn:
+\begin{equation}
+    J^\pi(\theta) = \sum_{t=1}^{T} \mathbb{E}_t[c_t], \quad \text{trong đó } \mathbb{E}_t[c_t] := \mathbb{E}_{x_t}[c(x_t)].
+    \label{chi_phi_tong}
+\end{equation}
+Gradient tổng:
+\begin{equation}
+    \frac{\mathrm{d}J^\pi(\theta)}{\mathrm{d}\theta} = \sum_{t=1}^{T} \frac{\mathrm{d}\,\mathbb{E}_t[c_t]}{\mathrm{d}\theta}.
+    \label{gradient_tong}
+\end{equation}
+Áp dụng quy tắc dây chuyền theo thời gian, mỗi số hạng có dạng:
+\begin{equation}
+    \frac{\mathrm{d}\,\mathbb{E}_t[c_t]}{\mathrm{d}\theta} = \frac{\partial\,\mathbb{E}_t[c_t]}{\partial m_t}\frac{\mathrm{d}m_t}{\mathrm{d}\theta} + \frac{\partial\,\mathbb{E}_t[c_t]}{\partial \mathbf{S}_t}\frac{\mathrm{d}\mathbf{S}_t}{\mathrm{d}\theta},
+    \label{gradient_tung_buoc}
+\end{equation}
+trong đó các derivatives $\partial\,\mathbb{E}_t[c_t]/\partial m_t$ và $\partial\,\mathbb{E}_t[c_t]/\partial \mathbf{S}_t$ được tính theo công thức giải tích (xem Mục \ref{SEC_cost}), còn các Jacobian $\mathrm{d}m_t/\mathrm{d}\theta$ và $\mathrm{d}\mathbf{S}_t/\mathrm{d}\theta$ được tính đệ quy ngược thời gian qua chuỗi moment.
+
+\subsubsection{Đệ quy ngược thời gian}
+\label{SUB_SUB_SEC_backward_recursion}
+
+Đạo hàm được tính từ bước $T$ về $1$. Tại bước $t$, các đạo hàm $\mathrm{d}m_t/\mathrm{d}\theta$ và $\mathrm{d}\mathbf{S}_t/\mathrm{d}\theta$ phụ thuộc vào $\mathrm{d}m_{t-1}/\mathrm{d}\theta$ và $\mathrm{d}\mathbf{S}_{t-1}/\mathrm{d}\theta$. Các Jacobian của phép truyền moment (moment matching hay tuyến tính hóa, xem Mục \ref{SEC_predictions}) cung cấp các liên kết cần thiết:
+\begin{equation}
+    \frac{\mathrm{d}m_t}{\mathrm{d}\theta} = \frac{\partial m_t}{\partial m_{t-1}}\frac{\mathrm{d}m_{t-1}}{\mathrm{d}\theta} + \frac{\partial m_t}{\partial \mathbf{S}_{t-1}}\frac{\mathrm{d}\mathbf{S}_{t-1}}{\mathrm{d}\theta} + \frac{\partial m_t}{\partial \theta}\Biggr|_{\text{trực tiếp}},
+    \label{grad_recursion}
+\end{equation}
+và tương tự cho $\mathbf{S}_t$. Thành phần ``trực tiếp'' xuất hiện vì chính sách $\pi^\theta$ tác động trực tiếp lên phân phối điều khiển $p(u_t)$ tại mỗi bước.
+
+\subsubsection{Tối ưu hóa chính sách}
+\label{SUB_SUB_SEC_policy_optimization}
+
+Với gradient giải tích $\mathrm{d}J^\pi(\theta)/\mathrm{d}\theta$, các phương pháp tối ưu hóa bậc hai như \textbf{Conjugate Gradient (CG)} hay \textbf{BFGS} có thể được áp dụng, hội tụ nhanh hơn đáng kể so với gradient descent bậc nhất. Điều này đặc biệt quan trọng khi số tham số $\lvert\theta\rvert$ lớn (lên đến hàng nghìn trong trường hợp chính sách RBF).
+\medskip
+
+\begin{nx}
+    So sánh với các phương pháp gradient-free (như PEGASUS \cite{Ng_Jordan_2000} hay các phương pháp dựa trên lấy mẫu quỹ đạo): gradient giải tích của PILCO ít nhiễu hơn, chính xác hơn và không đòi hỏi số lượng lớn rollout. Đây là một trong những lý do PILCO có thể tối ưu hóa $10^2$--$10^3$ tham số chính sách, trong khi các phương pháp sampling thường chỉ xử lý được $\mathcal{O}(10)$ tham số.
+\end{nx}
+\medskip

@@ -1,0 +1,185 @@
+\section{Kiến thức nền tảng}
+\label{SEC_background}
+
+\subsection{Quá trình Gaussian}
+\label{SUB_SEC_GP}
+
+Quá trình Gaussian (Gaussian Process, viết tắt: GP) là một phân phối xác suất trên không gian các hàm số. Thay vì tham số hóa hàm bằng một số hữu hạn tham số, GP định nghĩa một phân phối trên mọi hàm số có thể \cite{Rasmussen_Williams_2006}. Một GP được đặc trưng hoàn toàn bởi \textit{hàm trung bình} $m(\cdot)$ và \textit{hàm hiệp phương sai (kernel)} $k(\cdot, \cdot)$:
+\begin{equation}
+    f(\mathbf{x}) \sim \mathcal{GP}\bigl(m(\mathbf{x}),\; k(\mathbf{x}, \mathbf{x}')\bigr).
+    \label{gp_dinh_nghia}
+\end{equation}
+Ý nghĩa: với bất kỳ tập hữu hạn điểm $\{\mathbf{x}_1, \dots, \mathbf{x}_n\}$, vector giá trị hàm $[f(\mathbf{x}_1), \dots, f(\mathbf{x}_n)]^\top$ tuân theo phân phối chuẩn nhiều chiều.
+
+\begin{dn}
+\label{DN_GP}
+    Một \textbf{Quá trình Gaussian} $f(\mathbf{x}) \sim \mathcal{GP}(m(\mathbf{x}), k(\mathbf{x}, \mathbf{x}'))$ được xác định bởi:
+    \begin{itemize}
+        \item \textbf{Hàm trung bình:} $m(\mathbf{x}) = \mathbb{E}[f(\mathbf{x})]$,
+        \item \textbf{Hàm hiệp phương sai:} $k(\mathbf{x}, \mathbf{x}') = \mathbb{E}\bigl[(f(\mathbf{x}) - m(\mathbf{x}))(f(\mathbf{x}') - m(\mathbf{x}'))\bigr]$.
+    \end{itemize}
+\end{dn}
+
+\subsubsection{Hàm kernel SE và siêu tham số}
+\label{SUB_SUB_SEC_kernel}
+
+Trong bài báo \cite{Deisenroth_2015}, nhóm tác giả sử dụng kernel \textbf{Squared Exponential} (SE) với thêm nhiễu Gaussian:
+\begin{equation}
+    k(\tilde{\mathbf{x}}_p, \tilde{\mathbf{x}}_q) = \sigma_f^2 \exp\!\Bigl(-\tfrac{1}{2}(\tilde{\mathbf{x}}_p - \tilde{\mathbf{x}}_q)^\top \mathbf{L}^{-1} (\tilde{\mathbf{x}}_p - \tilde{\mathbf{x}}_q)\Bigr) + \delta_{pq}\,\sigma_w^2,
+    \label{kernel_SE}
+\end{equation}
+trong đó $\tilde{\mathbf{x}} := [\mathbf{x}^\top, \mathbf{u}^\top]^\top$ là cặp trạng thái--hành động, $\mathbf{L} := \mathrm{diag}([\ell_1^2, \dots, \ell_{D+F}^2])$ là ma trận độ dài đặc trưng, $\sigma_f^2$ là phương sai của hàm tiềm ẩn và $\sigma_w^2$ là phương sai nhiễu. Tập siêu tham số $\{\ell_i, \sigma_f, \sigma_w\}$ được học bằng \textbf{cực đại hóa marginal log-likelihood} (evidence maximization) \cite{Rasmussen_Williams_2006,MacKay_2003}.
+\medskip
+
+\textit{Ý nghĩa của $\ell_i$:} độ dài đặc trưng $\ell_i$ điều khiển mức độ ảnh hưởng của chiều thứ $i$ trong không gian đầu vào. Nếu $\ell_i$ lớn, hàm biến thiên chậm theo chiều $i$; nếu $\ell_i$ nhỏ, hàm biến thiên nhanh.
+
+\begin{nx}[Trực giác về kernel SE và bất định]
+\label{NX_se_kernel_intuition}
+Kernel SE giả định hàm động học \textit{trơn vô hạn}: hai đầu vào gần nhau cho ra đầu ra gần nhau. Đây là giả thiết hợp lý cho hầu hết các hệ cơ học và robot (po tential energy, friction đều là hàm trơn). Hệ quả: khi diểm test $\tilde{\mathbf{x}}_*$ nằm cách xa mọi điểm huấn luyện, $\mathbf{k}_*$ tiến về $\mathbf{0}$, phương sai hậu nghiệm tiến về giá trị tiền nghiệm $\sigma_f^2$ --- nghĩa là bất định tăng khi xa dữ liệu. Đây chính là hành vi mong muốn: PILCO sẽ cẩn thận hơn với những vùng chưa được khám phá.
+\end{nx}
+
+\subsubsection{Hồi quy GP (Gaussian Process Regression)}
+\label{SUB_SUB_SEC_gp_regression}
+
+Cho tập dữ liệu huấn luyện $\mathcal{D} = \{(\tilde{\mathbf{x}}_i, y_i)\}_{i=1}^n$ với đầu ra $y_i = f(\tilde{\mathbf{x}}_i) + \varepsilon_i$, $\varepsilon_i \sim \mathcal{N}(0, \sigma_w^2)$. Gọi $\mathbf{K}$ là ma trận kernel với $K_{ij} = k(\tilde{\mathbf{x}}_i, \tilde{\mathbf{x}}_j)$, $\mathbf{k}_* := k(\tilde{\mathbf{X}}, \tilde{\mathbf{x}}_*)$ là vector kernel giữa điểm test $\tilde{\mathbf{x}}_*$ và tập huấn luyện. Phân phối hậu nghiệm tại điểm test $\tilde{\mathbf{x}}_*$ là Gaussian:
+\begin{equation}
+    p(f_* \mid \tilde{\mathbf{x}}_*, \mathcal{D}) = \mathcal{N}(f_* \mid \mu_f(\tilde{\mathbf{x}}_*),\; \sigma^2_f(\tilde{\mathbf{x}}_*)),
+    \label{gp_posterior}
+\end{equation}
+với:
+\begin{align}
+    \mu_f(\tilde{\mathbf{x}}_*) &= \mathbf{k}_*^\top (\mathbf{K} + \sigma_w^2 \mathbf{I})^{-1} \mathbf{y} =: \mathbf{k}_*^\top \boldsymbol{\beta},
+    \label{gp_mean} \\
+    \sigma^2_f(\tilde{\mathbf{x}}_*) &= k(\tilde{\mathbf{x}}_*, \tilde{\mathbf{x}}_*) - \mathbf{k}_*^\top (\mathbf{K} + \sigma_w^2 \mathbf{I})^{-1} \mathbf{k}_*,
+    \label{gp_variance}
+\end{align}
+trong đó $\boldsymbol{\beta} := (\mathbf{K} + \sigma_w^2 \mathbf{I})^{-1} \mathbf{y}$ là vector hệ số hậu nghiệm.
+
+\begin{nx}
+    Phương sai hậu nghiệm $\sigma^2_f(\tilde{\mathbf{x}}_*)$ thể hiện \textbf{mức độ không chắc chắn} của mô hình tại điểm $\tilde{\mathbf{x}}_*$. Tại các vùng có nhiều dữ liệu huấn luyện (gần với $\tilde{\mathbf{x}}_i$), $\sigma^2_f$ nhỏ; tại vùng ít dữ liệu, $\sigma^2_f$ lớn. Đây chính là cơ chế mà PILCO khai thác để định lượng sai số mô hình.
+\end{nx}
+
+\subsubsection{Độ phức tạp tính toán}
+\label{SUB_SUB_SEC_complexity}
+
+Huấn luyện GP đòi hỏi tính nghịch đảo ma trận $(\mathbf{K} + \sigma_w^2 \mathbf{I})^{-1} \in \mathbb{R}^{n \times n}$, tốn $\mathcal{O}(n^3)$ thao tác và $\mathcal{O}(n^2)$ bộ nhớ. Dự báo tại điểm mới tốn $\mathcal{O}(n)$ cho giá trị trung bình và $\mathcal{O}(n^2)$ cho phương sai. Để xử lý dữ liệu lớn, nhóm tác giả sử dụng \textit{sparse GP} \cite{Snelson_Ghahramani_2006} sau khi thu thập được 300 điểm dữ liệu.
+\medskip
+
+\subsection{Học tăng cường dựa trên mô hình}
+\label{SUB_SEC_model_based_RL}
+
+\subsubsection{Bài toán học tăng cường}
+\label{SUB_SUB_SEC_RL_problem}
+
+Xét hệ thống động học dạng:
+\begin{equation}
+    x_{t+1} = f(x_t, u_t) + w_t, \quad w_t \sim \mathcal{N}(\mathbf{0}, \boldsymbol{\Sigma}_w),
+    \label{he_dong_hoc}
+\end{equation}
+trong đó $x_t \in \mathbb{R}^D$ là vector trạng thái tại thời điểm $t$, $u_t \in \mathbb{R}^F$ là tín hiệu điều khiển (hành động), $f$ là hàm động học chưa biết, và $w_t$ là nhiễu hệ thống.
+
+\begin{dn}
+\label{DN_chinh_sach}
+    Một \textbf{chính sách} (policy) $\pi$ là một ánh xạ từ không gian trạng thái sang không gian điều khiển: $u_t = \pi^\theta(x_t)$, trong đó $\theta$ là vector tham số của chính sách.
+\end{dn}
+
+Mục tiêu của học tăng cường là tìm tham số chính sách $\theta$ tối thiểu hóa \textbf{chi phí dài hạn kỳ vọng}:
+\begin{equation}
+    J^\pi(\theta) = \sum_{t=1}^{T} \mathbb{E}_{x_t}\bigl[c(x_t)\bigr],
+    \label{chi_phi_dai_han}
+\end{equation}
+trong đó $c: \mathbb{R}^D \to [0, 1]$ là hàm chi phí tức thời và $T$ là chân trời lập kế hoạch.
+
+\subsubsection{Phương pháp dựa trên mô hình vs. không dựa trên mô hình}
+\label{SUB_SUB_SEC_model_based_vs_free}
+
+\textbf{Phương pháp không dựa trên mô hình} (model-free), như Q-learning \cite{Watkins_1989} hay TD-learning \cite{Sutton_Barto_1998}, ước lượng trực tiếp hàm giá trị hoặc chính sách từ tương tác với môi trường mà không cần xây dựng mô hình động học. Ưu điểm là đơn giản; nhược điểm là kém hiệu quả dữ liệu.
+
+\textbf{Phương pháp dựa trên mô hình} (model-based) xây dựng mô hình $\hat{f}$ của động học $f$, sau đó dùng mô hình này để lập kế hoạch và cải thiện chính sách. Về lý thuyết, model-based RL hiệu quả dữ liệu hơn vì mỗi lần tương tác mang lại nhiều thông tin hơn thông qua mô hình. Tuy nhiên, thách thức chính là \textbf{sai số mô hình}: sự khác biệt giữa $\hat{f}$ và $f$ thực có thể tích lũy qua nhiều bước và làm hỏng kết quả lập kế hoạch.
+\medskip
+
+\subsubsection{Vấn đề sai số mô hình}
+\label{SUB_SUB_SEC_model_error}
+
+Khi chỉ có ít dữ liệu (đặc biệt ở giai đoạn đầu học), sai số mô hình có thể rất lớn. Các phương pháp model-based truyền thống đối phó với vấn đề này bằng cách sử dụng mô hình tất định (deterministic model), tức là chọn một ước lượng điểm $\hat{f}$ duy nhất, rồi lập kế hoạch như thể đó là $f$ thực. Điều này có thể dẫn đến \textbf{độ tự tin thái quá} (overconfidence): các dự báo dài hạn nằm ngoài vùng dữ liệu nhưng vẫn được xem như là chắc chắn.
+\medskip
+
+Giải pháp của PILCO là dùng mô hình xác suất (GP) để:
+\begin{enumerate}
+    \item Nắm bắt \textbf{sự không chắc chắn về mô hình} (model uncertainty) thông qua phương sai hậu nghiệm $\sigma^2_f$.
+    \item \textbf{Tích hợp sự không chắc chắn này} vào quá trình dự báo dài hạn và tối ưu hóa chính sách, thay vì bỏ qua nó.
+\end{enumerate}
+
+\subsection{Liên quan đến công trình trước}
+\label{SUB_SEC_related_work}
+
+Trước PILCO, nhiều hướng tiếp cận đã được đề xuất để cải thiện hiệu quả dữ liệu trong RL:
+\begin{itemize}
+    \item \textbf{Điều khiển robust và adaptive} \cite{Astrom_Wittenmark_2008}: áp dụng nguyên tắc tương đương chắc chắn (certainty equivalence), xử lý ước lượng tham số như giá trị thực. Hạn chế: chủ yếu cho hệ tuyến tính.
+    \item \textbf{Hồi quy Bayesian cục bộ có trọng số} \cite{Bagnell_Schneider_2001,Schneider_1997}: dùng mô hình phi tham số nhưng xử lý sự không chắc chắn của mô hình như nhiễu, không tích hợp vào lập kế hoạch.
+    \item \textbf{Gaussian Process Dynamic Programming (GPDP)} \cite{Deisenroth_2009}: sử dụng GP nhưng dựa trên lập trình động (dynamic programming) trong không gian rời rạc hóa, không mở rộng tốt.
+    \item \textbf{PEGASUS} \cite{Ng_Jordan_2000}: tìm kiếm chính sách dựa trên lấy mẫu quỹ đạo, bị giới hạn ở số lượng tham số chính sách nhỏ.
+\end{itemize}
+\medskip
+
+PILCO vượt qua các hạn chế trên bằng cách kết hợp mô hình GP xác suất với suy diễn xấp xỉ hiệu quả và gradient giải tích, cho phép tối ưu hóa hàng nghìn tham số chính sách chỉ với vài chục giây dữ liệu thực.
+
+\subsection{PILCO trong bối cảnh RL hiện đại}
+\label{SUB_SEC_pilco_modern_context}
+
+Để định vị rõ PILCO trong hệ sinh thái học tăng cường, bảng dưới so sánh ba nhóm phương pháp chính:
+
+\subsubsection{So với model-free deep RL}
+\label{SUB_SUB_SEC_vs_model_free}
+
+Các phương pháp model-free hiện đại như DQN \cite{Watkins_1989}, PPO, SAC, TD3 đạt kết quả vượt trội trên nhiều bộ chuẩn Atari và MuJoCo. Tuy nhiên, chúng đạt được điều đó với chi phí dữ liệu khổng lồ: Atari cần hàng trăm triệu frames (tương đương nhiều tháng thực tế), MuJoCo cần hàng triệu bước mô phỏng. PILCO (2015) cần \textbf{dưới 30 giây tương tác} với robot thực cho bài toán cart-pole --- hiệu quả dữ liệu hơn khoảng $\mathbf{10^6}$ lần.
+
+\textbf{Khi nào model-free tốt hơn:}
+\begin{itemize}
+    \item Môi trường mô phỏng nhanh (game, simulation), dữ liệu rồi rào và rẻ.
+    \item Không gian trạng thái cao chiều (quan sát ảnh).
+    \item Động học phức tạp, phi tuyến mạnh, khó mô hình hóa.
+\end{itemize}
+
+\textbf{Khi nào PILCO vượt trội:}
+\begin{itemize}
+    \item Điều khiển robot thực (arm, legged robot), mỗi lần chạy tốn kém, risk hư hại.
+    \item Trạng thái vừa phải (dưới 30--50 chiều), cảm biến đầy đủ và đáng tin cậy.
+    \item Cần chuyển giữa các nhiệm vụ liên quan (multi-task GP).
+\end{itemize}
+
+\subsubsection{So với model-based deep RL hiện đại}
+\label{SUB_SUB_SEC_vs_modern_mbrl}
+
+Sau PILCO, hướng model-based RL phát triển mạnh với các biến thể deep learning:
+
+\begin{table}[H]
+\centering
+\caption{So sánh PILCO với các phương pháp model-based RL hiện đại}
+\label{TAB_mbrl_comparison}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Phương pháp} & \textbf{Mô hình} & \textbf{Bất định} & \textbf{Scale} & \textbf{Hiệu quả dữ liệu} \\
+\hline
+PILCO (2015) & GP & Bayesian & Thấp & \textbf{Cực cao} \\
+PETS (2018) & NN ensemble & Bootstrap & Trung bình & Rất cao \\
+MBPO (2019) & NN & Bootstrap & Cao & Cao \\
+Dreamer (2020) & Latent RNN & N/A & Cao (images) & Trung bình \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Ba điểm nổi bật} của PILCO so với các mô hình NN:
+\begin{itemize}
+    \item Bất định Bayesian ``thật'': phân phối hậu nghiệm trên không gian hàm, không chỉ là ensemble thống kê.
+    \item Gradient giải tích hoàn toàn: không cần back-propagate qua mô phỏng.
+    \item Không tham số hóa mô hình (non-parametric): ưu điểm khi động học phức tạp, khó chọn kiến trúc mạng nơ-ron.
+\end{itemize}
+
+\textbf{Hạn chế của PILCO so với deep MBRL:}
+\begin{itemize}
+    \item Khó scale lên trạng thái cao chiều (100+ chiều) do GP $\mathcal{O}(n^3)$.
+    \item Không làm việc trực tiếp với quan sát ảnh (không có latent representation).
+    \item Giả định Gaussian có thể không phù hợp với hệ có tiếp xúc/va chạm (contact-rich).
+\end{itemize}
+\medskip

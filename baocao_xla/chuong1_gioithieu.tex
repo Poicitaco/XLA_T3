@@ -1,0 +1,130 @@
+% ============================================================
+%  CHƯƠNG 1: GIỚI THIỆU
+% ============================================================
+\section{Giới thiệu}
+\label{sec:gioithieu}
+
+\subsection{Bối cảnh và động lực nghiên cứu}
+\label{subsec:boidung}
+
+Trong hai thập kỷ qua, sự phổ biến của camera giám sát đã tạo ra sự thay đổi căn bản trong cách con người quản lý không gian công cộng và tư nhân. Theo ước tính của IHS Markit, năm 2021 thế giới có khoảng 770 triệu camera giám sát đang hoạt động, và con số này tiếp tục tăng với tốc độ chóng mặt \cite{ihs2021}. Tại Việt Nam, hàng triệu camera được lắp đặt tại các khu chung cư, văn phòng, trung tâm thương mại, trường học và bệnh viện. Mỗi camera này liên tục thu thập và ghi lại dữ liệu khuôn mặt của người đi qua --- một loại dữ liệu sinh trắc học đặc biệt nhạy cảm, vì khuôn mặt là danh tính duy nhất và không thể thay đổi của mỗi người.
+
+\medskip
+Sự bùng nổ của kỹ thuật nhận diện khuôn mặt (face recognition) dựa trên học sâu, khởi đầu với DeepFace \cite{taigman2014} và tiếp theo là ArcFace \cite{deng2019arcface}, FaceNet \cite{schroff2015facenet}, InsightFace \cite{guo2021insightface}, đã đẩy độ chính xác nhận diện lên ngang bằng hoặc vượt khả năng con người trong nhiều điều kiện. Điều này có nghĩa là bất kỳ ai có đủ nguồn lực đều có thể xây dựng một hệ thống theo dõi người dùng dựa trên video giám sát một cách tự động và quy mô lớn. Nguy cơ xâm phạm quyền riêng tư theo đó trở nên cực kỳ nghiêm trọng.
+
+\medskip
+Các quy định pháp lý quốc tế đã bắt đầu phản ứng với thực tế này. Quy định Bảo vệ Dữ liệu Chung của Liên minh Châu Âu (GDPR) \cite{gdpr2016} phân loại dữ liệu sinh trắc học (bao gồm khuôn mặt) là dữ liệu đặc biệt nhạy cảm, yêu cầu sự đồng ý rõ ràng từ chủ thể dữ liệu khi thu thập. Đạo luật về Quyền riêng tư Sinh trắc học Illinois (BIPA) tại Hoa Kỳ \cite{bipa2008} đặt ra yêu cầu tương tự. Tuy nhiên, trong thực tế, đa phần các hệ thống camera hiện tại không tuân thủ các nguyên tắc này.
+
+\medskip
+Từ góc độ kỹ thuật, các hệ thống giám sát hiện tại đang ở một trong hai trạng thái cực đoan:
+
+\begin{itemize}
+    \item \textbf{Ghi thô không xử lý} (raw surveillance): Toàn bộ video được lưu nguyên bản, lộ hoàn toàn danh tính của mọi người có mặt trong khung hình. Đây là cách làm phổ biến nhất nhưng đặt ra nguy cơ nghiêm trọng về quyền riêng tư.
+    \item \textbf{Xóa hoặc không lưu} (no-record policy): Để bảo vệ quyền riêng tư, một số nơi không ghi lại video. Điều này đồng nghĩa với việc mất đi bằng chứng khi xảy ra sự cố an ninh.
+\end{itemize}
+
+\medskip
+Mâu thuẫn này --- giữa \textit{quyền riêng tư} và \textit{nhu cầu bằng chứng} --- chính là khoảng trống mà đề tài này muốn lấp đầy.
+
+\subsection{Vấn đề đặt ra}
+\label{subsec:vandede}
+
+Bài toán cụ thể mà đề tài giải quyết có thể phát biểu như sau:
+
+\begin{quote}
+\textit{Làm thế nào để xây dựng một hệ thống camera giám sát vừa bảo vệ quyền riêng tư khuôn mặt theo mặc định, vừa cho phép khôi phục danh tính khi có sự cố an ninh với sự ủy quyền phù hợp?}
+\end{quote}
+
+\medskip
+Các yêu cầu kỹ thuật cụ thể bao gồm:
+
+\begin{enumerate}[a)]
+    \item \textbf{Ẩn danh hoá theo thời gian thực}: Hệ thống phải phát hiện và che khuất khuôn mặt trong luồng video camera trực tiếp với độ trễ không đáng kể, đảm bảo không một ai bị nhận diện bất hợp pháp.
+    \item \textbf{Bảo toàn bằng chứng}: Đồng thời với việc ẩn danh hoá, hệ thống phải lưu trữ bản gốc của video dưới dạng được mã hoá mạnh, chỉ người có thẩm quyền (admin) với mật khẩu đúng mới giải mã được.
+    \item \textbf{Nhận biết người thân / thành viên gia đình}: Trong ngữ cảnh gia đình hoặc tổ chức, những người đã được đăng ký trước được nhận diện và hiển thị bình thường trong khi người lạ vẫn bị ẩn danh hoá.
+    \item \textbf{Khả năng vận hành trên phần cứng phổ thông}: Hệ thống phải chạy được trên máy tính thông thường, không yêu cầu GPU chuyên dụng.
+    \item \textbf{Giao diện web đầy đủ}: Cả admin và người dùng thường đều có thể truy cập qua trình duyệt mà không cần cài đặt thêm phần mềm.
+\end{enumerate}
+
+\subsection{Mục tiêu đề tài}
+\label{subsec:muctieu}
+
+\subsubsection{Mục tiêu tổng quát}
+
+Xây dựng và đánh giá một hệ thống camera giám sát hoàn chỉnh theo triết lý \textit{Privacy-First}: \textbf{ẩn danh hoá khuôn mặt theo mặc định} kết hợp \textbf{lưu trữ mã hoá bản gốc} để dung hoà giữa quyền riêng tư và trách nhiệm giải trình.
+
+\subsubsection{Mục tiêu cụ thể}
+
+\begin{enumerate}[1.]
+    \item Nghiên cứu và ứng dụng mô hình \textbf{YOLOv11n-face} để phát hiện khuôn mặt thời gian thực trên CPU với hiệu suất chấp nhận được.
+    \item Tích hợp \textbf{InsightFace buffalo\_l} với không gian embedding 512 chiều để nhận diện thành viên đã đăng ký, phân biệt giữa \textit{người thân} và \textit{người lạ}.
+    \item Thiết kế và cài đặt \textbf{9 chế độ ẩn danh hoá} từ đơn giản (blur, pixelate) đến mạnh (silhouette, obliterate) cùng 4 preset tiền cấu hình.
+    \item Xây dựng cơ chế \textbf{lưu trữ kép}: video đã ẩn danh hoá (MP4 thường) và video gốc mã hoá bằng \textbf{AES-256-GCM}, với khoá dẫn xuất PBKDF2-SHA256 (390.000 vòng lặp).
+    \item Phát triển \textbf{REST API} đầy đủ bằng FastAPI, hỗ trợ 4 giao thức streaming: MJPEG, SSE, WebSocket, polling.
+    \item Xây dựng \textbf{giao diện web} SPA với bảng điều khiển admin và cổng người dùng.
+    \item \textbf{Đánh giá toàn diện} hiệu suất (FPS, độ trễ, SSIM) và bảo mật (cosine similarity, khả năng ngăn nhận diện) của từng chế độ.
+\end{enumerate}
+
+\subsection{Phạm vi nghiên cứu}
+\label{subsec:phamvi}
+
+\begin{itemize}
+    \item \textbf{Trong phạm vi:} Phát hiện và ẩn danh hoá khuôn mặt người trong luồng video camera. Nhận diện thành viên đã đăng ký trước. Lưu trữ mã hoá bản gốc. Streaming video qua HTTP/WebSocket. Quản lý qua giao diện web.
+    \item \textbf{Ngoài phạm vi:} Nhận diện và theo dõi toàn bộ cơ thể (body tracking). Phân tích cảm xúc (emotion recognition). Nhận diện hành vi (action recognition). Phân tán trên nhiều camera đồng thời (multi-camera federated system). Tuân thủ pháp lý cụ thể (không phải sản phẩm thương mại).
+\end{itemize}
+
+\subsection{Phương pháp nghiên cứu}
+\label{subsec:phuongphap}
+
+Đề tài sử dụng phương pháp nghiên cứu kết hợp lý thuyết và thực hành, được thực hiện bởi nhóm 3 sinh viên với sự phân công rõ ràng:
+
+\begin{enumerate}[1.]
+    \item \textbf{Nghiên cứu tài liệu}: Tổng hợp kiến thức về phát hiện/nhận diện khuôn mặt, kỹ thuật ẩn danh hoá, mật mã học ứng dụng từ các bài báo và tài liệu kỹ thuật.
+    \item \textbf{Thiết kế kiến trúc}: Phân tích yêu cầu và thiết kế kiến trúc hệ thống từ trên xuống (top-down design).
+    \item \textbf{Triển khai thực nghiệm}: Cài đặt toàn bộ hệ thống bằng Python, tích hợp các thư viện mã nguồn mở.
+    \item \textbf{Đánh giá định lượng}: Đo đạc các chỉ số hiệu suất (FPS, latency, SSIM) và bảo mật (cosine similarity, recognition prevention rate) bằng các script tự động.
+    \item \textbf{Phân tích và cải tiến}: Dựa trên kết quả đánh giá để điều chỉnh tham số và cải tiến thiết kế.
+\end{enumerate}
+
+\subsubsection{Phân công nhiệm vụ nhóm}
+\label{subsubsec:phancong}
+
+\begin{table}[H]
+\centering
+\caption{Phân công nhiệm vụ các thành viên nhóm}
+\label{tab:phancong}
+{\small
+\begin{tabularx}{\textwidth}{|l|c|X|}
+\hline
+\textbf{Họ và tên} & \textbf{MSSV} & \textbf{Nhiệm vụ chính} \\
+\hline
+Hoàng Tiến Đạt & 23010864 & Trưởng nhóm; thiết kế hệ thống, cài đặt backend pipeline, REST API FastAPI, luồng streaming, tích hợp hệ thống. \\
+\hline
+Nguyễn Hữu Đăng Khoa & 23010901 & Cài đặt face recognition (InsightFace), face lock, cơ sở dữ liệu khuôn mặt, công cụ đăng ký. \\
+\hline
+Nghiêm Xuân Khánh & 23010598 & Cài đặt các đoạn mã đánh giá, script benchmark, giao diện web (admin \& user portal). \\
+\hline
+\end{tabularx}
+}
+\end{table}
+
+\subsection{Bố cục báo cáo}
+\label{subsec:bocuc}
+
+Báo cáo được tổ chức thành 6 chương như sau:
+
+\begin{itemize}
+    \item \textbf{Chương 1 --- Giới thiệu} (chương này): Trình bày bối cảnh, vấn đề đặt ra, mục tiêu và phạm vi nghiên cứu.
+    
+    \item \textbf{Chương 2 --- Cơ sở lý thuyết}: Trình bày các kiến thức nền tảng cần thiết bao gồm phát hiện khuôn mặt với YOLOv11, nhận diện khuôn mặt với InsightFace, các kỹ thuật ẩn danh hoá, mật mã học AES-GCM và PBKDF2, và các công nghệ xây dựng hệ thống.
+    
+    \item \textbf{Chương 3 --- Thiết kế hệ thống}: Trình bày kiến trúc tổng thể, thiết kế pipeline xử lý video, thiết kế hệ thống lưu trữ kép, thiết kế API và giao diện.
+    
+    \item \textbf{Chương 4 --- Triển khai}: Mô tả chi tiết cách triển khai từng module của hệ thống, bao gồm code minh họa các điểm quan trọng.
+    
+    \item \textbf{Chương 5 --- Thực nghiệm và đánh giá}: Trình bày thiết lập thực nghiệm, kết quả đánh giá hiệu suất và bảo mật, phân tích và so sánh các chế độ.
+    
+    \item \textbf{Chương 6 --- Kết luận}: Tổng kết đóng góp của đề tài, nêu hạn chế và đề xuất hướng phát triển tương lai.
+\end{itemize}
+
+\medskip

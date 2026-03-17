@@ -1,0 +1,525 @@
+% ============================================================
+%  CHƯƠNG 4: TRIỂN KHAI
+% ============================================================
+\section{Triển khai}
+\label{sec:trienkhai}
+
+\subsection{Môi trường và công cụ phát triển}
+\label{subsec:moitruong}
+
+\begin{table}[H]
+\centering
+\caption{Môi trường phát triển và công cụ}
+\label{tab:moitruong}
+{\small\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Hạng mục} & \textbf{Công cụ/Phiên bản} & \textbf{Vai trò} \\
+\hline
+Ngôn ngữ & Python 3.12 & Ngôn ngữ chính cho backend \\
+Web framework & FastAPI 0.115 + Uvicorn 0.30 & REST API \& ASGI server \\
+CV / ML & OpenCV 4.8, Ultralytics 8.3 & Xử lý ảnh, YOLOv11 \\
+Face recognition & DeepFace / InsightFace buffalo\_l & Embedding 512D \\
+Mã hoá & cryptography 43 (OpenSSL backend) & AES-GCM, PBKDF2, Scrypt \\
+Mảng số & NumPy 1.24 & Xử lý batch embedding \\
+Đánh giá chất lượng & scikit-image 0.22 & Tính SSIM \\
+Camera enumeration & cv2-enumerate-cameras 1.2 & Liệt kê camera theo tên \\
+Môi trường ảo & Python venv & Cô lập phụ thuộc \\
+Hệ điều hành phát triển & Windows 11 / Ubuntu 22.04 & Đa nền tảng \\
+\hline
+\end{tabularx}}
+\end{table}
+
+\textbf{Khởi động hệ thống}:
+\begin{lstlisting}[language=bash, caption={Lệnh khởi động server}]
+# Kich hoat virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Khoi dong FastAPI voi auto-reload
+uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
+\end{lstlisting}
+
+Hoặc dùng script PowerShell \texttt{start\_server.ps1} đã được cung cấp.
+
+\subsection{Module phát hiện khuôn mặt (\texttt{FaceDetector})}
+\label{subsec:detectormod}
+
+Module này đóng gói YOLOv11n-face trong class \texttt{FaceDetector} (\file{src/detector.py}), cung cấp interface thống nhất cho phần còn lại của hệ thống.
+
+\begin{lstlisting}[language=Python, caption={Interface của FaceDetector}]
+class FaceDetector:
+    def __init__(
+        self,
+        model_path: str = "models/yolov11n-face.pt",
+        conf_threshold: float = 0.35,
+        iou_threshold: float = 0.5,
+        imgsz: int = 640,
+        device: Optional[str] = None,
+    ) -> None: ...
+
+    def detect_faces(self, frame: np.ndarray) -> List[List[int]]:
+        """Returns list of [x, y, w, h] bounding boxes."""
+        ...
+\end{lstlisting}
+
+\medskip
+\textbf{Chi tiết triển khai}:
+
+\begin{enumerate}[1.]
+    \item \textbf{Lazy import YOLO}: \texttt{ultralytics.YOLO} được import lazily thông qua \texttt{importlib.import\_module()} thay vì import trực tiếp ở đầu file. Điều này cho phép server khởi động bình thường ngay cả khi ultralytics chưa được cài đặt, chỉ báo lỗi khi thực sự gọi detector.
+    
+    \item \textbf{Graceful degradation}: Thuộc tính \texttt{is\_ready} kiểm tra xem model đã load thành công chưa. Nếu không, các endpoint trả về kết quả rỗng thay vì crash.
+    
+    \item \textbf{Coordinate conversion}: YOLO trả về tọa độ $[x_1, y_1, x_2, y_2]$ (xyxy format); detector chuyển về $[x, y, w, h]$ (xywh format) theo công thức $w = x_2 - x_1$, $h = y_2 - y_1$, sau đó cắt về giới hạn frame.
+\end{enumerate}
+
+\subsection{Module nhận diện khuôn mặt}
+\label{subsec:recognizermod}
+
+\subsubsection{FaceRecognizer (\texttt{src/face\_recognition.py})}
+\label{subsubsec:facerecognizer}
+
+\texttt{FaceRecognizer} là wrapper mỏng quanh \texttt{InsightFace.FaceAnalysis} với hai phương thức chính:
+
+\begin{enumerate}[1.]
+    \item \textbf{\texttt{extract\_embeddings\_from\_frame}}: Nhận một frame và danh sách bounding box, trả về list embedding tương ứng. Crop từng ROI và chạy InsightFace trực tiếp trên ROI đó. Nếu có nhiều khuôn mặt trong ROI, chọn khuôn mặt có diện tích lớn nhất.
+    
+    \item \textbf{\texttt{extract\_embedding\_from\_image}}: Nhận một ảnh đơn (thường là ảnh đăng ký thành viên), trả về embedding của khuôn mặt lớn nhất phát hiện được.
+\end{enumerate}
+
+\subsubsection{FamilyDatabase (\texttt{src/family\_database.py})}
+\label{subsubsec:familydb}
+
+\texttt{FamilyDatabase} quản lý cơ sở dữ liệu khuôn mặt với các tính năng:
+
+\begin{itemize}
+    \item \textbf{CRUD operations}: \texttt{upsert\_member}, \texttt{remove\_member}, \texttt{update\_member} với tự động save và rebuild index sau mỗi thay đổi.
+    \item \textbf{Vectorized matching}: Dùng NumPy matrix multiplication để tính cosine similarity một lần cho toàn bộ database:
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption={Nhận diện vectorized với NumPy}]
+def identify(self, embedding: np.ndarray) -> Tuple[Optional[str], float]:
+    if self._emb_matrix.shape[0] == 0:
+        return None, 0.0
+    # Ma tran nhan: (M, 512) @ (512,) -> (M,)
+    scores = self._emb_matrix @ embedding.astype(np.float32)
+    best_idx = int(np.argmax(scores))
+    best_score = float(scores[best_idx])
+    member_id = self._member_ids[best_idx]
+    threshold = float(self._member_thresholds[best_idx])
+    if best_score >= threshold:
+        return member_id, best_score
+    return None, best_score  # Nguoi la
+\end{lstlisting}
+
+\medskip
+\textbf{Hot Reload}: Khi thành viên được đăng ký qua API, pipeline đang chạy nhận tín hiệu qua shared event và gọi \texttt{family\_db.load()} để reload database ngay lập tức mà không cần restart.
+
+\subsubsection{RecognitionWorker (Thread bất đồng bộ)}
+\label{subsubsec:recworker}
+
+Do nhận diện InsightFace tốn $\approx 50$--$200$ms mỗi khuôn mặt, nếu chạy đồng bộ trong pipeline render sẽ làm giảm FPS đáng kể. Thiết kế dùng \texttt{RecognitionWorker} chạy trong thread riêng: chấp nhận ROI qua queue không chặn (non-blocking submit), và drop frame nếu queue đầy --- pipeline render tiếp tục dùng kết quả nhận diện gần nhất của track đó mà không bao giờ bị block.
+
+\subsection{Engine ẩn danh hoá (\texttt{FaceAnonymizationEngine})}
+\label{subsec:anonymizermod}
+
+\subsubsection{Các chế độ ẩn danh hoá}
+\label{subsubsec:modes}
+
+Module \texttt{src/privacy.py} cài đặt 9 chế độ ẩn danh hoá thông qua hàm thống nhất \texttt{anonymize\_faces(frame, boxes, mode, ...)}. Hàm này nhận frame và danh sách bounding box, áp dụng đúng cơ chế theo tham số \texttt{mode}, và trả về frame đã xử lý.
+
+\medskip
+Bảng~\ref{tab:modes} mô tả chi tiết 9 chế độ ẩn danh hoá được hỗ trợ:
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết 9 chế độ ẩn danh hoá}
+\label{tab:modes}
+\begin{tabular}{|l|l|p{0.45\textwidth}|}
+\hline
+\textbf{Mode} & \textbf{Vùng che} & \textbf{Cơ chế ẩn danh hoá} \\
+\hline
+\texttt{blur} & Mặt & Gaussian blur downsample-blur-upsample \\
+\texttt{pixelate} & Mặt & Mosaic $B \times B$ pixel block \\
+\texttt{solid} & Mặt & Hình chữ nhật màu đen đặc \\
+\texttt{obliterate} & Mặt & Màu nền + nhiễu scramble \\
+\texttt{headcloak} & Đầu đầy đủ & Black box mở rộng theo \texttt{head\_ratio} \\
+\texttt{neckup} & Đầu + cổ & Black box mở rộng bao cổ \\
+\texttt{silhouette} & Đầu + vai + thân trên & Black block mở rộng tối đa \\
+\texttt{lock} & Mặt & AES-GCM encrypt ROI (xem §\ref{subsec:facelockmod}) \\
+\texttt{none} & --- & Không che, chỉ detect và trả về boxes \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Bốn preset cấu hình}
+\label{subsubsec:presets}
+
+Bốn preset tiền cấu hình giúp người dùng nhanh chóng chọn cân bằng giữa tốc độ và mức độ ẩn danh hoá:
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình chi tiết 4 preset}
+\label{tab:presets}
+{\small
+\begin{tabular}{|l|l|c|c|c|c|}
+\hline
+\textbf{Preset} & \textbf{Mode} & \textbf{imgsz} & \textbf{detect\_every} & \textbf{proc\_width} & \textbf{face\_padding} \\
+\hline
+\texttt{fast} & pixelate & 416 & 3 & 512 & 0.12 \\
+\texttt{balanced} & headcloak & 512 & 2 & 640 & 0.16 \\
+\texttt{strong} & obliterate & 512 & 2 & 640 & 0.20 \\
+\texttt{strict} & headcloak & 416 & 2 & 512 & 0.24 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textbf{Giải thích tham số ảnh hưởng hiệu suất}:
+\begin{itemize}
+    \item \texttt{imgsz}: Kích thước ảnh khi inference YOLO. Nhỏ hơn → nhanh hơn nhưng bỏ sót mặt nhỏ.
+    \item \texttt{detect\_every}: Chạy detector mỗi $N$ frame. Tăng lên → FPS tổng thể cao hơn nhưng boxes cũ hơn.
+    \item \texttt{proc\_width}: Resize frame về width này trước khi xử lý. Nhỏ hơn → nhanh hơn nhưng giảm chất lượng detection.
+\end{itemize}
+
+\subsubsection{Làm mịn bounding box theo thời gian}
+\label{subsubsec:bboxsmooth}
+
+\texttt{BBoxSmoother} sử dụng EMA với IoU-based tracking:
+
+\begin{algorithm}[H]
+\caption{Làm mịn bounding box theo thời gian (EMA)}
+\begin{algorithmic}[1]
+\Require Frame $t$, boxes mới $\mathcal{B}_t = \{b_1, \ldots, b_k\}$, $\alpha = 0.7$
+\Ensure Boxes đã làm mịn $\mathcal{B}_t^{\text{smooth}}$
+\ForAll{track $i \in$ active\_tracks}
+    \State Tìm $b_j \in \mathcal{B}_t$ có $\text{IoU}(\text{track}_i.\text{box}, b_j) > \tau_{\text{IoU}}$
+    \If{Tìm thấy}
+        \State $\text{track}_i.\text{box} \leftarrow \alpha \cdot b_j + (1-\alpha) \cdot \text{track}_i.\text{box}$
+        \State $\text{track}_i.\text{last\_seen} \leftarrow t$
+    \Else
+        \If{$t - \text{track}_i.\text{last\_seen} > \texttt{max\_frames\_missing}$}
+            \State Xóa track $i$
+        \EndIf
+    \EndIf
+\EndFor
+\ForAll{$b_j \in \mathcal{B}_t$ chưa được ghép}
+    \State Tạo track mới với $\text{box} = b_j$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Module khóa mặt AES-GCM (\texttt{FaceRegionLocker})}
+\label{subsec:facelockmod}
+
+Module \file{src/face\_lock.py} cài đặt tính năng \textbf{reversible face lock}: mã hoá từng vùng mặt độc lập bằng AES-GCM. Khác với các chế độ ẩn danh hoá khác, lock cho phép \textbf{khôi phục hoàn toàn} ảnh gốc với passphrase đúng.
+
+\medskip
+\textbf{Quy trình Lock:}
+
+\begin{algorithm}[H]
+\caption{Khóa khuôn mặt thứ $i$ (FaceRegionLocker.lock)}
+\begin{algorithmic}[1]
+\Require Ảnh $I$, box $[x,y,w,h]$, passphrase $P$, head\_ratio $r$
+\Ensure Ảnh $I'$ (đã che), payload $\pi_i$ (để mở khóa sau)
+\State $\text{salt} \leftarrow \text{OS.urandom}(21)$ \Comment{Salt cố định cho session}
+\State $K \leftarrow \text{Scrypt}(P, \text{salt}, N=2^{14}, r=8, p=1)$ \Comment{32 byte}
+\State $\text{box}_h \leftarrow \texttt{expand\_head\_box}([x,y,w,h], r)$
+\State $\text{ROI} \leftarrow I[\text{box}_h]$ \Comment{Cắt vùng đầu}
+\State $N \leftarrow \text{OS.urandom}(12)$ \Comment{Nonce 96-bit}
+\State $A \leftarrow \textsc{encode}(\text{box}_h, \text{shape}(I))$ \Comment{Associated Data}
+\State $(C, T) \leftarrow \text{AES-GCM-Encrypt}(K, N, \text{ROI.tobytes()}, A)$
+\State Ghi đè $I'[\text{box}_h] \leftarrow \texttt{overlay}(C, T, N)$ \Comment{Overlay visual}
+\State $\pi_i \leftarrow \{N_{\text{b64}}, (C\|T)_{\text{b64}}, \text{box}_h, \text{shape}\}$
+\Return $I'$, $\pi_i$
+\end{algorithmic}
+\end{algorithm}
+
+\medskip
+\textbf{Overlay visual} khi khuôn mặt đang bị khóa: Người dùng có thể chọn một trong 4 kiểu:
+\begin{itemize}
+    \item \texttt{solid}: Hình chữ nhật màu xám đặc.
+    \item \texttt{noise}: Nhiễu Gaussian ngẫu nhiên, không để lộ thông tin.
+    \item \texttt{ciphernoise}: Nhiễu được seed từ hash của ciphertext --- cùng ảnh cho cùng pattern nhiễu, tạo hiệu ứng watermark.
+    \item \texttt{rps} (Reversible Pixel Shuffling): Xáo trộn pixel theo thứ tự xác định bởi seed ngẫu nhiên, tạo overlay trông như nhiễu nhưng khi giải mã pixel được khôi phục đúng thứ tự.
+\end{itemize}
+
+\medskip
+\textbf{Quy trình Unlock:} Nhận ảnh + list payload $\{\pi_i\}$ + passphrase. Với mỗi payload, dẫn xuất lại khoá từ salt+passphrase, giải mã bằng AES-GCM, kiểm tra tag xác thực. Nếu sai passphrase → InvalidTag exception → HTTP 400. Nếu đúng, khôi phục ROI gốc.
+
+\medskip
+\textbf{Kết hợp với pipeline}: Khi \texttt{mode = "lock"} trong pipeline, \textit{các payload được lưu kèm theo clip metadata} để sau này có thể unlock clip.
+
+\subsection{Quản lý xác thực admin}
+\label{subsec:adminauth}
+
+Module \file{src/admin\_auth.py} cài đặt hệ thống mật khẩu admin với các thuộc tính bảo mật:
+
+\begin{enumerate}[1.]
+    \item \textbf{Zero knowledge}: Server không lưu mật khẩu plaintext. File
+    \texttt{admin\_cre\-den\-tials.json} chỉ chứa:
+    \begin{lstlisting}[language=Python, caption={Cấu trúc file admin\_credentials.json}]
+{
+  "salt": "<base64, salt 32 byte ngẫu nhiên>",
+  "hash": "<base64, PBKDF2-SHA256 output>",
+  "iterations": 390000,
+  "created_at": 1747350000.0
+}
+    \end{lstlisting}
+    
+    \item \textbf{Timing-safe comparison}: Hàm \texttt{\_ct\_equal(a, b)} dùng \texttt{hmac.compare\_digest} thay vì toán tử \texttt{==}, đảm bảo thời gian so sánh không phụ thuộc vào nội dung (chống timing attack).
+    
+    \item \textbf{Giới hạn mật khẩu}: Yêu cầu tối thiểu 8 ký tự. Không có giới hạn trên --- mật khẩu dài hơn tốt hơn.
+    
+    \item \textbf{Khoá dẫn xuất cho clip}: Hàm \texttt{derive\_clip\_key(password, salt)} trả về khoá AES-256 dùng PBKDF2 với salt riêng của từng clip:
+    \begin{lstlisting}[language=Python, caption={Dẫn xuất khoá clip}]
+def derive_clip_key(password: str, clip_salt: bytes) -> bytes:
+    return _pbkdf2(password, clip_salt, _ITERATIONS)
+    \end{lstlisting}
+    Mỗi clip có salt 32-byte ngẫu nhiên riêng → mỗi clip có khoá AES khác nhau, ngay cả khi admin dùng cùng một mật khẩu. Điều này đảm bảo compromise một clip key không ảnh hưởng các clip khác.
+\end{enumerate}
+
+\subsection{Bộ ghi clip kép (\texttt{ClipRecorder})}
+\label{subsec:cliprecorder}
+
+\texttt{ClipRecorder} (\file{src/clip\_recorder.py}) là module phức tạp nhất của hệ thống, quản lý toàn bộ vòng đời của một clip từ khi trigger đến khi lưu đĩa.
+
+\textbf{Cấu trúc bộ nhớ đệm:} \texttt{ClipRecorder} duy trì hai bộ đệm: (1) \texttt{\_pre\_buffer} lưu 3 giây frame trước trigger; (2) \texttt{\_recording\_frames} tích lũy frame đang ghi. Trạng thái máy (\texttt{idle} / \texttt{recording} / \texttt{saving}) được quản lý bằng trường \texttt{\_state} và timestamp cooldown.
+
+\medskip
+\textbf{State machine của ClipRecorder:}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    state/.style={circle, draw=black, minimum size=2cm, text centered, fill=blue!10},
+    arrow/.style={->, >=Stealth, thick},
+]
+\node[state] (idle) at (0,0) {idle};
+\node[state, fill=orange!20] (recording) at (5,0) {recording};
+\node[state, fill=green!20] (saving) at (5,-3.5) {saving};
+
+\draw[arrow] (idle) -- (recording) node[midway, above] {\small face detected \& no cooldown};
+\draw[arrow] (recording) -- (saving) node[midway, right] {\small duration $\geq$ 8s};
+\draw[arrow] (saving) -- (idle) node[midway, below, sloped] {\small save complete};
+\draw[arrow, dashed] (recording) to[bend left=30] node[above]{\small stop()} (idle);
+
+\end{tikzpicture}
+\caption{State machine của ClipRecorder}
+\label{fig:statemachine}
+\end{figure}
+
+\medskip
+\textbf{Quy trình lưu clip (chạy trong background thread):}
+
+\begin{algorithm}[H]
+\caption{Lưu clip kép (blurred + encrypted)}
+\begin{algorithmic}[1]
+\Require \texttt{raw\_frames[]}, \texttt{display\_frames[]}, \texttt{fps}, \texttt{clip\_id}
+\State \textbf{Lưu clip blurred:}
+\State $\quad$ Encode \texttt{display\_frames[]} thành H.264 MP4 bằng OpenCV \texttt{VideoWriter}
+\State $\quad$ Ghi vào \texttt{data/clips/blurred/<clip\_id>.mp4}
+\State \textbf{Lưu clip mã hoá:}
+\State $\quad$ $\text{salt} \leftarrow \text{OS.urandom}(32)$
+\State $\quad$ $K \leftarrow \text{PBKDF2-SHA256}(\text{admin\_password}, \text{salt}, 390000)$
+\State $\quad$ $N \leftarrow \text{OS.urandom}(12)$
+\State $\quad$ $\text{plaintext} \leftarrow \textsc{pack\_frames}(\text{raw\_frames}, \text{fps})$
+\State $\quad$ $(C, T) \leftarrow \text{AES-GCM-256-Encrypt}(K, N, \text{plaintext})$
+\State $\quad$ Ghi \texttt{[salt][nonce][(C||T)]} vào \texttt{data/clips/secure/<clip\_id>.enc}
+\State \textbf{Cập nhật metadata:}
+\State $\quad$ Append entry vào \texttt{data/clips/clips.json}
+\end{algorithmic}
+\end{algorithm}
+
+\medskip
+\textbf{Lưu ý quan trọng về bảo mật}: Mật khẩu admin được truyền vào \texttt{ClipRecorder} tại thời điểm pipeline start. Nếu mật khẩu chưa được thiết lập (admin chưa setup), hệ thống sẽ không lưu clip mã hoá, chỉ lưu blurred.
+
+\subsection{Pipeline camera thời gian thực}
+\label{subsec:camerapipeline}
+
+Module \file{src/run\_phone\_cam.py} cài đặt các thành phần core của pipeline:
+
+\subsubsection{FrameReader (luồng đọc camera)}
+
+\texttt{FrameReader} chạy trong thread riêng, liên tục đọc frame từ camera và đưa vào \texttt{Queue(maxsize=2)}. Khi queue đầy, frame cũ bị drop và frame mới hơn được giữ lại, đảm bảo pipeline luôn nhận được frame mới nhất và không tích lũy độ trễ khi xử lý chậm hơn camera rate.
+
+\subsubsection{SimpleTracker (theo dõi đối tượng)}
+
+\texttt{SimpleTracker} gắn ID nhất quán cho các khuôn mặt qua nhiều frame dựa trên IoU. Mỗi frame mới, tracker ghép từng box mới vào track cũ có IoU cao nhất vượt ngưỡng; nếu không tìm được, tạo track mới với ID tăng dần.
+
+\subsection{REST API và luồng streaming}
+\label{subsec:apiimpl}
+
+\file{src/app\_api.py} (~1700 dòng code) là điểm tập trung toàn bộ logic API. Một số điểm triển khai quan trọng:
+
+\subsubsection{Singleton Pipeline State}
+
+Pipeline được thiết kế là \textbf{singleton} --- chỉ một pipeline chạy tại một thời điểm. Trạng thái được lưu trong object \texttt{PipelineState} toàn cục chứa: trạng thái chạy, cấu hình hiện tại, thread tham chiếu, bytes JPEG frame mới nhất (có lock), và thống kê FPS.
+
+\subsubsection{WebSocket Broadcasting}
+
+Cơ chế broadcasting WebSocket: mỗi client kết nối được thêm vào tập hợp tòan cục (có \texttt{asyncio.Lock} bảo vệ), vòng lặp gửi frame mới nhất $\approx 30$ FPS qua WebSocket, và xóa client khi ngắt kết nối.
+
+\subsubsection{Cập nhật cấu hình nóng (Hot-update)}
+
+Endpoint \texttt{PATCH /pipeline/config} cho phép thay đổi cấu hình pipeline đang chạy mà không cần restart: merge các trường được gửi lên vào \texttt{AnonymizationConfig} hiện tại. Thread pipeline đọc cơ chế mới ngay frame tiếp theo.
+
+\subsection{Giao diện web}
+\label{subsec:giaodien}
+
+\subsubsection{Admin Dashboard}
+
+Dashboard admin (\texttt{frontend/admin/dashboard.html}) cung cấp:
+\begin{itemize}
+    \item \textbf{Live View panel}: Xem real-time video pipeline qua MJPEG stream hoặc WebSocket. Chỉ số FPS và độ trễ hiển thị real-time.
+    \item \textbf{Pipeline Control}: Form cấu hình (chọn camera, mode, preset), nút Start/Stop.
+    \item \textbf{Member Registry}: Upload ảnh để đăng ký thành viên mới, danh sách thành viên với thao tác sửa/xóa.
+    \item \textbf{Secure Archive}: Danh sách clip mã hoá, form nhập mật khẩu để xem clip gốc, video player tích hợp.
+\end{itemize}
+
+\subsubsection{User Portal}
+
+Cổng người dùng không cần xác thực, cung cấp:
+\begin{itemize}
+    \item \textbf{Live Portal}: Xem live stream đã blurred qua MJPEG.
+    \item \textbf{Clips}: Duyệt và xem toàn bộ clip đã blurred.
+    \item \textbf{Support}: Thông tin hỗ trợ.
+\end{itemize}
+
+% =============================================================
+\subsection{Phân tích tối ưu hoá và chất lượng code}
+\label{subsec:toiuuhoa}
+% =============================================================
+
+Đây là tổng hợp các kỹ thuật tối ưu hoá được áp dụng xuyên suốt hệ thống, phân tích cả về lý thuyết lẫn kết quả đo đạc thực tế.
+
+\subsubsection{Tối ưu 1: Vectorized Matching --- $\mathcal{O}(MN)$ → Nhân ma trận BLAS}
+\label{subsubsec:opt_vectorize}
+
+\textbf{Vấn đề:} Tìm khuôn mặt gần nhất trong database gồm $M$ embedding. Cách sử dụng Python loop thuần túy tạo overhead lớn do mỗi iteration gọi CPython interpreter. \textbf{Giải pháp vectorized:}
+\begin{lstlisting}[language=Python, caption={Vectorized matching --- DÙNG trong hệ thống}]
+# E_DB: (M, 512) matrix --- BLAS DGEMV operation
+scores = self._emb_matrix @ embedding
+best_idx = int(np.argmax(scores))
+\end{lstlisting}
+
+\textbf{Phân tích hiệu năng:} Cả hai đều có độ phức tạp $\mathcal{O}(512M)$ tính theo FLOP, nhưng khác nhau hoàn toàn về \textit{constant factor}:
+
+\begin{table}[H]
+\centering
+\caption{So sánh Python loop vs NumPy BLAS vectorization}
+\label{tab:vectorize_perf}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Phương pháp} & \textbf{$M = 10$} & \textbf{$M = 100$} & \textbf{$M = 1000$} \\
+\hline
+Python loop & $\approx$0.8\,ms & $\approx$7.5\,ms & $\approx$74\,ms \\
+\hline
+NumPy vectorized & $\approx$0.02\,ms & $\approx$0.05\,ms & $\approx$0.3\,ms \\
+\hline
+\textbf{Tăng tốc} & \textbf{40$\times$} & \textbf{150$\times$} & \textbf{250$\times$} \\
+\hline
+\end{tabular}
+\end{table}
+
+Lý do: BLAS (Basic Linear Algebra Subprograms) trong NumPy tối ưu cho SIMD (AVX2/AVX-512), xử lý 8--16 float cùng lúc. Python loop có overhead cao vì mỗi iteration phải gọi CPython interpreter.
+
+\textbf{Điều kiện tiên quyết:} Để cosine similarity tính bằng dot product đơn giản, mọi embedding phải được L2-normalize ($\|\mathbf{e}\| = 1$) trước khi lưu vào ma trận $\mathbf{E}_\text{DB}$. Bước này xảy ra tại thời điểm đăng ký thành viên, không tốn chi phí trong quá trình nhận diện.
+
+\subsubsection{Tối ưu 2: Skip Detection --- Giảm FLOPs của YOLO}
+\label{subsubsec:opt_skipdetect}
+
+Chạy YOLO mỗi frame tốn $\approx$30ms trên CPU (i7 @2.8GHz). Với \texttt{detect\_every=2} (giá trị mặc định):
+\begin{itemize}
+    \item Frame chẵn: Chạy YOLO → detect box mới.
+    \item Frame lẻ: Bỏ qua YOLO → dùng lại box từ frame trước (đã làm mịn bởi EMA).
+\end{itemize}
+Kết quả: FLOPs liên quan đến detection giảm $\approx 50\%$. Toàn bộ pipeline FPS tăng $\sim 35\%$ so với detect every frame.
+
+\textbf{Trade-off:} Box có thể cũ 1 frame ($\approx$33ms ở 30fps). Với người đi bộ thông thường (tốc độ $< 1.5$m/s), khuôn mặt dịch chuyển $< 5$px trong 33ms → không ảnh hưởng đáng kể đến chất lượng ẩn danh hoá.
+
+\subsubsection{Tối ưu 3: Downsample-Blur-Upsample}
+\label{subsubsec:opt_blur}
+
+Áp Gaussian blur trực tiếp trên ROI kích thước $W \times H$ tốn $\mathcal{O}(W \cdot H \cdot k^2)$ FLOPs. Với downsample:
+\begin{itemize}
+    \item Resize ROI xuống $0.2 \times$ kích thước (scale$=0.2$) → $w = 0.2W, h = 0.2H$
+    \item Blur trên ROI nhỏ: $\mathcal{O}(0.04WH \cdot k^2)$ --- giảm $25\times$
+    \item Upsample về kích thước gốc với bilinear interpolation: $\mathcal{O}(WH)$
+\end{itemize}
+Tiết kiệm thực tế: $\approx 20\times$ nhanh hơn với chất lượng blur chủ quan không khác biệt.
+
+\subsubsection{Tối ưu 4: Drop-frame Queue và Async Architecture}
+\label{subsubsec:opt_queue}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    comp/.style={rectangle, rounded corners=3pt, minimum width=2.8cm, minimum height=0.8cm, align=center, draw=black, fill=blue!10},
+    thread/.style={rectangle, rounded corners=5pt, draw=phenikaa, dashed, fill=blue!3, inner sep=5pt},
+    arrow/.style={->, >=Stealth, thick},
+    note/.style={font=\tiny, text=gray},
+]
+% Thread 1: FrameReader
+\begin{scope}
+\node[thread, minimum width=3.0cm, minimum height=1.8cm] (t1) at (0,0) {};
+\node[above] at (t1.north) {\scriptsize Thread 1: FrameReader};
+\node[comp] (cam) at (0, 0) {Camera.read()};
+\end{scope}
+
+\node[draw, minimum width=1cm, minimum height=0.6cm] (q1) at (3.0, 0) {\tiny Queue(2)};
+\draw[arrow] (cam) -- (q1);
+\node[note, below=0.1cm of q1] {drop nếu đầy};
+
+% Thread 2: Pipeline render
+\begin{scope}
+\node[thread, minimum width=5.5cm, minimum height=3.5cm] (t2) at (7.5, -0.5) {};
+\node[above] at (t2.north) {\scriptsize Thread 2: Pipeline Render};
+\node[comp] (det) at (7.5, 0.6) {YOLO detect};
+\node[comp] (ano) at (7.5, -0.4) {Anonymize};
+\node[comp] (enc) at (7.5, -1.5) {Encode JPEG};
+\draw[arrow] (det) -- (ano);
+\draw[arrow] (ano) -- (enc);
+\end{scope}
+
+\draw[arrow] (q1) -- (det);
+
+\node[draw, minimum width=1cm, minimum height=0.6cm] (q2) at (11.2, -0.5) {\tiny bytes};
+\draw[arrow] (enc) -- (q2);
+
+% Thread 3: Recognition (async)
+\node[comp, fill=green!15] (rec) at (7.5, 2.2) {InsightFace\\(async)};
+\draw[arrow, dashed] (det) -- (rec) node[midway, right]{\tiny ROI};
+
+% Clients
+\node[comp] (ws) at (11.2, -2.0) {WS/MJPEG\\clients};
+\draw[arrow] (q2) -- (ws);
+
+\end{tikzpicture}
+\caption{Kiến trúc đa luồng với drop-frame queue, đảm bảo pipeline không bao giờ block}
+\label{fig:multithreaded}
+\end{figure}
+
+\subsubsection{Tổng hợp điểm tối ưu hoá}
+\label{subsubsec:opt_summary}
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các kỹ thuật tối ưu hoá được áp dụng}
+\label{tab:opt_summary}
+{\small
+\begin{tabularx}{\textwidth}{|l|X|c|}
+\hline
+\textbf{Kỹ thuật} & \textbf{Vị trí trong code} & \textbf{Tăng tốc} \\
+\hline
+Vectorized dot product (BLAS) & \texttt{family\_database.py:identify()} & $\sim$150$\times$ \\
+Skip detection every-N & \texttt{app\_api.py} pipeline loop & $\sim$35\% FPS \\
+Downsample-blur-upsample & \texttt{privacy.py:\_apply\_gaussian\_blur()} & $\sim$20$\times$ \\
+Async RecognitionWorker & \texttt{run\_phone\_cam.py} & 30 FPS ổn \\
+Queue(2) drop-old frame & \texttt{run\_phone\_cam.py:FrameReader} & Latency ổn \\
+L2-normalize tại đăng ký & \texttt{family\_database.py:upsert\_member()} & Loại bỏ norm \\
+\hline
+\end{tabularx}
+}
+\end{table}

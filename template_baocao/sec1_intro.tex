@@ -1,0 +1,66 @@
+\section{Giới thiệu}
+\label{SEC_intro}
+
+\subsection{Giới thiệu chung về báo cáo}
+\label{SUB_SEC_gioi_thieu_chung}
+
+Báo cáo này được thực hiện trong học phần \textbf{Phương pháp số cho học máy}, với mục tiêu rèn luyện kỹ năng đọc hiểu, phân tích và đánh giá các công trình nghiên cứu chuyên sâu trong lĩnh vực học máy và tối ưu hóa số. Nội dung báo cáo tập trung nghiên cứu bài báo khoa học có tựa đề \textit{``Gaussian Processes for Data-Efficient Learning in Robotics and Control''} \cite{Deisenroth_2015}, do các tác giả Marc Peter Deisenroth, Dieter Fox và Carl Edward Rasmussen công bố trên tạp chí \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}, tập 37, tháng 2 năm 2015.
+\medskip
+
+Thông qua việc nghiên cứu bài báo, báo cáo không chỉ trình bày lại các nội dung cốt lõi mà còn cung cấp bối cảnh toán học đầy đủ, phân tích những đóng góp quan trọng của công trình trong việc xây dựng một phương pháp học điều khiển hiệu quả dữ liệu sử dụng Quá trình Gaussian, từ đó liên hệ với các kiến thức số học và phương pháp tối ưu đã học trong học phần.
+\medskip
+
+\subsection{Tổng quan bài báo}
+\label{SUB_SEC_tong_quan}
+
+\subsubsection{Bối cảnh và động lực nghiên cứu}
+\label{SUB_SUB_SEC_boi_canh}
+
+Một trong những hạn chế trọng tâm của nhiều thuật toán học tăng cường (Reinforcement Learning, RL) hiện nay là tốc độ học \textbf{quá chậm}: số lần tương tác cần thiết với môi trường để học được bộ điều khiển (controller) là quá lớn so với giới hạn thực tế. Ví dụ, nhiều phương pháp RL trên các bài toán có không gian trạng thái thấp chiều và động học tương đối đơn giản vẫn cần hàng nghìn lần thử để học. Điều này khiến việc áp dụng RL trực tiếp lên robot thực hay các hệ điều khiển thực tế trở nên bất khả thi.
+\medskip
+
+Để tăng hiệu quả dữ liệu, người ta có thể: (1) bổ sung tri thức tiên nghiệm đặc thù cho nhiệm vụ (expert demonstrations, mô phỏng thực tế, phương trình động học), hoặc (2) khai thác nhiều thông tin hơn từ dữ liệu hiện có. Deisenroth et al.\ \cite{Deisenroth_2015} theo đuổi hướng thứ hai: họ xây dựng một \textbf{mô hình động học xác suất phi tham số} bằng Quá trình Gaussian, cho phép nắm bắt cả giá trị dự báo lẫn mức độ \textit{không chắc chắn} của mô hình.
+\medskip
+
+Vấn đề then chốt trong học dựa trên mô hình (model-based RL) là \textbf{sai số mô hình} (model errors): khi chỉ có ít dữ liệu, mô hình học được có thể sai đáng kể so với thực tế, và các dự báo dài hạn dựa trên mô hình sai sẽ nhanh chóng trở nên vô nghĩa. Hình \ref{fig_model_uncertainty} minh họa điều này: với một tập dữ liệu nhỏ, nhiều hàm chuyển trạng thái đều có thể sinh ra dữ liệu đó. Nếu chọn một mô hình tất định duy nhất, các dự báo dài hạn sẽ nằm ngoài vùng dữ liệu huấn luyện và mang theo độ tin cậy ảo. Ngược lại, mô hình xác suất thể hiện phân phối hậu nghiệm trên các hàm chuyển trạng thái có thể, giúp định lượng đúng mức sự không chắc chắn.
+\medskip
+
+\subsubsection{Phương pháp đề xuất: PILCO}
+\label{SUB_SUB_SEC_pilco}
+
+Dựa trên những ý tưởng trên, nhóm tác giả đề xuất \textbf{PILCO} (Probabilistic Inference for Learning Control -- Suy diễn Xác suất cho Học Điều khiển), một phương pháp tìm kiếm chính sách dựa trên mô hình \cite{Deisenroth_2015}. PILCO có ba thành phần cốt lõi:
+\begin{itemize}
+    \item[(1)] \textbf{Mô hình động học GP xác suất:} Quá trình Gaussian được dùng để học mô hình chuyển trạng thái $p(x_{t+1} \mid x_t, u_t)$ từ dữ liệu quan sát, biểu diễn đầy đủ sự không chắc chắn về hàm động học tiềm ẩn.
+    \item[(2)] \textbf{Suy diễn xác suất xấp xỉ cho dự báo dài hạn:} Thay vì lấy mẫu (sampling), PILCO sử dụng suy diễn tất định (deterministic approximate inference) -- cụ thể là phương pháp \textit{moment matching} -- để lan truyền phân phối xác suất của trạng thái qua nhiều bước thời gian, vừa hiệu quả về tính toán vừa bảo toàn thông tin về độ không chắc chắn.
+    \item[(3)] \textbf{Gradient chính sách giải tích:} Nhờ tích hợp mô hình GP và suy diễn xấp xỉ, PILCO tính được gradient của hàm chi phí dài hạn $J^\pi(\theta)$ theo các tham số chính sách $\theta$ dưới dạng giải tích, cho phép tối ưu hóa chính sách hiệu quả bằng các phương pháp gradient.
+\end{itemize}
+\medskip
+
+\subsubsection{Đóng góp và bố cục bài báo}
+\label{SUB_SUB_SEC_dong_gop}
+
+Đóng góp chính của bài báo \cite{Deisenroth_2015} bao gồm:
+\begin{itemize}
+    \item[(i)] Trình bày chi tiết khung học PILCO, bao gồm mô hình GP, hai phương pháp suy diễn xấp xỉ (moment matching và tuyến tính hóa), và tính toán gradient giải tích.
+    \item[(ii)] So sánh thực nghiệm hai phương pháp suy diễn xấp xỉ về tốc độ tính toán và tốc độ học.
+    \item[(iii)] Kiểm chứng PILCO trên các bài toán điều khiển phi tuyến thách thức: con lắc đôi, hệ con lắc-xe đẩy (cart-pole), xe đạp một bánh (unicycle), cánh tay robot.
+    \item[(iv)] Chứng minh rằng PILCO đạt tốc độ học nhanh hơn ít nhất một bậc độ lớn so với các phương pháp RL tiên tiến nhất vào thời điểm đó, và có thể áp dụng trực tiếp trên phần cứng robot thực.
+\end{itemize}
+\medskip
+
+Bài báo được tổ chức như sau: Mục \ref{SEC_background} trình bày các kiến thức nền tảng về Quá trình Gaussian và học tăng cường dựa trên mô hình. Mục \ref{SEC_pilco} mô tả khung học PILCO. Mục \ref{SEC_predictions} chi tiết hóa hai phương pháp dự báo dài hạn. Mục \ref{SEC_policy} trình bày các biểu diễn chính sách. Mục \ref{SEC_cost} thảo luận hàm chi phí. Mục \ref{SEC_experiments} trình bày kết quả thực nghiệm. Mục \ref{SEC_conclusion} tổng kết.
+\medskip
+
+\subsection{Mục tiêu báo cáo và đóng góp của người viết}
+\label{SUB_SEC_muctieu_donggop}
+
+Báo cáo này không dừng lại ở việc \textit{tóm tắt} bài báo gốc mà hướng tới ba mục tiêu học thuật bổ sung:
+
+\begin{itemize}
+    \item \textbf{Phân tích ưu/nhược điểm của PILCO} trong bối cảnh học máy hiện đại: đặt PILCO trước câu hỏi \textit{``khi nào nên dùng, khi nào không?''} và so sánh với các phương pháp RL model-free (DQN, PPO) cũng như model-based hiện đại (Dreamer, PETS, MBPO).
+    \item \textbf{Làm rõ trực giác} đằng sau các lựa chọn kỹ thuật quan trọng: tại sao dùng $\Delta x$ thay vì $x_{t+1}$, tại sao kernel SE phù hợp, khi nào moment matching vượt trội tuyến tính hóa, hàm chi phí bão hòa tạo ra cơ chế khám phá như thế nào.
+    \item \textbf{Tái hiện thực nghiệm}: cài đặt một phiên bản rút gọn của PILCO trên bài toán cart-pole, sinh ra các hình đồ thị minh họa (GP fit, phân phối bất định, quỹ đạo trạng thái), và so sánh với kết quả trong bài báo gốc.
+\end{itemize}
+
+Nhờ những phân tích bổ sung này, người đọc sẽ không chỉ hiểu \textit{PILCO làm gì} mà còn nắm được \textit{tại sao nó hoạt động được} và \textit{khi nào nó phù hợp} --- những câu hỏi thiết thực khi ứng dụng phương pháp vào bài toán thực tế.
+\medskip

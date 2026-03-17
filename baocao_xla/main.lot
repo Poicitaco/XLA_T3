@@ -1,0 +1,22 @@
+\babel@toc {vietnamese}{}\relax 
+\contentsline {table}{\numberline {1.1}{\ignorespaces Phân công nhiệm vụ các thành viên nhóm}}{14}{table.caption.1}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces So sánh các phương pháp phát hiện khuôn mặt}}{17}{table.caption.2}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces So sánh các thư viện nhận diện khuôn mặt}}{20}{table.caption.3}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces So sánh các chế độ mã hoá đối xứng}}{25}{table.caption.4}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Yêu cầu chức năng của hệ thống}}{31}{table.1}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Bộ API REST của hệ thống (tóm tắt)}}{36}{table.2}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Môi trường phát triển và công cụ}}{39}{table.caption.9}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Chi tiết 9 chế độ ẩn danh hoá}}{42}{table.caption.10}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Cấu hình chi tiết 4 preset}}{42}{table.caption.11}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces So sánh Python loop vs NumPy BLAS vectorization}}{49}{table.caption.13}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Tóm tắt các kỹ thuật tối ưu hoá được áp dụng}}{50}{table.caption.15}%
+\contentsline {table}{\numberline {5.1}{\ignorespaces Cấu hình phần cứng thực nghiệm}}{51}{table.caption.16}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Kết quả benchmark hiệu suất (100 frame, CPU-only)}}{52}{table.caption.17}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Đánh giá bảo mật: Cosine Similarity sau ẩn danh hoá (50 frame)}}{54}{table.caption.18}%
+\contentsline {table}{\numberline {5.4}{\ignorespaces Ma trận đánh đổi giữa các chế độ ẩn danh hoá}}{55}{table.caption.23}%
+\contentsline {table}{\numberline {5.5}{\ignorespaces Hiệu suất pipeline tổng thể (camera thực, 1 khuôn mặt)}}{57}{table.caption.24}%
+\contentsline {table}{\numberline {5.6}{\ignorespaces Ảnh hưởng của \texttt {conf\_threshold} lên detection (50 frame, 1--2 mặt/frame)}}{58}{table.caption.25}%
+\contentsline {table}{\numberline {5.7}{\ignorespaces Ảnh hưởng của \texttt {pixel\_block} đến bảo mật}}{58}{table.caption.26}%
+\contentsline {table}{\numberline {5.8}{\ignorespaces Ảnh hưởng của \texttt {blur\_scale} đến bảo mật và tốc độ}}{59}{table.caption.27}%
+\contentsline {table}{\numberline {5.9}{\ignorespaces Ảnh hưởng của \texttt {detect\_every} đến FPS và chất lượng}}{59}{table.caption.28}%
+\contentsline {table}{\numberline {5.10}{\ignorespaces Kết quả kiểm thử độ bền vững}}{60}{table.caption.29}%

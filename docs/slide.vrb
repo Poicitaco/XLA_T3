@@ -1,0 +1,62 @@
+\frametitle{Blur Engine --- 7 Privacy Modes}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{tabular}{lll}
+\toprule
+\textbf{Mode} & \textbf{Kỹ thuật} & \textbf{Mức độ} \\
+\midrule
+\texttt{blur} & Gaussian downscale & Nhẹ \\
+\texttt{pixelate} & Bilinear+Nearest & Nhẹ-TB \\
+\texttt{solid} & Constant fill & Nhanh \\
+\texttt{headcloak} & Mix+Noise+GBlur & \textbf{Mạnh}* \\
+\texttt{neckup} & Expand+Cloak & Mạnh \\
+\texttt{obliterate} & 4-step pipeline & \textbf{Rất mạnh} \\
+\texttt{silhouette} & Extreme cloak & \textbf{Cực mạnh} \\
+\bottomrule
+\multicolumn{3}{l}{\footnotesize *Default của hệ thống}
+\end{tabular}
+
+\vspace{0.5em}
+\begin{block}{\faExpand\ Expand box trước khi blur}
+\footnotesize
+Không chỉ blur đúng mặt.
+\texttt{headcloak} expand:
+\begin{itemize}\scriptsize
+  \item Left/Right: $\pm 35\%-70\%$ width
+  \item Top: $+70\%-120\%$ height (tóc)
+  \item Bottom: $+25\%-50\%$ height (cằm)
+\end{itemize}
+$\Rightarrow$ Không còn nhìn thấy tai, tóc, jawline
+\end{block}
+
+\column{0.46\textwidth}
+\begin{lstlisting}[language=Python,
+  caption={privacy.py --- obliterate}]
+def _obliterate_features(roi,...):
+  """4-step pipeline, IRREVERSIBLE"""
+
+  # Step 1: Compress 8% resolution
+  # Destroy all facial details
+  w, h = roi.shape[:2]
+  small = cv2.resize(roi,
+    (int(w*0.08), int(h*0.08)),
+    interpolation=INTER_AREA)
+  work = cv2.resize(small, (w, h),
+    interpolation=INTER_NEAREST)
+
+  # Step 2: Scramble 12x12 blocks
+  # Break geometric relationships
+  work = _scramble_blocks(work,
+    block_size=12, seed=1337)
+
+  # Step 3: Blur edges (kernel 35)
+  work = cv2.GaussianBlur(work,
+    (35,35), 0)
+
+  # Step 4: Quantize to 10 colors
+  # Remove subtle texture traces
+  work = _quantize_colors(work,
+    levels=10)
+  return work
+\end{lstlisting}
+\end{columns}

@@ -1,0 +1,267 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{caption}
+\usepackage{float}
+\usepackage[utf8]{vietnam}
+\usepackage{tocloft,calc}
+\usepackage[top=3.5cm, bottom=3.0cm, left=3.5cm, right=2.0cm]{geometry}
+\usepackage{amsmath,latexsym,amscd,amsfonts,mathrsfs,enumerate}
+\usepackage{upgreek}
+\usepackage[thref,thmmarks,standard,amsmath,hyperref]{ntheorem}
+\usepackage[mathscr]{eucal}
+\usepackage[unicode,colorlinks=true, bookmarks=true, pdfstartview=FitH]{hyperref}
+\hypersetup{
+pdftitle={Báo cáo bài tập lớn - Học phần Phương pháp số cho học máy},
+pdfauthor={Hoàng Tiến Đạt},
+pdfsubject={Quá trình Gaussian cho Học máy Hiệu quả Dữ liệu trong Robot và Điều khiển},
+pdfkeywords={Gaussian Process, PILCO, Reinforcement Learning, Policy Search, Robotics},
+colorlinks = true,
+linkcolor = blue,
+citecolor = blue,
+urlcolor = blue,
+}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\graphicspath{{image/}{../experiment/results/}}
+\usepackage{fancybox,cite}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc}
+
+\newtheorem{tc}{Tính chất}[section]
+\newtheorem{md}{Mệnh đề}[section]
+\newtheorem{bd}{Bổ đề}[section]
+\newtheorem{hq}{Hệ quả}[section]
+\newtheorem{dl}{Định lý}[section]
+
+\allowdisplaybreaks
+
+\theoremheaderfont{\bfseries}
+\theorembodyfont{}
+\theoremseparator{}
+\newtheorem{dn}{Định nghĩa}[section]
+
+\theoremheaderfont{\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{.}
+\newtheorem{vd}{Ví dụ}[section]
+
+\theoremstyle{plain}
+\theoremheaderfont{\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{}
+\newtheorem{cy}{Chú ý}
+
+\theoremheaderfont{\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{}
+\newtheorem{bt}{Bài tập}
+
+\theoremheaderfont{\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{}
+\newtheorem{nx}{Nhận xét}[section]
+
+\theoremstyle{plain}
+\theoremheaderfont{\normalfont\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{.}
+\renewtheorem{theorem}{Định lý}
+
+\theoremstyle{plain}
+\theoremheaderfont{\normalfont\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{.}
+\renewtheorem{proposition}{Mệnh đề}
+
+\theoremstyle{nonumberplain}
+\theoremheaderfont{\normalfont\bfseries}
+\theorembodyfont{\normalfont}
+\theoremseparator{.}
+\theoremsymbol{\ensuremath{\square}}
+\newtheorem{cm}{Chứng minh}
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\pagestyle{plain}
+\lhead{\it Phương pháp số cho học máy}
+\rhead{}
+\lfoot{\it Hoàng Tiến Đạt}
+\rfoot{\it MSSV: 23010864}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{1.2pt}
+\renewcommand{\footrulewidth}{1.2pt}
+
+\usepackage{amsmath}
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+
+\begin{document}
+ \fontsize{14pt}{20pt}\selectfont
+
+ \thisfancypage{\setlength{\fboxsep}{0.2cm}\setlength{\fboxrule}{1pt}\doublebox}{}
+ \begin{titlepage}
+% PHẦN ĐẦU - Tên trường
+\begin{center}
+	\textbf{\normalsize ĐẠI HỌC PHENIKAA}\\
+	\textbf{\normalsize TRƯỜNG CÔNG NGHỆ THÔNG TIN}\\[0.3cm]
+	\textbf{\textit{—————— $\bigstar$ ——————}}
+\end{center}
+
+\vspace{1.5cm}
+
+% LOGO TRƯỜNG (logo tròn)
+\begin{center}
+    \includegraphics[width=0.25\textwidth]{image/logo.png}
+\end{center}
+
+\vspace{1.2cm}
+
+% LOẠI BÁO CÁO
+\begin{center}
+    \textbf{BÁO CÁO BÀI TẬP LỚN}\\
+    \textbf{HỌC PHẦN: PHƯƠNG PHÁP SỐ CHO HỌC MÁY}
+\end{center}
+
+\vspace{1cm}
+
+% TIÊU ĐỀ
+\begin{center}
+	\textbf{ĐỀ TÀI:}\\[0.3cm]
+	\textbf{Quá trình Gaussian cho Học máy Hiệu quả Dữ liệu trong Robot và Điều khiển}
+\end{center}
+
+\vspace{1.2cm}
+
+% THÔNG TIN SINH VIÊN (dạng bảng)
+\begin{center}
+\textbf{Thành viên}\\[0.3cm]
+\begin{tabular}{|c|l|c|}
+\hline
+\textbf{MSSV} & \textbf{Họ và tên} & \textbf{Lớp} \\
+\hline
+23010864 & Hoàng Tiến Đạt & KHMT \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{1cm}
+
+% GIẢNG VIÊN
+\begin{center}
+	\textbf{GVHD: ThS. Đặng Thị Ngoan}
+\end{center}
+
+\vfill
+
+% PHẦN CUỐI - Địa điểm và thời gian
+\begin{center}
+	\textbf{Hà Nội, tháng 3 năm 2026}
+\end{center}
+ \end{titlepage}
+
+% TRANG BÌA PHỤ (không có khung)
+\newpage
+\thispagestyle{empty}
+\begin{center}
+	\textbf{\normalsize ĐẠI HỌC PHENIKAA}\\
+	\textbf{\normalsize TRƯỜNG CÔNG NGHỆ THÔNG TIN}\\[0.3cm]
+	\textbf{\textit{—————— $\bigstar$ ——————}}
+\end{center}
+
+\vspace{1.5cm}
+
+\begin{center}
+    \includegraphics[width=0.25\textwidth]{image/logo.png}
+\end{center}
+
+\vspace{1.2cm}
+
+\begin{center}
+    \textbf{BÁO CÁO BÀI TẬP LỚN}\\
+    \textbf{HỌC PHẦN: PHƯƠNG PHÁP SỐ CHO HỌC MÁY}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+	\textbf{ĐỀ TÀI:}\\[0.3cm]
+	\textbf{Quá trình Gaussian cho Học máy Hiệu quả Dữ liệu trong Robot và Điều khiển}
+\end{center}
+
+\vspace{1.2cm}
+
+\begin{center}
+\textbf{Thành viên}\\[0.3cm]
+\begin{tabular}{|c|l|c|}
+\hline
+\textbf{MSSV} & \textbf{Họ và tên} & \textbf{Lớp} \\
+\hline
+23010864 & Hoàng Tiến Đạt & KHMT \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+	\textbf{GVHD: ThS. Đặng Thị Ngoan}
+\end{center}
+
+\vfill
+
+\begin{center}
+	\textbf{Hà Nội, tháng 3 năm 2026}
+\end{center}
+
+\pagestyle{fancy}
+\hypersetup{linkcolor=black}
+
+% Tóm tắt báo cáo
+\newpage
+\thispagestyle{fancy}
+\begin{center}
+    \bf\large TÓM TẮT
+\end{center}
+\medskip
+Báo cáo này trình bày nội dung bài báo ``Gaussian Processes for Data-Efficient Learning in Robotics and Control'' của Deisenroth, Fox và Rasmussen (2015), đăng trên tạp chí \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}. Bài báo đề xuất phương pháp học điều khiển dựa trên mô hình có tên \textbf{PILCO} (Probabilistic Inference for Learning Control — Suy diễn Xác suất cho Học Điều khiển), sử dụng \textit{Quá trình Gaussian} (Gaussian Process, GP) như một mô hình động học xác suất phi tham số.
+
+\medskip
+Điểm cốt lõi của PILCO là việc tích hợp sự không chắc chắn của mô hình vào quá trình lên kế hoạch dài hạn và học chính sách, từ đó giảm thiểu đáng kể sai số mô hình — một thách thức trọng tâm trong học dựa trên mô hình. Báo cáo trình bày chi tiết: (1) mô hình động học GP xác suất, (2) suy diễn xấp xỉ tất định cho dự báo dài hạn bằng phương pháp \textit{moment matching} và tuyến tính hóa, (3) tính toán giải tích gradient chính sách, (4) biểu diễn chính sách tuyến tính và phi tuyến, (5) hàm chi phí bão hòa với tính chất khám phá/khai thác tự nhiên, và (6) kết quả thực nghiệm trên các bài toán điều khiển phi tuyến.
+
+\medskip
+So với các phương pháp học tăng cường tiên tiến nhất tại thời điểm công bố, PILCO đạt tốc độ học nhanh hơn ít nhất một bậc độ lớn, đồng thời được kiểm chứng thành công trên robot thực mà không cần trợ giúp từ con người hay mô phỏng chính xác.
+
+\medskip
+\noindent\textbf{Từ khóa:} Quá trình Gaussian, Học tăng cường dựa trên mô hình, Tìm kiếm chính sách, PILCO, Moment matching, Robot.
+
+\newpage
+
+% Mục lục
+\tableofcontents
+\vspace{2cm}
+
+\renewcommand{\listfigurename}{Danh mục hình ảnh}
+\listoffigures
+\hypersetup{linkcolor=blue}
+\newpage
+
+\input{sec1_intro}
+\input{sec2_background}
+\input{sec3_pilco}
+\input{sec4_predictions}
+\input{sec5_policy}
+\input{sec6_cost}
+\input{sec7_experiments}
+\input{sec8_conclusion}
+
+\newpage
+
+\renewcommand{\refname}{Tài liệu tham khảo}
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+\bibliographystyle{plain}
+\bibliography{ref_pilco}
+
+\end{document}

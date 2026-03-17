@@ -36,7 +36,7 @@ def _expand_head_box(box: List[int], width: int, height: int, head_ratio: float)
 
 
 def _expand_neckup_box(box: List[int], width: int, height: int, neck_ratio: float) -> List[int]:
-    """Expand around face to cover only head + neck (not shoulders/chest)."""
+    """Expand around face to cover onlyg head + neck (not shoulders/chest)."""
     x, y, w, h = box
     r = max(0.0, neck_ratio)
     pad_left = int(round(w * (0.45 + 0.25 * r)))

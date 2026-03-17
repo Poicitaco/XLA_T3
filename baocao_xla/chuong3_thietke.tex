@@ -1,0 +1,412 @@
+% ============================================================
+%  CHƯƠNG 3: THIẾT KẾ HỆ THỐNG
+% ============================================================
+\section{Thiết kế hệ thống}
+\label{sec:thietke}
+
+\subsection{Yêu cầu hệ thống}
+\label{subsec:yeucau}
+
+\subsubsection{Yêu cầu chức năng}
+\label{subsubsec:yccn}
+
+Bảng~\ref{tab:yccn} liệt kê các yêu cầu chức năng chính của hệ thống, phân nhóm theo tác nhân sử dụng.
+
+\begin{longtable}{|p{0.08\textwidth}|p{0.38\textwidth}|p{0.38\textwidth}|}
+\caption{Yêu cầu chức năng của hệ thống}
+\label{tab:yccn} \\
+\hline
+\textbf{ID} & \textbf{Yêu cầu} & \textbf{Mô tả chi tiết} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Yêu cầu} & \textbf{Mô tả chi tiết} \\
+\hline
+\endhead
+\hline
+\endfoot
+FR01 & Phát hiện khuôn mặt thời gian thực & Detect khuôn mặt từ camera với YOLOv11n-face, trả về bounding box và confidence \\
+\hline
+FR02 & Nhận diện thành viên & So sánh embedding với database, phân biệt thành viên/người lạ \\
+\hline
+FR03 & Ẩn danh hoá khuôn mặt & Hỗ trợ 9 chế độ ẩn danh hoá và 4 preset \\
+\hline
+FR04 & Lưu trữ clip kép & Lưu song song clip blurred (MP4) và clip gốc mã hoá (.enc) \\
+\hline
+FR05 & Giải mã clip & Admin với mật khẩu đúng giải mã và xem clip gốc \\
+\hline
+FR06 & Quản lý thành viên & CRUD thành viên trong face database \\
+\hline
+FR07 & Xác thực admin & Login, đổi mật khẩu, bảo vệ các endpoint nhạy cảm \\
+\hline
+FR08 & Xử lý ảnh tĩnh & Anonymize/lock/unlock/recognize trên ảnh upload \\
+\hline
+FR09 & Streaming video & Truyền video đã xử lý qua MJPEG/SSE/WebSocket/polling \\
+\hline
+FR10 & Cổng người dùng & Xem live stream blurred, duyệt clip blurred không cần login \\
+\hline
+FR11 & Cổng admin & Pipeline control, member registry, secure archive với xác thực \\
+\hline
+FR12 & Liệt kê camera & Phát hiện và liệt kê camera kết nối với máy tính \\
+\hline
+\end{longtable}
+
+\subsubsection{Yêu cầu phi chức năng}
+\label{subsubsec:ycphi}
+
+\begin{itemize}
+    \item \textbf{Hiệu suất}: Đạt $\geq 25$ FPS ở preset \texttt{balanced} trên CPU thông thường (Intel Core i5 trở lên).
+    \item \textbf{Bảo mật}: Mật khẩu admin lưu dạng PBKDF2-SHA256 với salt ngẫu nhiên; clip mã hoá AES-256-GCM; không có mật khẩu nào được lưu plaintext; so sánh mật khẩu theo constant-time.
+    \item \textbf{Quyền riêng tư}: Khuôn mặt người lạ bị ẩn danh hoá mọi lúc; không ghi log hoặc phân tích danh tính ngoài cơ sở dữ liệu đã được ủy quyền.
+    \item \textbf{Khả dụng}: Server chạy ổn định 24/7; pipeline có thể khởi động lại không mất clip đang ghi.
+    \item \textbf{Khả năng mở rộng}: API thiết kế RESTful chính xác, frontend có thể thay thế độc lập.
+    \item \textbf{Độ chịu lỗi}: Nếu model không tải được, hệ thống vẫn phục vụ API với dữ liệu giả (graceful degradation).
+    \item \textbf{Tương thích}: Chạy được trên Windows, Linux, macOS với Python 3.10+.
+\end{itemize}
+
+\subsection{Tổng quan kiến trúc hệ thống}
+\label{subsec:kientruc}
+
+Hệ thống được thiết kế theo kiến trúc \textbf{client-server ba lớp}:
+
+\begin{enumerate}[1.]
+    \item \textbf{Lớp trình bày} (Presentation Layer): Giao diện web SPA (Single Page Application) chạy trên trình duyệt. Hai loại client: Admin Dashboard và User Portal.
+    \item \textbf{Lớp ứng dụng} (Application Layer): Backend FastAPI (\texttt{src/app\_api.py}) quản lý toàn bộ logic nghiệp vụ, REST API, WebSocket và SSE.
+    \item \textbf{Lớp dữ liệu} (Data Layer): Hệ thống file \texttt{data/} lưu face database (JSON), clip blurred (MP4) và clip mã hoá (AES-GCM .enc).
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.9, transform shape,
+    font=\small,
+    box/.style={rectangle, rounded corners=4pt, minimum width=3.0cm, minimum height=0.9cm, align=center, draw=black, fill=blue!10},
+    bigbox/.style={rectangle, rounded corners=6pt, minimum width=11cm, minimum height=1.5cm, align=center, draw=phenikaa, fill=blue!5, line width=1.2pt},
+    arrow/.style={->, >=Stealth, thick},
+    dbbox/.style={cylinder, shape border rotate=90, aspect=0.25, minimum width=2.5cm, minimum height=1cm, draw=black, fill=yellow!15, text centered},
+]
+
+% Layer 1 - Frontend
+\node[bigbox, label={[xshift=-4.5cm]left:\small Lớp 1}] (frontend) at (0,6) {};
+\node[box, fill=green!15] (admin) at (-3.5,6) {Admin Dashboard};
+\node[box, fill=green!15] (user) at (0,6) {User Portal};
+\node[box, fill=gray!15] (apidoc) at (3.5,6) {API Docs (/docs)};
+
+% Layer 2 - Backend
+\node[bigbox, label={[xshift=-4.5cm]left:\small Lớp 2}] (backend) at (0,3.5) {};
+\node[box, fill=orange!20] (api) at (-3.5,3.5) {REST API};
+\node[box, fill=orange!20] (ws) at (0,3.5) {WebSocket/SSE};
+\node[box, fill=orange!20] (pipeline) at (3.5,3.5) {Pipeline Engine};
+
+% Layer 3 - Data
+\node[bigbox, minimum height=1.3cm, label={[xshift=-4.5cm]left:\small Lớp 3}] (data) at (0,1.0) {};
+\node[dbbox] (facedb) at (-3.5,1.0) {Face DB (JSON)};
+\node[dbbox] (blurred) at (0,1.0) {Blurred MP4};
+\node[dbbox] (enc) at (3.5,1.0) {Encrypted .enc};
+
+% Arrows
+\draw[arrow] (frontend) -- (backend) node[midway, right] {HTTP / WS};
+\draw[arrow] (backend) -- (data) node[midway, right] {R/W};
+
+% Camera input
+\node[box, fill=red!15] (camera) at (-6.5,3.5) {Camera / IP Cam};
+\draw[arrow] (camera) -- (api) node[midway, above] {\tiny frames};
+
+\end{tikzpicture}
+\caption{Kiến trúc ba lớp của hệ thống XLA Face Privacy System}
+\label{fig:kientruc}
+\end{figure}
+
+\subsection{Thiết kế pipeline xử lý video}
+\label{subsec:pipeline}
+
+Pipeline xử lý video là trái tim của hệ thống, chạy trong một background thread độc lập. Pipeline nhận frame từ camera, xử lý song song phát hiện và nhận diện khuôn mặt, áp dụng ẩn danh hoá, và đẩy frame đã xử lý ra các luồng streaming.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    proc/.style={rectangle, rounded corners=3pt, minimum width=2.8cm, minimum height=0.85cm, align=center, draw=black, fill=blue!12},
+    crypt/.style={rectangle, rounded corners=3pt, minimum width=2.8cm, minimum height=0.85cm, align=center, draw=black, fill=red!15},
+    db/.style={cylinder, shape border rotate=90, aspect=0.3, minimum width=2.8cm, minimum height=0.85cm, draw=black, fill=yellow!20, text centered},
+    arrow/.style={->, >=Stealth, thick},
+    darrow/.style={->, >=Stealth, thick, dashed},
+]
+% Camera
+\node[proc, fill=gray!20] (cam) at (0,0) {Camera Source};
+
+% Frame Reader
+\node[proc] (reader) at (0,-1.8) {FrameReader\\ \tiny(thread)};
+\draw[arrow] (cam) -- (reader);
+
+% Detector
+\node[proc] (detector) at (0,-3.6) {YOLOv11\\ FaceDetector};
+\draw[arrow] (reader) -- (detector) node[midway,right]{\tiny frame};
+
+% BBox Smoother
+\node[proc] (smoother) at (0,-5.2) {BBoxSmoother\\ \tiny(EMA / Kalman)};
+\draw[arrow] (detector) -- (smoother) node[midway,right]{\tiny boxes};
+
+% Fork: two paths
+\node[proc, fill=green!15] (recognizer) at (-4,-7.0) {RecognitionWorker\\ \tiny(InsightFace)};
+\node[proc, fill=orange!15] (anonymizer) at (4,-7.0) {FaceAnonymizer\\ \tiny(9 modes)};
+\draw[arrow] (smoother) -| (recognizer) node[near start,above]{\tiny async};
+\draw[arrow] (smoother) -| (anonymizer) node[near start,above]{\tiny display};
+
+% Family DB
+\node[db] (facedb) at (-4,-9.0) {FamilyDatabase};
+\draw[arrow] (recognizer) -- (facedb);
+\draw[darrow] (facedb) -- (recognizer) node[midway,right]{\tiny matches};
+
+% Merge & Output
+\node[proc, fill=purple!15] (merge) at (0,-9.0) {Overlay\\ (name labels)};
+\draw[arrow] (recognizer) -| (merge);
+\draw[arrow] (anonymizer) -| (merge);
+
+% Streaming
+\node[proc, fill=blue!20] (stream) at (4,-10.8) {StreamBroadcaster\\ \tiny(MJPEG/WS/SSE)};
+\draw[arrow] (merge) -| (stream);
+
+% Clip Recorder
+\node[crypt] (clip) at (-4,-10.8) {ClipRecorder\\ \tiny(dual: MP4 + .enc)};
+\draw[arrow] (merge) -| (clip);
+\draw[arrow] (recognizer) -| node[near start,right]{\tiny face detected?} (clip);
+\end{tikzpicture}
+\caption{Pipeline xử lý video thời gian thực}
+\label{fig:pipeline}
+\end{figure}
+
+\medskip
+Một số điểm thiết kế quan trọng:
+
+\begin{enumerate}[1.]
+    \item \textbf{Detect every N frames}: Phát hiện khuôn mặt không chạy trên mỗi frame để tiết kiệm tài nguyên. Tham số \texttt{detect\_every} (mặc định 2) chỉ định cứ $N$ frame mới chạy detector một lần; các frame xen kẽ dùng lại boxes từ lần chạy trước (sau khi đã làm mịn).
+    \item \textbf{Asynchronous recognition}: Nhận diện khuôn mặt (chạy InsightFace) được đẩy vào một thread riêng (\texttt{RecognitionWorker}) để không chặn luồng render chính. Kết quả nhận diện được cập nhật bất đồng bộ qua shared queue.
+    \item \textbf{Selective anonymization}: Chỉ ẩn danh hoá khuôn mặt không được nhận ra; thành viên đã đăng ký hiển thị bình thường. Trạng thái nhận diện của từng track được duy trì qua \texttt{SimpleTracker}.
+    \item \textbf{Pre-buffer}: ClipRecorder duy trì rolling buffer 3 giây trước sự kiện. Khi phát hiện khuôn mặt lạ, clip bắt đầu từ 3 giây trước thời điểm phát hiện.
+\end{enumerate}
+
+\subsection{Thiết kế hệ thống lưu trữ kép}
+\label{subsec:dualstorage}
+
+Hệ thống lưu trữ kép (dual-layer storage) là điểm sáng tạo trung tâm của đề tài. Kiến trúc được mô tả trong Hình~\ref{fig:dualstorage}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={rectangle, rounded corners=3pt, minimum width=3.5cm, minimum height=0.85cm, align=center, draw=black},
+    arrow/.style={->, >=Stealth, thick},
+    darrow/.style={->, >=Stealth, thick, dashed, red},
+]
+% Input
+\node[box, fill=gray!20] (rawframe) at (0,0) {Raw Frame (gốc)};
+
+% Fork
+\node (fork) at (0,-1.2) {};
+\draw[arrow] (rawframe) -- (fork);
+
+% Blurred path
+\node[box, fill=orange!20] (blur) at (-4,-2.4) {Ẩn danh hoá khuôn mặt\\ \small(blur/headcloak/...)};
+\node[box, fill=green!20] (mp4) at (-4,-4.2) {\textbf{data/clips/blurred/}\\ \small id.mp4 (H.264)};
+\draw[arrow] (fork) -| (blur);
+\draw[arrow] (blur) -- (mp4);
+
+% Encrypted path
+\node[box, fill=red!20] (encrypt) at (4,-2.4) {AES-256-GCM\\ \small Key = PBKDF2(password, salt)};
+\node[box, fill=red!30] (enc) at (4,-4.2) {\textbf{data/clips/secure/}\\ \small id.enc (mã hoá)};
+\draw[arrow] (fork) -| (encrypt);
+\draw[arrow] (encrypt) -- (enc);
+
+% Access labels
+\node[align=center, text=green!50!black] at (-4,-5.4) {\small Tất cả người dùng\\ \small (Member + Admin)};
+\node[align=center, text=red!60!black] at (4,-5.4) {\small \textbf{Chỉ Admin}\\ \small với mật khẩu đúng};
+
+% Admin box
+\node[box, fill=yellow!20] (admin) at (4,-7.0) {Admin Decrypt\\ \small PBKDF2 → AES-GCM Decrypt};
+\node[box, fill=gray!10] (rawclip) at (4,-8.8) {Video gốc (khôi phục)};
+\draw[darrow] (enc) -- (admin);
+\draw[darrow] (admin) -- (rawclip);
+
+% Pre-buffer note
+\node[box, fill=blue!10, minimum width=5cm] (prebuf) at (0,-7.5) {Pre-buffer 3s + Clip 8s\\ \small Cooldown 15s giữa các clip};
+\draw[->, dashed, gray] (rawframe) -- (prebuf);
+
+\end{tikzpicture}
+\caption{Thiết kế lưu trữ kép: blurred công khai và encrypted admin-only}
+\label{fig:dualstorage}
+\end{figure}
+
+\medskip
+\textbf{Định dạng file mã hoá (.enc):}
+
+File \texttt{.enc} có cấu trúc nhị phân:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{32 byte (salt)} & \textbf{12 byte (nonce)} & \textbf{biến đổi byte (ciphertext + GCM tag)} \\
+\hline
+\end{tabular}
+\end{center}
+
+Bản rõ (plaintext) trước khi mã hoá là chuỗi frame JPEG tuần tự:
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{4B: n\_frames} & \textbf{4B: fps$\times$1000} & \textbf{4B: len(jpeg\_1)} & \textbf{jpeg\_1 bytes} \\
+\hline
+\multicolumn{2}{|c|}{\ldots} & \textbf{4B: len(jpeg\_n)} & \textbf{jpeg\_n bytes} \\
+\hline
+\end{tabular}
+\end{center}
+
+Việc sử dụng \textit{little-endian 32-bit integer} làm length-prefix (thay vì format video chuẩn như MP4) có chủ ý: tránh cấu trúc container có metadata lộ số frame, fps trước khi giải mã.
+
+\textbf{Metadata index clips} được lưu tại \texttt{data/clips/clips.json}:
+\begin{lstlisting}[language=Python, caption={Cấu trúc metadata clip trong clips.json}]
+{
+  "clips": [
+    {
+      "id": "20260315_181958",
+      "timestamp": "2026-03-15T18:19:58+07:00",
+      "fps": 25.0,
+      "duration_s": 8.2,
+      "frame_count": 205,
+      "blurred_path": "data/clips/blurred/20260315_181958.mp4",
+      "secure_path": "data/clips/secure/20260315_181958.enc",
+      "trigger": "face_detected"
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsection{Thiết kế API REST}
+\label{subsec:apidesign}
+
+Backend cung cấp một REST API đầy đủ gồm 25+ endpoints, tổ chức thành 7 nhóm chức năng, được tóm tắt trong Bảng~\ref{tab:api}.
+
+\begin{longtable}{|p{0.1\textwidth}|p{0.35\textwidth}|p{0.45\textwidth}|}
+\caption{Bộ API REST của hệ thống (tóm tắt)}
+\label{tab:api} \\
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Mô tả} \\
+\hline
+\endhead
+\hline
+\endfoot
+\multicolumn{3}{|l|}{\textbf{Nhóm 1: Health \& Info}} \\
+\hline
+GET & \texttt{/health} & Kiểm tra server online \\
+GET & \texttt{/info} & Capabilities, modes, model info \\
+GET & \texttt{/presets} & Chi tiết 4 preset cấu hình \\
+\hline
+\multicolumn{3}{|l|}{\textbf{Nhóm 2: Xử lý ảnh tĩnh}} \\
+\hline
+POST & \texttt{/anonymize} & Ẩn danh hoá ảnh upload \\
+POST & \texttt{/lock} & Khóa mặt bằng AES-GCM \\
+POST & \texttt{/unlock} & Giải khóa mặt \\
+POST & \texttt{/recognize} & Nhận diện khuôn mặt trong ảnh \\
+\hline
+\multicolumn{3}{|l|}{\textbf{Nhóm 3: Camera}} \\
+\hline
+GET & \texttt{/cameras} & Liệt kê camera kết nối \\
+\hline
+\multicolumn{3}{|l|}{\textbf{Nhóm 4: Quản lý thành viên}} \\
+\hline
+GET & \texttt{/members} & Danh sách thành viên \\
+GET & \texttt{/members/\{id\}} & Chi tiết 1 thành viên \\
+POST & \texttt{/members} & Đăng ký thành viên mới (upload ảnh) \\
+PATCH & \texttt{/members/\{id\}} & Cập nhật tên/ngưỡng \\
+DELETE & \texttt{/members/\{id\}} & Xóa thành viên \\
+\hline
+\multicolumn{3}{|l|}{\textbf{Nhóm 5: Pipeline}} \\
+\hline
+POST & \texttt{/pipeline/start} & Khởi động pipeline camera \\
+DELETE & \texttt{/pipeline/stop} & Dừng pipeline \\
+GET & \texttt{/pipeline/status} & Trạng thái và thống kê live \\
+PATCH & \texttt{/pipeline/config} & Cập nhật cấu hình không cần restart \\
+\hline
+\multicolumn{3}{|l|}{\textbf{Nhóm 6: Streaming}} \\
+\hline
+GET & \texttt{/stream/frame} & Frame mới nhất dạng base64 JSON \\
+GET & \texttt{/stream/mjpeg} & MJPEG stream (\texttt{<img src>}) \\
+GET & \texttt{/stream/sse} & Server-Sent Events \\
+WS & \texttt{/stream/ws} & WebSocket (binary|json) \\
+\hline
+\multicolumn{3}{|l|}{\textbf{Nhóm 7: Admin \& Clips}} \\
+\hline
+POST & \texttt{/admin/setup} & Thiết lập mật khẩu admin lần đầu \\
+POST & \texttt{/admin/verify} & Xác minh mật khẩu \\
+POST & \texttt{/admin/change-password} & Đổi mật khẩu \\
+GET & \texttt{/clips} & Danh sách clip \\
+GET & \texttt{/clips/blurred/\{id\}} & Tải clip blurred (MP4) \\
+POST & \texttt{/clips/decrypt/\{id\}} & Giải mã clip gốc (admin) \\
+DELETE & \texttt{/clips/\{id\}} & Xóa clip \\
+\hline
+\end{longtable}
+
+\medskip
+\textbf{Nguyên tắc thiết kế API}:
+\begin{itemize}
+    \item Tất cả request/response body dùng \textbf{JSON} (trừ file upload dùng multipart/form-data).
+    \item Ảnh truyền qua tham số \texttt{image\_b64} (Base64-encoded JPEG/PNG) thay vì multipart để đơn giản hóa tích hợp frontend.
+    \item Lỗi trả về theo chuẩn HTTP status code với body \texttt{\{detail: "message"\}}.
+    \item CORS được cấu hình \texttt{allow\_origins=["*"]} cho môi trường phát triển (cần hạn chế trong production).
+\end{itemize}
+
+\subsection{Thiết kế cơ sở dữ liệu khuôn mặt}
+\label{subsec:facedb}
+
+Hệ thống dùng file JSON thay vì RDBMS vì khối lượng dữ liệu nhỏ và cần đơn giản hoá triển khai. Cấu trúc \texttt{data/family\_members.json}:
+
+\begin{lstlisting}[language=Python, caption={Cấu trúc dữ liệu face database}]
+{
+  "model_name": "buffalo_l",
+  "embedding_dim": 512,
+  "members": [
+    {
+      "member_id": "khoa",
+      "name": "Khoa",
+      "threshold": 0.35,
+      "embeddings": [
+        [0.023, -0.145, 0.872, ...],  // 512 float32 values
+        // ... up to 25 embeddings
+      ]
+    }
+  ]
+}
+\end{lstlisting}
+
+\medskip
+Để hiệu suất truy vấn tốt, \texttt{FamilyDatabase} xây dựng và duy trì \textbf{embedding matrix} trong bộ nhớ:
+\begin{itemize}
+    \item $\mathbf{E}_{\text{DB}} \in \mathbb{R}^{M \times 512}$: Ma trận tập hợp tất cả $M$ embedding của mọi thành viên.
+    \item \texttt{\_member\_ids[m]}: Ánh xạ từ chỉ số hàng $m$ về \texttt{member\_id} tương ứng.
+    \item Khi có thay đổi (thêm/xóa thành viên), \texttt{\_rebuild\_index()} được gọi để tái xây dựng matrix.
+\end{itemize}
+
+\subsection{Thiết kế giao diện người dùng}
+\label{subsec:ui}
+
+Giao diện web là SPA (Single Page Application) thuần HTML/CSS/JavaScript, không cần framework nặng. Kiến trúc frontend bao gồm hai cổng:
+
+\begin{enumerate}[1.]
+    \item \textbf{Admin Dashboard} (\texttt{frontend/admin/dashboard.html}): Pipeline control (start/stop, cấu hình), xem live stream, quản lý thành viên (đăng ký, sửa, xóa), truy cập secure archive.
+    
+    \item \textbf{User Portal} (\texttt{frontend/user/live-portal.html}): Xem live stream blurred, duyệt lịch sử clip blurred, không cần xác thực.
+\end{enumerate}
+
+\medskip
+Module \texttt{frontend/assets/js/xla.js} cung cấp các API helper dùng chung:
+\begin{itemize}
+    \item \texttt{apiCall(method, endpoint, body)}: Wrapper cho fetch API.
+    \item \texttt{toBase64(file)}: Đọc file ảnh thành base64.
+    \item \texttt{connectWebSocket(url, onFrame)}: Kết nối WebSocket với auto-reconnect.
+    \item \texttt{attachMjpeg(imgEl, url)}: Gắn MJPEG stream vào thẻ \texttt{<img>}.
+\end{itemize}
+
+\medskip

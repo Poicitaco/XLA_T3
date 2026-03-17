@@ -1,0 +1,8 @@
+\xpginauxfiletrue 
+\selectlanguage *{vietnamese}
+\beamer@sectionintoc {1}{Tổng Quan}{3}{0}{1}
+\beamer@sectionintoc {2}{AI: Detection \& Recognition}{6}{0}{2}
+\beamer@sectionintoc {3}{6 Chế Độ Ẩn Danh Hoá}{8}{0}{3}
+\beamer@sectionintoc {4}{Backend \& Pipeline}{10}{0}{4}
+\beamer@sectionintoc {5}{Bảo Mật}{12}{0}{5}
+\beamer@sectionintoc {6}{Demo \& Kết Quả}{14}{0}{6}

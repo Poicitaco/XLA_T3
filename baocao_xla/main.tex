@@ -1,0 +1,349 @@
+\documentclass[12pt,a4paper]{article}
+
+% ─── Encoding & Language ──────────────────────────────────────────────────────
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+\setmonofont[Scale=0.9]{Latin Modern Mono}
+\usepackage[vietnamese]{babel}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{tocloft,calc}
+
+% ─── Page Layout ─────────────────────────────────────────────────────────────
+\usepackage[top=3.5cm, bottom=3.0cm, left=3.5cm, right=2.0cm]{geometry}
+
+% ─── Math ────────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amsfonts,amssymb}
+\numberwithin{equation}{section}
+
+% ─── Graphics & Figures ──────────────────────────────────────────────────────
+\usepackage{graphicx}
+\graphicspath{{../template_baocao/image/}{./image/}{./img/}}
+\usepackage{subcaption}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+
+% ─── Typography ──────────────────────────────────────────────────────────────
+\usepackage{fancybox}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+% ─── Tables ──────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+
+% ─── Colors ──────────────────────────────────────────────────────────────────
+\usepackage{xcolor}
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codegreen}{RGB}{0,128,0}
+\definecolor{codegray}{RGB}{100,100,100}
+\definecolor{codeblue}{RGB}{0,0,180}
+\definecolor{codepurple}{RGB}{160,32,240}
+\definecolor{codered}{RGB}{180,0,0}
+\definecolor{phenikaa}{RGB}{0,84,166}
+
+% ─── Code Listings ───────────────────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    captionpos=b,
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{codeblue}\bfseries,
+    stringstyle=\color{codered},
+    numberstyle=\tiny\color{codegray},
+    numbers=left,
+    numbersep=6pt,
+    stepnumber=1,
+    frame=single,
+    framesep=3pt,
+    tabsize=4,
+    showstringspaces=false,
+    xleftmargin=15pt,
+    language=Python,
+}
+
+% ─── TikZ Diagrams ───────────────────────────────────────────────────────────
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc,backgrounds,decorations.pathreplacing}
+
+% ─── Hyperlinks ──────────────────────────────────────────────────────────────
+\usepackage[unicode,colorlinks=true,bookmarks=true,pdfstartview=FitH]{hyperref}
+\hypersetup{
+    pdftitle={Báo cáo Đồ án: Hệ thống Giám sát Camera Bảo vệ Quyền Riêng Tư Khuôn Mặt},
+    pdfauthor={Hoàng Tiến Đạt},
+    pdfsubject={XLA Face Privacy System — Xử lý ảnh và Bảo mật},
+    pdfkeywords={Face Detection, Face Recognition, Anonymization, AES-256-GCM, YOLOv11, InsightFace, Privacy},
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+}
+
+% ─── Lists ──────────────────────────────────────────────────────────────────
+\usepackage[shortlabels]{enumitem}
+
+% ─── Algorithm ───────────────────────────────────────────────────────────────
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% ─── Page Style ──────────────────────────────────────────────────────────────
+\setlength{\headheight}{15pt}
+\pagenumbering{arabic}
+\pagestyle{fancy}
+\lhead{\it Xử lý ảnh số --- ĐH Phenikaa}
+\rhead{\it XLA Face Privacy System}
+\lfoot{\it Nhóm SV: Đạt -- Khoa -- Khánh}
+\rfoot{\it Năm học 2025--2026}
+\renewcommand{\headrulewidth}{1.2pt}
+\renewcommand{\footrulewidth}{1.2pt}
+
+% ─── TOC / LOF depth ─────────────────────────────────────────────────────────
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% ─── Custom commands ─────────────────────────────────────────────────────────
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\api}[1]{\texttt{\textcolor{phenikaa}{#1}}}
+\newcommand{\file}[1]{\texttt{\textit{#1}}}
+
+% ─── BEGIN DOCUMENT ──────────────────────────────────────────────────────────
+% Global overflow prevention: allow TeX to stretch inter-word glue
+\tolerance=2000
+\hbadness=10000
+\setlength{\emergencystretch}{4em}
+
+\begin{document}
+\fontsize{14pt}{20pt}\selectfont
+
+% ════════════════════════════════════════════════════════════════════════════
+%   TRANG BÌA CHÍNH (có khung)
+% ════════════════════════════════════════════════════════════════════════════
+\thisfancypage{\setlength{\fboxsep}{0.2cm}\setlength{\fboxrule}{1pt}\doublebox}{}
+\begin{titlepage}
+\begin{center}
+    \textbf{\normalsize ĐẠI HỌC PHENIKAA}\\
+    \textbf{\normalsize TRƯỜNG CÔNG NGHỆ THÔNG TIN}\\[0.3cm]
+    \textbf{\textit{—————— $\bigstar$ ——————}}
+\end{center}
+
+\vspace{1.2cm}
+
+\begin{center}
+    \includegraphics[width=0.22\textwidth]{logo.png}
+\end{center}
+
+\vspace{0.8cm}
+
+\begin{center}
+    \textbf{BÁO CÁO ĐỒ ÁN MÔN HỌC}\\[0.2cm]
+    \textbf{HỌC PHẦN: XỬ LÝ ẢNH SỐ}
+\end{center}
+
+\vspace{0.6cm}
+
+\begin{center}
+    \textbf{ĐỀ TÀI:}\\[0.3cm]
+    {\large\textbf{HỆ THỐNG GIÁM SÁT CAMERA BẢO VỆ QUYỀN RIÊNG TƯ KHUÔN MẶT}}\\[0.1cm]
+    {\normalsize\textit{(XLA Face Privacy System)}}
+\end{center}
+
+\vspace{0.8cm}
+
+\begin{center}
+\textbf{Thành viên nhóm thực hiện}\\[0.3cm]
+{\small
+\begin{tabular}{|c|l|c|}
+\hline
+\textbf{STT} & \textbf{Họ và tên} & \textbf{MSSV} \\
+\hline
+1 & Hoàng Tiến Đạt & 23010864 \\
+\hline
+2 & Nguyễn Hữu Đăng Khoa & 23010901 \\
+\hline
+3 & Nghiêm Xuân Khánh & 23010598 \\
+\hline
+\end{tabular}
+}\\
+[0.2cm]{\small Lớp: KHDL\&AI}
+\end{center}
+
+\end{titlepage}
+
+% ════════════════════════════════════════════════════════════════════════════
+%   TRANG BÌA PHỤ (không khung)
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \textbf{\normalsize ĐẠI HỌC PHENIKAA}\\
+    \textbf{\normalsize TRƯỜNG CÔNG NGHỆ THÔNG TIN}\\[0.3cm]
+    \textbf{\textit{—————— $\bigstar$ ——————}}
+\end{center}
+
+\vspace{1.2cm}
+
+\begin{center}
+    \includegraphics[width=0.22\textwidth]{logo.png}
+\end{center}
+
+\vspace{0.8cm}
+
+\begin{center}
+    \textbf{BÁO CÁO ĐỒ ÁN MÔN HỌC}\\[0.2cm]
+    \textbf{HỌC PHẦN: XỬ LÝ ẢNH SỐ}
+\end{center}
+
+\vspace{0.6cm}
+
+\begin{center}
+    \textbf{ĐỀ TÀI:}\\[0.3cm]
+    {\large\textbf{HỆ THỐNG GIÁM SÁT CAMERA BẢO VỆ QUYỀN RIÊNG TƯ KHUÔN MẶT}}\\[0.1cm]
+    {\normalsize\textit{(XLA Face Privacy System)}}
+\end{center}
+
+\vspace{0.8cm}
+
+\begin{center}
+\textbf{Thành viên nhóm thực hiện}\\[0.3cm]
+{\small
+\begin{tabular}{|c|l|c|}
+\hline
+\textbf{STT} & \textbf{Họ và tên} & \textbf{MSSV} \\
+\hline
+1 & Hoàng Tiến Đạt & 23010864 \\
+\hline
+2 & Nguyễn Hữu Đăng Khoa & 23010901 \\
+\hline
+3 & Nghiêm Xuân Khánh & 23010598 \\
+\hline
+\end{tabular}
+}\\
+[0.2cm]{\small Lớp: KHDL\&AI}
+\end{center}
+
+\vspace{0.6cm}
+
+\begin{center}
+    \textbf{GVHD: TS. Nguyễn Văn Tới}
+\end{center}
+
+\vfill
+
+\begin{center}
+    \textbf{Hà Nội, tháng 3 năm 2026}
+\end{center}
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    {\large\textbf{PHÂN CÔNG NHIỆM VỤ CHI TIẾT}}\\[0.6cm]
+    \textbf{Đề tài: Hệ thống Giám sát Camera Bảo vệ Quyền Riêng Tư Khuôn Mặt}\\[0.2cm]
+    \textit{Môn học: Xử lý ảnh số --- ĐH Phenikaa, tháng 3 năm 2026}
+\end{center}
+\vspace{0.4cm}
+\begin{center}
+{\small
+\begin{tabular}{|c|p{3.2cm}|c|p{8.8cm}|}
+\hline
+\textbf{STT} & \textbf{Họ và tên} & \textbf{MSSV} & \textbf{Nhiệm vụ chi tiết} \\
+\hline
+1 &
+Hoàng Tiến Đạt\newline\textit{(Trưởng nhóm)} & 23010864 &
+\textbullet~Thiết kế kiến trúc hệ thống tổng thể và phân công công việc\newline
+\textbullet~Mô-đun face lock: mã hoá/giải mã khuôn mặt AES-256-GCM (\texttt{face\_lock.py})\newline
+\textbullet~Tích hợp InsightFace nhận diện khuôn mặt người thân (\texttt{face\_recognition.py})\newline
+\textbullet~Phát triển REST API và WebSocket streaming (\texttt{app\_api.py}, \texttt{backend\_api.py})\newline
+\textbullet~Clip recorder và dẫn xuất khoá mã hoá (\texttt{clip\_recorder.py})
+\\
+\hline
+2 & Nguyễn Hữu Đăng Khoa & 23010901 &
+\textbullet~Mô-đun phát hiện khuôn mặt YOLOv11-face (\texttt{detector.py})\newline
+\textbullet~Làm mượt và ổn định bounding box (\texttt{bbox\_smoother.py})\newline
+\textbullet~Mô-đun ẩn danh hoá: blur, pixelate, obliterate, silhouette (\texttt{privacy.py})\newline
+\textbullet~Backend ẩn danh hoá và tracking khuôn mặt (\texttt{anonymizer\_backend.py})\newline
+\textbullet~Tối ưu hoá pipeline xử lý video và thử nghiệm hiệu năng
+\\
+\hline
+3 & Nghiêm Xuân Khánh & 23010598 &
+\textbullet~Toàn bộ giao diện web: Admin Dashboard, Live Portal, Secure Archive, Face Registry (\texttt{frontend/})\newline
+\textbullet~Xác thực admin và bảo mật phiên (\texttt{admin\_auth.py})\newline
+\textbullet~Cơ sở dữ liệu khuôn mặt và đăng ký thành viên (\texttt{family\_database.py})\newline
+\textbullet~Script đánh giá hiệu năng và bảo mật (\texttt{evaluation/})\newline
+\textbullet~Viết báo cáo, tài liệu kỹ thuật và kiểm thử tích hợp
+\\
+\hline
+\end{tabular}
+}
+\end{center}
+\vspace{0.5cm}
+\begin{center}
+\textit{Mỗi thành viên tham gia kiểm thử chéo và review code của nhau.}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════════════════
+%   TÓM TẮT
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\pagestyle{fancy}
+\begin{center}
+    \textbf{\large TÓM TẮT}
+\end{center}
+\medskip
+
+Báo cáo này trình bày thiết kế, triển khai và đánh giá của hệ thống \textbf{XLA Face Privacy System} --- một hệ thống giám sát camera thời gian thực được xây dựng trên triết lý \textit{``Privacy-First''}: bảo vệ quyền riêng tư của khuôn mặt theo mặc định, nhưng không đánh mất bằng chứng khi cần thiết.
+
+\medskip
+Hệ thống giải quyết một mâu thuẫn cốt lõi trong giám sát hiện đại: hoặc ghi thô lộ toàn bộ danh tính, hoặc xóa dữ liệu mất hết bằng chứng. Giải pháp đề xuất là kiến trúc lưu trữ \textbf{kép} (dual-layer): (1) luồng video đã ẩn danh hoá khuôn mặt được lưu dạng MP4 thông thường, công khai trong hệ thống; (2) luồng video gốc được mã hoá bằng \textbf{AES-256-GCM} với khoá dẫn xuất từ mật khẩu admin theo chuẩn \textbf{PBKDF2-SHA256} (390.000 vòng lặp), chỉ admin với mật khẩu đúng mới giải mã được.
+
+\medskip
+Về nhận diện, hệ thống sử dụng mô hình \textbf{YOLOv11n-face} để phát hiện khuôn mặt theo thời gian thực và \textbf{InsightFace buffalo\_l} (không gian embedding 512 chiều) để nhận diện thành viên được đăng ký trước --- những người này được hiển thị bình thường trong khi người lạ bị ẩn danh hoá. Chín chế độ ẩn danh hoá được hỗ trợ: \texttt{blur}, \texttt{pixelate}, \texttt{solid}, \texttt{obliterate}, \texttt{headcloak}, \texttt{silhouette}, \texttt{neckup}, \texttt{lock}, \texttt{none}; cùng bốn preset tiền cấu hình: \texttt{fast}, \texttt{balanced}, \texttt{strong}, \texttt{strict}.
+
+\medskip
+Backend được xây dựng bằng \textbf{FastAPI} với đầy đủ các giao thức streaming (MJPEG, Server-Sent Events, WebSocket, polling) và một REST API hoàn chỉnh. Frontend là SPA với bảng điều khiển admin và cổng người dùng. Kết quả thực nghiệm đánh giá trên 100 khung hình cho thấy hệ thống đạt tốc độ từ 7,7 đến 72,5 FPS tùy chế độ, và chế độ \texttt{silhouette} ngăn hoàn toàn nhận diện khuôn mặt với cosine similarity chỉ còn 0,23.
+
+\medskip
+\noindent\textbf{Từ khóa:} Phát hiện khuôn mặt, Nhận diện khuôn mặt, Ẩn danh hoá, AES-256-GCM, YOLOv11, InsightFace, Bảo mật, Quyền riêng tư, FastAPI, Camera giám sát.
+
+% ════════════════════════════════════════════════════════════════════════════
+%   MỤC LỤC
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\hypersetup{linkcolor=black}
+\tableofcontents
+
+\newpage
+\renewcommand{\listfigurename}{Danh mục hình ảnh}
+\listoffigures
+
+\newpage
+\renewcommand{\listtablename}{Danh mục bảng biểu}
+\listoftables
+\hypersetup{linkcolor=blue}
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%   CÁC CHƯƠNG
+% ════════════════════════════════════════════════════════════════════════════
+\input{chuong1_gioithieu}
+\input{chuong2_cosoly}
+\input{chuong3_thietke}
+\input{chuong4_trienkhai}
+\input{chuong5_thucnghiem}
+\input{chuong6_ketluan}
+
+% ════════════════════════════════════════════════════════════════════════════
+%   TÀI LIỆU THAM KHẢO
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\renewcommand{\refname}{Tài liệu tham khảo}
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+\bibliographystyle{plain}
+\bibliography{ref_xla}
+
+\end{document}

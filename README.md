@@ -70,62 +70,80 @@ xla_demo/
 
 ## Quick Start
 
-### 1. Install Python dependencies
+Choose **one** of the three methods below:
+
+---
+
+### Method A — One-click script (recommended, no manual setup)
+
+> Automatically installs Python (if needed), creates venv, installs all packages, and starts the server.
+
+**Windows** — double-click `setup.ps1` or run in PowerShell:
+
+```powershell
+.\setup.ps1
+```
+
+**macOS / Linux:**
+
+```bash
+bash setup.sh
+```
+
+The script handles everything: venv, pip, ffmpeg check, data directories, and server launch.
+
+---
+
+### Method B — Docker (no Python required at all)
+
+> Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+```bash
+docker compose up --build
+```
+
+- All dependencies are inside the container — no pip, no Python needed on the host
+- Data (clips, credentials, members) is stored in `./data/` on your machine
+- **Webcam note:** Docker can access USB cameras on Linux (`/dev/video0`). On Windows/macOS, use an IP camera or phone camera (Camo, DroidCam) and enter the stream URL in the dashboard
+
+---
+
+### Method C — Manual setup
+
+**1. Install Python dependencies**
 
 ```bash
 python -m venv .venv
-# Windows:
-.\.venv\Scripts\Activate.ps1
-# macOS/Linux:
-source .venv/bin/activate
-
+.\.venv\Scripts\Activate.ps1   # Windows
+# source .venv/bin/activate    # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 2. Install ffmpeg (required for clip recording)
-
-**Windows** — install via winget or download from https://ffmpeg.org/download.html and add to PATH:
+**2. Install ffmpeg** (required for clip recording)
 
 ```powershell
-winget install ffmpeg
+winget install ffmpeg          # Windows
+# brew install ffmpeg          # macOS
+# sudo apt install ffmpeg      # Linux
 ```
 
-**macOS:**
-
-```bash
-brew install ffmpeg
-```
-
-**Linux:**
-
-```bash
-sudo apt install ffmpeg
-```
-
-### 3. First-startup — model auto-download
-
-- **YOLOv11 face weights** (`models/yolov11n-face.pt`) — included in the repo, no download needed
-- **InsightFace buffalo_l** (~300 MB) — downloaded automatically on first run into `~/.insightface/models/`, requires internet access
-
-### 4. Start the server
+**3. Start the server**
 
 ```bash
 uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
-# or on Windows:
-.\start_server.ps1
 ```
 
-### 5. Open the dashboard
+---
+
+### Open the dashboard
 
 - Admin panel: http://localhost:8000/ui/admin/dashboard.html
 - User portal: http://localhost:8000/ui/user/live-portal.html
 - API docs: http://localhost:8000/docs
 
-### 6. First-time setup
+> **First-time setup:** Go to the Admin Dashboard → set admin password → register members in Face Registry → start the pipeline.
 
-1. Go to the **Admin Dashboard** and set your admin password (stored as PBKDF2-SHA256 hash, never plaintext)
-2. Go to **Face Registry** and register members by uploading photos
-3. Start the pipeline — select camera source, anonymization mode, and enable clip recording
+> **Model note:** `models/yolov11n-face.pt` is included in the repo. InsightFace `buffalo_l` (~300 MB) downloads automatically on first run into `~/.insightface/models/`.
 
 ---
 

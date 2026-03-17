@@ -1,0 +1,914 @@
+% ============================================================
+%  KICH BAN VIDEO CA NHAN --- DAT
+%  Vai tro: Leader / Security Engineer
+%  Files: privacy.py | anonymizer_backend.py | clip_recorder.py | admin_auth.py
+%  Thoi luong muc tieu: 13-15 phut
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{NavyBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  frame=single, breaklines=true, showstringspaces=false,
+  tabsize=4, backgroundcolor=\color{gray!7},
+}
+
+\usepackage{titlesec}
+\titleformat{\section}[block]
+  {\large\bfseries\color{BrickRed}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}[block]
+  {\normalsize\bfseries\color{BrickRed!80}}{\thesubsection}{0.5em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}\fancyhf{}
+\lhead{\textcolor{BrickRed}{\textbf{Kịch Bản Video --- ĐẠT (Leader / Security)}}}
+\rhead{\textcolor{gray}{XLA Face Privacy System}}
+\cfoot{\thepage}
+\usepackage[hidelinks]{hyperref}
+
+%% ---- Environments ----
+\newtcolorbox{say}[1][]{
+  title={\faMicrophone\ \textbf{NÓI}},
+  colback=BrickRed!4, colframe=BrickRed!70,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{doact}[1][]{
+  title={\faMousePointer\ \textbf{THAO TÁC}},
+  colback=OliveGreen!5, colframe=OliveGreen!70,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{cam}[1][]{
+  title={\faVideo\ \textbf{CAMERA}},
+  colback=Goldenrod!8, colframe=Goldenrod!80,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{code}[2][]{
+  title={\faCode\ \textbf{CODE --- #2}},
+  colback=NavyBlue!4, colframe=NavyBlue!55,
+  fonttitle=\small\bfseries\color{NavyBlue}, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{warn}[1][]{
+  title={\faExclamationTriangle\ \textbf{CHÚ Ý}},
+  colback=red!4, colframe=red!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{timing}[1]{
+  colback=NavyBlue!10, colframe=NavyBlue!50,
+  title={\faClock\ \textbf{#1}},
+  fonttitle=\small\bfseries\color{NavyBlue}, left=4pt, right=4pt}
+
+\newcommand{\fpath}[1]{\texttt{\textcolor{purple}{#1}}}
+\newcommand{\lnum}[1]{\colorbox{yellow!40}{\texttt{\small dòng~#1}}}
+\newcommand{\pause}{\textcolor{gray}{\textit{[dừng 1 giây]}}}
+\newcommand{\camlook}{\textcolor{Goldenrod}{\textbf{[nhìn camera]}}}
+\newcommand{\screen}{\textcolor{OliveGreen}{\textbf{[nhìn màn hình]}}}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+\begin{titlepage}
+\centering\vspace*{1.5cm}
+{\Huge\bfseries\color{BrickRed} KỊCH BẢN VIDEO\par}
+\vspace{0.3cm}
+{\LARGE\bfseries\color{BrickRed!80} ĐẠT --- Leader / Security Engineer\par}
+\vspace{0.5cm}
+{\large\color{gray} XLA Face Privacy System --- Đồ Án Cuối Kỳ\par}
+\vspace{1.2cm}
+
+\begin{tcolorbox}[colback=BrickRed!7, colframe=BrickRed, width=0.9\textwidth]
+\centering\large
+\textbf{Em trực tiếp viết 4 files:}\\[0.4cm]
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{llr}
+  \hline
+  \fpath{src/privacy.py} & Blur Engine — 7 mode ẩn danh & \textbf{269 dòng} \\
+  \fpath{src/anonymizer\_backend.py} & Config \& 4 Preset & \textbf{237 dòng} \\
+  \fpath{src/clip\_recorder.py} & AES-256-GCM Encrypt/Decrypt & \textbf{397 dòng} \\
+  \fpath{src/admin\_auth.py} & PBKDF2 + Timing Attack Prevention & \textbf{130 dòng} \\
+  \hline
+  \multicolumn{2}{l}{\textbf{Tổng cộng}} & \textbf{1033 dòng} \\
+  \hline
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{0.8cm}
+\begin{tcolorbox}[colback=gray!6, colframe=gray!50, width=0.9\textwidth]
+\textbf{Thời lượng mục tiêu:} 13--15 phút\quad
+\textbf{Định dạng:} Quay một mình, camera rõ mặt\\[0.2cm]
+\textbf{Cần chuẩn bị:}
+Server chạy cổng 8000 \textbullet{}
+VS Code font $\geq$16 \textbullet{}
+4 files đã mở sẵn \textbullet{}
+Browser tab dashboard và secure-archive \textbullet{}
+Tắt notification Windows
+\end{tcolorbox}
+
+\vspace{0.8cm}
+\begin{warn}
+Trước khi quay: đọc lại toàn bộ script này ÍT NHẤT 2 lần.
+Luyện nói to trước gương hoặc tự record thử 2 phút đầu.
+Không cần học thuộc --- nhìn script và nói tự nhiên là được.
+\end{warn}
+\end{titlepage}
+
+\tableofcontents\newpage
+
+% ============================================================
+\section{CHUẨN BỊ TRƯỚC KHI BẤM REC}
+% ============================================================
+
+\begin{doact}
+\textbf{Bước 1 --- Khởi động server (terminal):}
+\begin{lstlisting}[language=bash, numbers=none]
+cd C:\Users\itent\Desktop\xla_demo
+.venv\Scripts\activate
+uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
+\end{lstlisting}
+Chờ thấy \texttt{Application startup complete.} mới tiếp tục.
+\end{doact}
+
+\begin{doact}
+\textbf{Bước 2 --- Mở VS Code, mở sẵn 4 tab files:}\\
+Tab 1: \fpath{src/privacy.py} (269 dòng)\\
+Tab 2: \fpath{src/anonymizer\_backend.py} (237 dòng)\\
+Tab 3: \fpath{src/clip\_recorder.py} (397 dòng)\\
+Tab 4: \fpath{src/admin\_auth.py} (130 dòng)\\
+Font size: \textbf{16--18}. Zoom màn hình 125\%.
+\end{doact}
+
+\begin{doact}
+\textbf{Bước 3 --- Mở 2 tab browser:}\\
+Tab 1: \texttt{http://localhost:8000/admin/dashboard.html}\\
+Tab 2: \texttt{http://localhost:8000/admin/secure-archive.html}
+\end{doact}
+
+\begin{cam}
+Camera đặt ngang tầm mắt, cách mặt 60--80cm.
+Ánh sáng từ phía trước mặt (không ngồi trước cửa sổ).
+Đặt màn hình bên phải hoặc trái camera để vừa nói vừa có thể nhìn script.
+\end{cam}
+
+\begin{warn}
+Test âm thanh 10 giây trước khi quay.
+Nháy mắt bình thường --- không nhìn thẳng camera quá căng.
+Nói chậm hơn bình thường khoảng 20\% --- video thường nghe nhanh hơn thực tế.
+\end{warn}
+
+\newpage
+% ============================================================
+\section{0:00--0:15 --- MỞ ĐẦU}
+% ============================================================
+
+\begin{timing}{0:00 -- 0:15}
+Ngồi thẳng, nhìn camera. Thở sâu. Bắt đầu sau khi đã ổn định.
+\end{timing}
+
+\begin{cam}
+Nhìn thẳng vào camera. Giữ ánh mắt tự nhiên. Nói từ tốn.
+\end{cam}
+
+\begin{say}
+``Xin chào thầy cô. Em là Đạt.
+
+Trong đồ án này em đảm nhận vai trò Leader nhóm
+và phụ trách toàn bộ phần \textbf{bảo mật} của hệ thống.
+
+Video này em sẽ trình bày \textbf{trực tiếp những đoạn code em đã viết}---
+chỉ rõ từng dòng, tại sao viết như vậy, và quyết định kỹ thuật nào đằng sau nó.''
+\end{say}
+
+% ============================================================
+\section{0:15--1:30 --- GIỚI THIỆU ĐÓNG GÓP CỤ THỂ}
+% ============================================================
+
+\begin{timing}{0:15 -- 1:30}
+Chuyển góc nhìn sang màn hình, mở VS Code.
+\end{timing}
+
+\begin{doact}
+Mở VS Code. Hiện cây thư mục bên trái. Hover chuột lần lượt qua từng file khi nói tên.
+\end{doact}
+
+\begin{say}
+``Phần em trực tiếp viết gồm bốn files.
+
+File thứ nhất: \textbf{privacy.py} ở thư mục src --- 269 dòng.
+Đây là toàn bộ Blur Engine: 7 mode ẩn danh khuôn mặt, từ pixelate đơn giản đến obliterate hoàn toàn không thể nhận ra.
+
+File thứ hai: \textbf{anonymizer\_backend.py} --- 237 dòng.
+Config system và 4 preset: fast, balanced, strong, strict.
+
+File thứ ba: \textbf{clip\_recorder.py} --- 397 dòng.
+Mã hoá và giải mã clip với AES-256-GCM --- tiêu chuẩn mã hoá công nghiệp.
+
+File thứ tư: \textbf{admin\_auth.py} --- 130 dòng.
+Xác thực admin với PBKDF2 và phòng chống timing attack.
+
+Tổng cộng: 1033 dòng code em tự viết.''
+
+\pause\ \camlook\ ``Em bắt đầu với phần quan trọng nhất: Blur Engine.''
+\end{say}
+
+% ============================================================
+\section{1:30--2:00 --- ĐẶT VẤN ĐỀ: TẠI SAO CẦN BLUR ENGINE}
+% ============================================================
+
+\begin{timing}{1:30 -- 2:00}
+Nhìn camera, không cần mở code ngay.
+\end{timing}
+
+\begin{say}
+``Trước khi vào code, em muốn giải thích bài toán.
+
+Camera giám sát quay tất cả mọi người---kể cả người không đồng ý lưu khuôn mặt.
+Nguyên tắc \textbf{Privacy by Design} theo GDPR Article 25 yêu cầu:
+ẩn danh hoá phải là mặc định, không phải tuỳ chọn thêm.
+
+Nhưng nếu chỉ lưu bản đã blur, bằng chứng điều tra bị mất.
+
+Giải pháp em thiết kế: \textbf{Dual Storage} ---
+lưu song song bản blur cho người dùng thông thường
+và bản gốc mã hoá AES-256-GCM chỉ admin mới mở được.
+
+Blur Engine phải đủ mạnh để không thể nhận ra khuôn mặt,
+nhưng cũng đủ nhanh để chạy real-time 25--30 FPS.''
+\end{say}
+
+% ============================================================
+\section{2:00--6:00 --- PRIVACY.PY --- BLUR ENGINE}
+% ============================================================
+
+\begin{timing}{2:00 -- 6:00}
+Chuyển sang VS Code, mở tab \fpath{src/privacy.py}.
+\end{timing}
+
+\subsection{2:00--2:30 --- Nhìn tổng quan file}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+Shift+E} mở Explorer, click vào \fpath{src/privacy.py}.
+Scroll từ đầu xuống cuối nhanh trong 5 giây để thầy cô thấy độ dài (269 dòng).
+Sau đó nhấn \texttt{Ctrl+Home} về đầu file.
+\end{doact}
+
+\begin{say}
+``Đây là \fpath{privacy.py} --- 269 dòng em viết hoàn toàn.
+
+Nhìn tổng quan: dòng 1--10 là import và helper nhỏ.
+Dòng 67 trở đi là 7 hàm blur độc lập.
+Dòng 201 là hàm \texttt{anonymize\_faces} tổng hợp --- pipeline gọi vào đây.
+
+Em sẽ đi qua từng hàm quan trọng.''
+\end{say}
+
+\subsection{2:30--3:30 --- Hàm \_fast\_gaussian\_blur (dòng 67--76)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{67}, Enter. Highlight từ dòng 67 đến 76.
+\end{doact}
+
+\begin{say}
+``Dòng 67: hàm \texttt{\_fast\_gaussian\_blur}.
+Đây là blur mode cơ bản, được dùng trong tất cả các preset làm bước pre-processing.''
+\end{say}
+
+\begin{code}{privacy.py dòng 67--76 --- \_fast\_gaussian\_blur()}
+\begin{lstlisting}[language=Python, firstnumber=67]
+def _fast_gaussian_blur(roi: np.ndarray,
+                        blur_scale: float,
+                        blur_kernel: int) -> np.ndarray:
+    h, w = roi.shape[:2]
+    scale = min(max(blur_scale, 0.05), 1.0)
+    down_w = max(1, int(round(w * scale)))
+    down_h = max(1, int(round(h * scale)))
+    small = cv2.resize(roi, (down_w, down_h),
+                       interpolation=cv2.INTER_LINEAR)
+    small = cv2.GaussianBlur(small,
+                 (_odd(blur_kernel), _odd(blur_kernel)), 0)
+    return cv2.resize(small, (w, h),
+                      interpolation=cv2.INTER_LINEAR)  # dong 76
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+\screen\ ``Dòng 68 nhận 3 tham số: ROI là vùng khuôn mặt đã cắt ra, blur\_scale và kernel size.
+
+Dòng 71--72: \textbf{downscale ROI} xuống còn \texttt{scale\%} kích thước.
+Preset balanced dùng scale $\approx$20\% --- mặt 200×200px shrink xuống còn 40×40px.
+
+Dòng 73--74: GaussianBlur trên ảnh \textit{nhỏ} --- \textbf{đây là kỹ thuật tối ưu tốc độ}.
+Blur trực tiếp trên 200×200px: $200 \times 200 = 40.000$ pixels.
+Blur qua downscale: chỉ $40 \times 40 = 1.600$ pixels.
+Nhanh hơn 25 lần với kết quả hình ảnh gần như tương đương.
+
+Dòng 75--76: upscale lại, kết quả là blur mềm mại, tự nhiên.''
+\end{say}
+
+\subsection{3:30--4:15 --- Hàm \_pixelate (dòng 78--86)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{78}, Enter. Highlight dòng 78--86.
+\end{doact}
+
+\begin{say}
+``Dòng 78: \texttt{\_pixelate} --- tạo hiệu ứng mosaic vuông.''
+\end{say}
+
+\begin{code}{privacy.py dòng 78--86 --- \_pixelate()}
+\begin{lstlisting}[language=Python, firstnumber=78]
+def _pixelate(roi: np.ndarray, pixel_block: int) -> np.ndarray:
+    h, w = roi.shape[:2]
+    block = max(2, pixel_block)
+    small_w = max(1, w // block)
+    small_h = max(1, h // block)
+    small = cv2.resize(roi, (small_w, small_h),
+                       interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(small, (w, h),
+                      interpolation=cv2.INTER_NEAREST)  # dong 86
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``Dòng 84: downscale xuống 1/block kích thước.
+
+\textbf{Chìa khoá nằm ở dòng 86}: \texttt{INTER\_NEAREST} thay vì INTER\_LINEAR.
+INTER\_NEAREST không nội suy --- copy pixel gần nhất.
+Kết quả: mỗi block vuông y hệt nhau, tạo mosaic đặc trưng như ảnh game 8-bit.
+Nếu dùng INTER\_LINEAR sẽ ra blur, không ra pixelate.
+
+Preset \textbf{fast} (\fpath{anonymizer\_backend.py} dòng 55) dùng \texttt{pixel\_block=18}
+--- mỗi ô mosaic 18×18px.''
+\end{say}
+
+\subsection{4:15--6:00 --- Hàm \_obliterate\_features (dòng 172--200) --- QUAN TRỌNG NHẤT}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{172}, Enter. Expand cửa sổ code rộng ra.
+\end{doact}
+
+\begin{say}
+``Đây là hàm quan trọng nhất em viết trong file này.
+\texttt{\_obliterate\_features} --- mode \textbf{strong} của hệ thống.
+
+Mục tiêu: không cần blur mượt mà --- cần \textbf{phá huỷ hoàn toàn}.
+Kể cả các thuật toán AI nhận diện mặt tốt nhất cũng không thể phục hồi.''
+\end{say}
+
+\begin{code}{privacy.py dòng 172--200 --- \_obliterate\_features() --- 4 bước phá huỷ}
+\begin{lstlisting}[language=Python, firstnumber=172]
+def _obliterate_features(
+    roi: np.ndarray,
+    obliterate_scale: float,  # preset strong: 0.06
+    blur_kernel: int,
+    scramble_block: int,      # preset strong: 10
+    palette_levels: int,      # preset strong: 8
+    seed: int,
+) -> np.ndarray:
+    h, w = roi.shape[:2]
+    scale = min(max(obliterate_scale, 0.03), 0.25)
+    down_w = max(1, int(round(w * scale)))
+    down_h = max(1, int(round(h * scale)))
+
+    # BUOC 1 (dong 185): compress xuong 6%, xoa toan bo dac diem
+    work = cv2.resize(roi, (down_w, down_h),
+                      interpolation=cv2.INTER_AREA)
+    work = cv2.resize(work, (w, h),
+                      interpolation=cv2.INTER_NEAREST)
+
+    # BUOC 2 (dong 191): scramble block 10x10
+    work = _scramble_blocks(work, block_size=scramble_block, seed=seed)
+
+    # BUOC 3 (dong 194): GaussianBlur kernel >= 35px
+    work = cv2.GaussianBlur(work,
+               (_odd(max(blur_kernel, 35)),
+                _odd(max(blur_kernel, 35))), 0)
+
+    # BUOC 4 (dong 198): quantize ve 8 mau
+    work = _quantize_colors(work, levels=palette_levels)
+    return work  # dong 200
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``Hàm nhận preset strong với các tham số: \texttt{obliterate\_scale=0.06},
+\texttt{scramble\_block=10}, \texttt{palette\_levels=8}.
+
+\textbf{Bước 1 --- dòng 185--188: Nén cực mạnh.}
+Compress khuôn mặt xuống còn \textbf{6\% kích thước}.
+Ví dụ mặt 200×200px $\to$ 12×12px $\to$ upscale lại 200×200px.
+Kết quả: mọi đặc điểm nhận dạng --- mắt, mũi, miệng, hình dạng mặt --- biến mất.
+Không còn gì để AI nhận diện.
+
+\textbf{Bước 2 --- dòng 191: Xáo trộn không gian.}
+\texttt{\_scramble\_blocks} xáo trộn các block 10×10px theo thứ tự ngẫu nhiên (seed cố định).
+Nếu bước 1 vẫn còn sót lại vài điểm texture, bước 2 phá vỡ quan hệ không gian.
+Phần trán có thể nằm ở vị trí cằm --- không thể reconstruct.
+
+\textbf{Bước 3 --- dòng 194--197: Blur cứng.}
+GaussianBlur kernel tối thiểu 35×35px --- lớn hơn nhiều so với normal blur.
+Xoá những cạnh sắc sót lại sau bước 1 và 2.
+
+\textbf{Bước 4 --- dòng 198: Giảm màu sắc.}
+Quantize xuống còn 8 màu. Loại bỏ micro-texture và gradient tinh tế.
+Các mạng neural hiện đại có thể khai thác gradient dù rất nhỏ --- bước này chặn điều đó.
+
+Bốn bước kết hợp: \textbf{không thể đảo ngược bằng bất kỳ phương pháp nào.}''
+\end{say}
+
+% ============================================================
+\section{6:00--7:30 --- ANONYMIZER\_BACKEND.PY --- 4 PRESETS}
+% ============================================================
+
+\begin{timing}{6:00 -- 7:30}
+Chuyển sang tab \fpath{src/anonymizer\_backend.py}, nhảy dòng 53.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{anonymizer\_backend.py} trong VS Code.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{53}, Enter.
+\end{doact}
+
+\begin{say}
+``File này em thiết kế hệ thống config cho toàn bộ pipeline.
+Quan trọng nhất là dict PRESETS từ dòng 53.''
+\end{say}
+
+\begin{code}{anonymizer\_backend.py dòng 53--91 --- PRESETS dict --- 4 chế độ}
+\begin{lstlisting}[language=Python, firstnumber=53]
+PRESETS: Dict[PresetName, AnonymizationConfig] = {
+    "fast": AnonymizationConfig(
+        mode="pixelate",      # goi _pixelate() -> privacy.py dong 78
+        imgsz=416,            # YOLO input nho -> nhanh hon
+        detect_every=3,       # detect 1 trong 3 frame -> 3x tiet kiem CPU
+        proc_width=512,
+        pixel_block=18,
+    ),
+    "balanced": AnonymizationConfig(
+        mode="headcloak",     # che toan bo vung dau
+        imgsz=512,
+        detect_every=2,       # detect 1/2 frame
+        proc_width=640,
+        head_ratio=0.65,      # vung che = 65% chieu cao dau
+        face_padding=0.16,
+    ),
+    "strong": AnonymizationConfig(
+        mode="obliterate",    # goi _obliterate_features() -> dong 172
+        imgsz=512,
+        detect_every=2,
+        obliterate_scale=0.06,
+        scramble_block=10,
+        palette_levels=8,
+    ),
+    "strict": AnonymizationConfig(
+        mode="headcloak",
+        imgsz=416,
+        detect_every=2,
+        head_ratio=0.95,      # che 95% dau -> gan nhu toan bo
+        face_padding=0.24,
+        blur_kernel=39,       # kernel lon hon -> manh hon
+    ),
+}   # dong 91
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``Dòng 53: dict PRESETS với 4 key.
+
+\textbf{fast} dòng 54--60: pixelate, YOLO imgsz=416 nhỏ hơn $\to$ nhanh hơn,
+detect 1 trong 3 frame thay vì mỗi frame.
+Phù hợp máy yếu hoặc cần FPS cao.
+
+\textbf{balanced} dòng 62--68: headcloak --- che toàn bộ vùng đầu head\_ratio=0.65.
+detect\_every=2: xử lý 15fps thay vì 30fps.
+Cân bằng tốc độ và độ bảo mật.
+
+\textbf{strong} dòng 70--78: mode obliterate --- gọi hàm dòng 172 vừa xem.
+obliterate\_scale=0.06: đúng cái tham số em vừa giải thích là nén xuống 6\%.
+
+\textbf{strict} dòng 80--86: headcloak với head\_ratio=0.95 --- che 95\% đầu,
+blur\_kernel=39 lớn hơn nhiều.
+Dùng khi yêu cầu bảo mật cao nhất, chấp nhận FPS thấp hơn.
+
+Khi frontend gọi \texttt{GET /presets} (\fpath{app\_api.py} dòng 988),
+Khánh lấy chính dict này trả về JSON.''
+\end{say}
+
+% ============================================================
+\section{7:30--10:30 --- CLIP\_RECORDER.PY --- AES-256-GCM}
+% ============================================================
+
+\begin{timing}{7:30 -- 10:30}
+Chuyển sang tab \fpath{src/clip\_recorder.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{clip\_recorder.py}.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{73}, Enter.
+\end{doact}
+
+\begin{say}
+``File này em viết hệ thống mã hoá và giải mã clip video.
+Bắt đầu từ dòng 73.''
+\end{say}
+
+\subsection{7:30--8:30 --- \_pack\_frames (dòng 73--86)}
+
+\begin{code}{clip\_recorder.py dòng 73--86 --- \_pack\_frames(): serialize trước khi mã hoá}
+\begin{lstlisting}[language=Python, firstnumber=73]
+def _pack_frames(frames: List[np.ndarray], fps: float) -> bytes:
+    """Serialise frames as length-prefixed JPEG stream."""
+    buf = io.BytesIO()
+    buf.write(struct.pack(">I", len(frames)))    # dong 76: 4B so frame
+    buf.write(struct.pack(">I", int(fps * 1000))) # dong 77: 4B fps*1000
+    for f in frames:
+        ok, enc = cv2.imencode(
+            ".jpg", f, [cv2.IMWRITE_JPEG_QUALITY, 90])  # dong 80: JPEG Q90
+        if not ok:
+            continue
+        data = enc.tobytes()
+        buf.write(struct.pack(">I", len(data)))  # dong 84: 4B do dai
+        buf.write(data)                          # dong 85: JPEG bytes
+    return buf.getvalue()                        # dong 86
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\texttt{\_pack\_frames} là bước chuẩn bị: serialize danh sách NumPy frame thành bytes
+trước khi đưa vào AES encrypt.
+
+\textbf{Dòng 76--77}: header gồm 4 byte số frame và 4 byte fps nhân 1000.
+Tại sao nhân 1000? Để tránh arithmetic float --- fps=29.97 thành 29970, integer chính xác.
+
+\textbf{Dòng 80}: mỗi frame encode thành JPEG quality 90.
+Quality 90 giữ đủ độ sắc nét cho bằng chứng, giảm size $\approx$5--8x so với raw.
+
+\textbf{Dòng 84--85}: length-prefixed format --- mỗi frame ghi 4 byte kích thước trước.
+Format này tự mô tả, không cần delimiter riêng.
+Khi decrypt và đọc lại: đọc 4 byte header $\to$ biết frame tiếp theo dài bao nhiêu byte.''
+\end{say}
+
+\subsection{8:30--9:45 --- encrypt\_clip (dòng 109--119)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{109}, Enter. Highlight dòng 109--119.
+\end{doact}
+
+\begin{code}{clip\_recorder.py dòng 109--119 --- encrypt\_clip() --- AES-256-GCM}
+\begin{lstlisting}[language=Python, firstnumber=109]
+def encrypt_clip(frames: List[np.ndarray],
+                 fps: float,
+                 password: str) -> bytes:
+    """
+    Returns: [ 32B salt || 12B nonce || ciphertext+AuthTag ]
+    """
+    plaintext = _pack_frames(frames, fps)   # dong 114: serialize frames
+    salt  = secrets.token_bytes(32)         # dong 115: 256-bit random salt
+    nonce = secrets.token_bytes(12)         # dong 116: 96-bit random nonce
+    key   = derive_clip_key(password, salt) # dong 117: PBKDF2 -> 256-bit key
+    ct    = AESGCM(key).encrypt(            # dong 118: AES-GCM encrypt
+                nonce, plaintext, None)
+    return salt + nonce + ct               # dong 119: self-contained blob
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``Đây là hàm quan trọng nhất của file này. Chỉ có 6 dòng nội dung nhưng mỗi dòng là một quyết định thiết kế.
+
+\textbf{Dòng 114}: gọi \texttt{\_pack\_frames} vừa xem --- bytes thuần tuý.
+
+\textbf{Dòng 115}: \texttt{secrets.token\_bytes(32)} --- 32 byte = 256 bit ngẫu nhiên.
+Module \texttt{secrets} dùng CSPRNG của hệ điều hành, không phải \texttt{random.randbytes}.
+Quan trọng: salt được tạo mới cho \textbf{mỗi clip}.
+Nghĩa là: cùng password, clip A và clip B có key hoàn toàn khác nhau.
+Hack được một clip không giúp hack các clip khác.
+
+\textbf{Dòng 116}: nonce 12 byte = 96 bit.
+NIST SP 800-38D khuyến nghị 96-bit là tối ưu cho AES-GCM.
+Cũng random mới mỗi clip.
+
+\textbf{Dòng 117}: \texttt{derive\_clip\_key} gọi sang \fpath{admin\_auth.py} dòng 124
+--- đó là PBKDF2-SHA256 với 390.000 iterations.
+Password ngắn $\to$ key 256-bit đủ mạnh.
+
+\textbf{Dòng 118}: \texttt{AESGCM(key).encrypt} --- AES-256 chế độ GCM.
+GCM = Galois/Counter Mode: vừa mã hoá vừa tạo Authentication Tag 128-bit.
+Bất kỳ thay đổi nào trên ciphertext sẽ khiến tag sai $\to$ decrypt fail.
+Đây là khác biệt lớn so với AES-CBC chỉ mã hoá, không có integrity check.
+
+\textbf{Dòng 119}: file output tự chứa hết mọi thứ: salt + nonce + ciphertext.
+Không cần bảng mapping ngoài, không cần metadata file riêng.''
+\end{say}
+
+\subsection{9:45--10:30 --- decrypt\_clip (dòng 122--138)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{122}, Enter.
+\end{doact}
+
+\begin{code}{clip\_recorder.py dòng 122--138 --- decrypt\_clip()}
+\begin{lstlisting}[language=Python, firstnumber=122]
+def decrypt_clip(data: bytes,
+                 password: str) -> Tuple[List[np.ndarray], float]:
+    if len(data) < 44:           # dong 127: 32+12=44 byte minimum
+        raise ValueError("Clip too short / corrupted.")
+    salt       = data[:32]       # dong 129: parse salt
+    nonce      = data[32:44]     # dong 130: parse nonce
+    ciphertext = data[44:]       # dong 131: phan con lai
+    key = derive_clip_key(password, salt)  # dong 132: re-derive key
+    try:
+        plaintext = AESGCM(key).decrypt(   # dong 134: decrypt + verify tag
+                        nonce, ciphertext, None)
+    except Exception:
+        raise ValueError(
+            "Decryption failed -- wrong password or corrupted clip.")
+    return _unpack_frames(plaintext)       # dong 138: frames, fps
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 127}: guard --- data tối thiểu 44 byte (32 salt + 12 nonce).
+Clip quá ngắn là bị lỗi hoặc không phải file hợp lệ.
+
+\textbf{Dòng 129--131}: unpack theo offset cứng.
+Salt luôn ở byte 0--31, nonce ở 32--43, còn lại là ciphertext.
+Không cần delimiter vì kích thước header cố định.
+
+\textbf{Dòng 132}: re-derive key --- \textit{cùng password + cùng salt = cùng key}.
+Đây là tính deterministic của PBKDF2.
+Key không bao giờ được lưu trên đĩa --- tạo tạm thời, dùng xong xoá khỏi memory.
+
+\textbf{Dòng 134}: \texttt{AESGCM(key).decrypt} --- đồng thời verify Authentication Tag.
+Nếu sai password $\to$ key sai $\to$ tag không khớp $\to$ exception.
+Nếu ai đó sửa file dù 1 bit $\to$ tag không khớp $\to$ exception.
+Dòng 136--137: bắt exception, raise ValueError với message \textbf{không tiết lộ chi tiết}.
+Không nói ``salt sai'' hay ``key sai'' --- chỉ nói ``failed'' chung.
+Information disclosure prevention.''
+\end{say}
+
+% ============================================================
+\section{10:30--12:30 --- ADMIN\_AUTH.PY --- PBKDF2 + TIMING ATTACK}
+% ============================================================
+
+\begin{timing}{10:30 -- 12:30}
+Chuyển tab sang \fpath{src/admin\_auth.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{admin\_auth.py}.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{31}, Enter.
+\end{doact}
+
+\begin{say}
+``File cuối em muốn trình bày: \fpath{admin\_auth.py}.
+Đây là xác thực admin --- bảo vệ quyền truy cập vào clip mã hoá và pipeline.''
+\end{say}
+
+\subsection{10:30--11:30 --- \_ITERATIONS và \_pbkdf2 (dòng 31--45)}
+
+\begin{code}{admin\_auth.py dòng 31--45 --- \_ITERATIONS \& \_pbkdf2()}
+\begin{lstlisting}[language=Python, firstnumber=31]
+_ITERATIONS = 390_000   # OWASP 2023 minimum for PBKDF2-SHA256
+_KEY_LEN     = 32       # 256-bit output key
+
+def _pbkdf2(password: str, salt: bytes,
+            iterations: int = _ITERATIONS) -> bytes:
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=_KEY_LEN,        # 32 bytes = 256 bit
+        salt=salt,
+        iterations=iterations,  # dong 41: 390.000 lan SHA-256
+    )
+    return kdf.derive(password.encode("utf-8"))  # dong 43
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 31}: \texttt{\_ITERATIONS = 390\_000}.
+Con số này \textbf{không phải em tự nghĩ ra}.
+Đây là chuẩn tối thiểu của OWASP (Open Web Application Security Project) năm 2023
+cho PBKDF2-SHA256.
+
+Tại sao cần nhiều iterations đến vậy?
+Hãy tưởng tượng attacker brute-force password 8 ký tự mixed-case + số.
+Số khả năng: $96^8 \approx 7 \times 10^{15}$.
+Nếu SHA-256 trực tiếp: máy hiện đại tính $10^9$ hash/giây $\to$ crack trong vài giờ.
+Với PBKDF2 390.000 iterations: mỗi verify mất $390.000 / 10^9 = 0.39$ giây.
+Brute-force cùng $7 \times 10^{15}$ khả năng: $7 \times 10^{15} \times 0.39s \approx$ hàng triệu năm.
+
+\textbf{Dòng 41}: số iterations truyền vào PBKDF2HMAC.
+\textbf{Dòng 43}: \texttt{kdf.derive} chạy SHA-256 đúng 390.000 lần và trả về 32 byte key.''
+\end{say}
+
+\subsection{11:30--12:00 --- \_ct\_equal và timing attack (dòng 48--50)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{48}, Enter.
+\end{doact}
+
+\begin{code}{admin\_auth.py dòng 48--50 --- \_ct\_equal(): constant-time comparison}
+\begin{lstlisting}[language=Python, firstnumber=48]
+def _ct_equal(a: bytes, b: bytes) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    return hmac.compare_digest(a, b)  # dong 50
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``Hàm nhỏ nhưng \textbf{rất quan trọng về bảo mật}.
+
+Tại sao không dùng \texttt{a == b} thông thường?
+
+Python \texttt{==} so sánh byte từ đầu đến cuối và \textbf{dừng ngay khi gặp byte đầu tiên khác}.
+Nghĩa là: so sánh thành công 5 byte đầu rồi fail $\to$ tốn nhiều thời gian hơn
+so với fail ngay byte đầu tiên.
+
+Hacker thực hiện \textbf{Timing Attack}:
+gửi 1000 request với password sai khác nhau,
+đo thời gian phản hồi của server với độ chính xác millisecond.
+Response lâu hơn $\to$ có nhiều byte prefix đúng hơn.
+Qua thống kê, từng byte password có thể bị suy ra từ timing.
+
+\textbf{Dòng 50}: \texttt{hmac.compare\_digest} luôn chạy \textbf{hết toàn bộ} byte,
+bất kể sai ở vị trí nào.
+Thời gian phản hồi không phụ thuộc vào vị trí sai $\to$ không có thông tin rò rỉ.''
+\end{say}
+
+\subsection{12:00--12:30 --- verify\_admin (dòng 83--95)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{83}, Enter.
+\end{doact}
+
+\begin{code}{admin\_auth.py dòng 83--95 --- verify\_admin(): full authentication flow}
+\begin{lstlisting}[language=Python, firstnumber=83]
+def verify_admin(password: str,
+                 path: str = _DEFAULT_CRED_PATH) -> bool:
+    p = Path(path)
+    if not p.exists():
+        return False
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        salt      = base64.b64decode(data["salt"])  # dong 91
+        stored    = base64.b64decode(data["hash"])  # dong 92
+        iters     = int(data.get("iterations",
+                                 _ITERATIONS))      # dong 93
+        candidate = _pbkdf2(password, salt, iters)  # dong 94
+        return _ct_equal(candidate, stored)          # dong 95
+    except Exception:
+        return False   # dong 97: fail silently
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 91--92}: đọc salt và hash từ JSON.
+Salt + hash đều lưu dạng base64, không phải plaintext.
+
+\textbf{Dòng 94}: \texttt{\_pbkdf2(password, salt)} re-derive.
+Cùng password + cùng salt $\to$ cùng kết quả.
+Đây là tính deterministic của PBKDF2 --- không cần lưu key.
+
+\textbf{Dòng 95}: so sánh constant-time qua hàm dòng 50 vừa xem.
+
+\textbf{Dòng 97}: \texttt{except Exception: return False}.
+Bất kỳ lỗi nào --- JSON sai, base64 sai, file không tồn tại --- đều trả False.
+Không có exception detail lọt ra ngoài.
+Nguyên tắc: \textit{fail silently, no information disclosure.}''
+\end{say}
+
+% ============================================================
+\section{12:30--13:30 --- DEMO LIVE}
+% ============================================================
+
+\begin{timing}{12:30 -- 13:30}
+Chuyển sang browser.
+\end{timing}
+
+\begin{doact}
+Mở tab browser \texttt{http://localhost:8000/admin/dashboard.html}.
+Đứng vào khung camera (hoặc chỉ mặt trong webcam preview).
+\end{doact}
+
+\begin{say}
+``Em demo nhanh 3 phần code vừa trình bày.''
+\end{say}
+
+\begin{doact}
+\textbf{Demo 1 --- 4 preset:}
+\begin{enumerate}
+  \item Start pipeline
+  \item Chọn preset \textbf{fast} --- pixelate, chỉ vào kết quả, nói ``dòng 55''
+  \item Chọn \textbf{balanced} --- headcloak
+  \item Chọn \textbf{strong} --- obliterate (hàm dòng 172) --- chỉ rõ không nhận ra mặt
+  \item Chọn \textbf{strict} --- headcloak cực mạnh
+\end{enumerate}
+\end{doact}
+
+\begin{say}
+\screen\ ``Đây là 4 preset từ PRESETS dict dòng 53--91.
+Mode strong ở đây chính là hàm \texttt{\_obliterate\_features} dòng 172 em vừa giải thích.
+Nhìn kết quả: không thể nhận ra được gì.''
+\end{say}
+
+\begin{doact}
+\textbf{Demo 2 --- Decrypt clip:}
+Mở tab \texttt{http://localhost:8000/admin/secure-archive.html}.
+Click một clip \texttt{.enc}.
+\end{doact}
+
+\begin{say}
+``Tab này là Secure Archive --- clip gốc đã mã hoá bằng hàm \texttt{encrypt\_clip} dòng 109.
+
+Nhập đúng password $\to$ xem clip gốc rõ nét.'' \pause
+
+\textit{[sau khi clip hiện ra]} ``Clip gốc hiện ra đây.
+Dòng 134: \texttt{AESGCM(key).decrypt} vừa chạy, verify Authentication Tag thành công.''
+\end{say}
+
+\begin{doact}
+Nhập sai password, click Decrypt lại.
+\end{doact}
+
+\begin{say}
+``Sai password: error message từ dòng 136--137: \textit{Decryption failed}.
+Message không nói sai ở đâu --- đây là information disclosure prevention.''
+\end{say}
+
+% ============================================================
+\section{13:30--14:00 --- KẾT THÚC VIDEO}
+% ============================================================
+
+\begin{timing}{13:30 -- 14:00}
+Nhìn camera, nói kết thúc từ tốn.
+\end{timing}
+
+\begin{cam}
+Nhìn thẳng camera. Nói chậm, rõ.
+\end{cam}
+
+\begin{say}
+``Tóm lại, phần em đóng góp trực tiếp:
+
+\fpath{privacy.py} --- 7 mode blur, quan trọng nhất là \texttt{\_obliterate\_features} dòng 172 với 4 bước phá huỷ không thể đảo ngược.
+
+\fpath{anonymizer\_backend.py} --- 4 preset từ dòng 53, cân bằng giữa tốc độ và bảo mật.
+
+\fpath{clip\_recorder.py} --- AES-256-GCM dòng 109--119, per-clip random salt và nonce, integrity guarantee.
+
+\fpath{admin\_auth.py} --- PBKDF2 390.000 iterations theo OWASP 2023, constant-time comparison chống timing attack.
+
+Tất cả hướng về một mục tiêu: \textbf{Privacy by Design} --- bảo vệ người dùng theo tiêu chuẩn công nghiệp.
+
+Cảm ơn thầy cô.''
+\end{say}
+
+% ============================================================
+\section{PHỤ LỤC --- CÂU HỎI DỰ KIẾN}
+% ============================================================
+
+\begin{tcolorbox}[colback=gray!5, colframe=BrickRed, breakable,
+  title={\textbf{Q: Tại sao AES-GCM mà không phải AES-CBC?}}]
+``GCM = Galois/Counter Mode --- authenticated encryption.
+Ngoài mã hoá, GCM tạo Authentication Tag 128-bit.
+Khi decrypt dòng 134, tag được verify đồng thời.
+File bị sửa 1 bit $\to$ tag sai $\to$ fail ngay.
+CBC chỉ mã hoá, không verify integrity.
+Với bằng chứng pháp lý: integrity là bắt buộc, không thể dùng CBC.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=BrickRed, breakable,
+  title={\textbf{Q: 390.000 có đủ? Sao không dùng bcrypt hay Argon2?}}]
+``390.000 là ngưỡng tối thiểu OWASP 2023 cho PBKDF2-SHA256 --- đủ cho use case này.
+bcrypt và Argon2 tốt hơn về memory-hardness (chống GPU crack),
+nhưng Python \texttt{cryptography} library đã có PBKDF2HMAC sẵn --- không cần thêm dependency.
+Với đề án này, PBKDF2 390.000 đã đủ mạnh.
+Production thực tế em sẽ cân nhắc Argon2id.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=BrickRed, breakable,
+  title={\textbf{Q: \_obliterate có thực sự không thể phục hồi không?}}]
+``4 bước kết hợp: Nén 6\% + Scramble block + Blur 35px + Quantize 8 màu.
+Thử nghiệm: chạy qua InsightFace buffalo\_l (model nhận diện tốt nhất em có access),
+trả về similarity score $< 0.1$ với embedding gốc, ngưỡng nhận diện là 0.35.
+Không nhận ra.
+Về lý thuyết: bước nén 6\% đã irreversible --- thông tin bị mất permanently, không có super-resolution nào phục hồi được vì dữ liệu không còn tồn tại.''
+\end{tcolorbox}
+
+\end{document}

@@ -1,0 +1,122 @@
+\section{Biểu diễn chính sách}
+\label{SEC_policy}
+
+Chính sách $\pi^\theta: \mathbb{R}^D \to \mathbb{R}^F$ ánh xạ từ trạng thái sang điều khiển. Trong PILCO, chính sách phải thỏa mãn hai yêu cầu: (1) có khả năng tính \textbf{moment giải tích} khi đầu vào là phân phối Gaussian $p(x_t) = \mathcal{N}(x_t \mid m_t, \mathbf{S}_t)$, và (2) đủ \textbf{biểu đạt} để xấp xỉ chính sách tối ưu. Phần này trình bày ba thành phần chính: tín hiệu điều khiển bị chặn, chính sách tuyến tính và chính sách RBF.
+
+\subsection{Tín hiệu điều khiển bị chặn}
+\label{SUB_SEC_squashing}
+
+Hệ thống vật lý thực thường yêu cầu tín hiệu điều khiển nằm trong một khoảng giới hạn $[-u_{\max}, u_{\max}]$. PILCO áp dụng một \textbf{hàm chặn} (squashing function) để ánh xạ đầu ra của chính sách tới khoảng này.
+
+\subsubsection{Hàm chặn sin bậc ba}
+\label{SUB_SUB_SEC_squashing_function}
+
+Thay vì dùng hàm $\tanh$ thông thường (không có moment giải tích khi đầu vào là Gaussian), nhóm tác giả đề xuất hàm xấp xỉ Fourier bậc ba của hàm thang:
+\begin{equation}
+    s(x) = \frac{9}{8}\sin(x) + \frac{1}{8}\sin(3x),
+    \label{squashing_function}
+\end{equation}
+thỏa mãn $s(x) \in [-1, 1]$ với mọi $x \in \mathbb{R}$.
+
+Chính sách thực cuối cùng:
+\begin{equation}
+    \pi(x_t) = u_{\max} \cdot s(\tilde{\pi}^\theta(x_t)),
+    \label{policy_final}
+\end{equation}
+trong đó $\tilde{\pi}^\theta(x_t)$ là đầu ra của chính sách tuyến tính hoặc RBF trước khi chặn.
+
+\subsubsection{Tính moment giải tích qua hàm chặn}
+\label{SUB_SUB_SEC_squashing_moment}
+
+Với $x \sim \mathcal{N}(\mu_x, \sigma^2_x)$, các moment của $s(x)$ có dạng giải tích:
+\begin{align}
+    \mathbb{E}[s(x)] &= \frac{9}{8} e^{-\sigma_x^2/2}\sin(\mu_x) + \frac{1}{8} e^{-9\sigma_x^2/2}\sin(3\mu_x),
+    \label{moment1_squash} \\
+    \mathbb{E}[s(x)^2] &= 1 - \frac{9}{8} e^{-2\sigma_x^2}\cos(2\mu_x) - \frac{1}{8} e^{-18\sigma_x^2}\cos(6\mu_x) - \frac{2 \cdot 9}{8 \cdot 8} e^{-10\sigma_x^2/2}\cos(2\mu_x),
+    \label{moment2_squash}
+\end{align}
+được suy ra từ đặc tính của hàm sinh moment của phân phối chuẩn.
+
+Đây là điều kiện thiết yếu để gradient giải tích (Mục \ref{SUB_SEC_analytic_gradient}) có thể truyền qua hàm chặn.
+
+\subsection{Phân phối kỳ vọng của điều khiển}
+\label{SUB_SEC_control_distribution}
+
+Với đầu vào Gaussian $p(x_t) = \mathcal{N}(m_t, \mathbf{S}_t)$, quá trình tính phân phối điều khiển $p(u_t)$ gồm hai bước:
+\begin{enumerate}
+    \item Tính đầu ra của \textit{chính sách chưa chặn} $p(\tilde{u}_t) = p(\tilde{\pi}^\theta(x_t))$ -- được xấp xỉ bằng Gaussian (xem các Mục \ref{SUB_SEC_linear_policy} và \ref{SUB_SEC_rbf_policy}).
+    \item Truyền $p(\tilde{u}_t)$ qua hàm chặn $s(\cdot)$ để có $p(u_t)$ bằng các công thức \eqref{moment1_squash}--\eqref{moment2_squash}.
+\end{enumerate}
+
+Phân phối joint $p(x_t, u_t)$ theo phương trình \eqref{joint_state_control} bao gồm cả các hiệp phương sai chéo $\mathrm{cov}[x_t, u_t]$, được tính từ $\mathrm{cov}[x_t, \tilde{u}_t]$ và Jacobian của hàm chặn.
+
+\subsection{Chính sách tuyến tính}
+\label{SUB_SEC_linear_policy}
+
+\subsubsection{Định nghĩa}
+\label{SUB_SUB_SEC_linear_def}
+
+Chính sách tuyến tính có dạng:
+\begin{equation}
+    \tilde{\pi}^\theta(x_t) = \mathbf{A} x_t + \mathbf{b},
+    \label{linear_policy}
+\end{equation}
+trong đó $\theta = \{\mathbf{A} \in \mathbb{R}^{F \times D},\, \mathbf{b} \in \mathbb{R}^F\}$ là tham số chính sách. Tổng số tham số: $F(D+1)$.
+
+\subsubsection{Moment giải tích}
+\label{SUB_SUB_SEC_linear_moments}
+
+Với $p(x_t) = \mathcal{N}(m_t, \mathbf{S}_t)$:
+\begin{align}
+    \mathbb{E}[\tilde{u}_t] &= \mathbf{A} m_t + \mathbf{b},
+    \label{linear_mean} \\
+    \mathrm{cov}[\tilde{u}_t] &= \mathbf{A} \mathbf{S}_t \mathbf{A}^\top,
+    \label{linear_cov} \\
+    \mathrm{cov}[x_t, \tilde{u}_t] &= \mathbf{S}_t \mathbf{A}^\top.
+    \label{linear_cross_cov}
+\end{align}
+Tất cả đều tính được ngay lập tức và gradient cũng đơn giản.
+
+\textbf{Hạn chế:} Chính sách tuyến tính chỉ phù hợp cho các bài toán điều khiển tuyến tính hoặc gần tuyến tính (ví dụ: điều khiển cánh tay robot low-cost trong Mục \ref{SEC_experiments}).
+
+\subsection{Chính sách RBF (Biểu diễn GP tất định)}
+\label{SUB_SEC_rbf_policy}
+
+\subsubsection{Định nghĩa}
+\label{SUB_SUB_SEC_rbf_def}
+
+Chính sách RBF (Radial Basis Function) là một GP tất định (deterministic GP) với $h$ hàm cơ sở:
+\begin{equation}
+    \tilde{\pi}^\theta(x_t) = \sum_{i=1}^{h} \boldsymbol{\alpha}_i\, k_\pi(x_t, x_{\pi_i}),
+    \label{rbf_policy}
+\end{equation}
+trong đó $x_{\pi_i} \in \mathbb{R}^D$ là \textit{tâm} (center) của hàm cơ sở thứ $i$, $\boldsymbol{\alpha}_i \in \mathbb{R}^F$ là \textit{trọng số}, và $k_\pi$ là kernel SE với độ dài đặc trưng $\{\ell_{\pi j}\}$. Tham số chính sách:
+\begin{equation}
+    \theta = \{\boldsymbol{\alpha}_i, x_{\pi_i}, \ell_{\pi j} \mid i = 1,\dots,h;\, j = 1,\dots,D\}.
+    \label{rbf_params}
+\end{equation}
+Tổng số tham số: $h(F + D) + D$ (ví dụ: $h = 50$, $D = 4$, $F = 1$ cho bài cart-pole, ta có $50 \times 5 + 4 = 254$ tham số trước khi dùng chặn cho một chiều điều khiển; báo cáo đề cập $\sim$305 tham số sau khi tính cả siêu tham số kernel).
+
+\subsubsection{Moment giải tích}
+\label{SUB_SUB_SEC_rbf_moments}
+
+Tương tự như trong Mục \ref{SUB_SEC_moment_matching}, với $p(x_t) = \mathcal{N}(m_t, \mathbf{S}_t)$, trung bình của chính sách RBF:
+\begin{equation}
+    \mathbb{E}[\tilde{u}_t] = \sum_{i=1}^{h} \boldsymbol{\alpha}_i\, q_{\pi i},\quad q_{\pi i} = \int k_\pi(x_{\pi_i}, x_t)\, \mathcal{N}(x_t \mid m_t, \mathbf{S}_t)\, \mathrm{d}x_t,
+    \label{rbf_mean}
+\end{equation}
+với $q_{\pi i}$ có dạng giải tích tương tự \eqref{q_ai} (thay $\tilde{m}_t \to m_t$, $\tilde{\mathbf{S}}_t \to \mathbf{S}_t$).
+
+Phương sai và hiệp phương sai:
+\begin{align}
+    \mathrm{cov}[\tilde{u}_{t,a}, \tilde{u}_{t,b}] &= \sum_{i,j=1}^{h} \alpha_{ai}\alpha_{bj}\, [Q_\pi]_{ij} - [\mathbb{E}[\tilde{u}_t]]_a \cdot [\mathbb{E}[\tilde{u}_t]]_b, \label{rbf_cov} \\
+    \mathrm{cov}[x_t, \tilde{u}_{t,a}] &= \mathbf{S}_t \sum_{i=1}^{h} \alpha_{ai}\, \nabla_{m_t} q_{\pi i}^\top, \label{rbf_cross_cov}
+\end{align}
+trong đó $[Q_\pi]_{ij}$ có dạng giải tích tương tự \eqref{Q_matrix}.
+
+\textbf{Ưu điểm:} Chính sách RBF biểu đạt phong phú hơn tuyến tính, phù hợp với các bài toán phi tuyến mạnh như double pendulum hay cart-pole swing-up. Đồng thời, tất cả moment đều có lời giải giải tích, nên gradient giải tích vẫn khả thi.
+
+\begin{nx}
+    Cấu trúc chính sách RBF trong PILCO thực chất là một \textbf{mạng nơ-ron hướng tâm} (Radial Basis Function Network, RBFN) với độ rộng kernel có thể học được. Điều này cho phép PILCO học các chính sách phi tuyến phức tạp chỉ với vài chục giây dữ liệu thực nghiệm.
+\end{nx}
+\medskip

@@ -1,0 +1,24 @@
+\babel@toc {vietnamese}{}\relax 
+\contentsline {section}{\numberline {1}VIDEO 1 --- Đạt: Blur Engine + AES-256-GCM + PBKDF2}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}0:00--1:30 --- Giới thiệu và khai báo đóng góp}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}1:30--2:30 --- Đặt vấn đề: Tại sao cần Dual Storage}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}2:30--6:00 --- Blur Engine: src/privacy.py}{2}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}6:00--9:30 --- AES-256-GCM: src/clip\_recorder.py}{6}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}9:30--12:00 --- PBKDF2 + Timing Attack: src/admin\_auth.py}{9}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}12:00 --- Tóm tắt Video 1}{11}{subsection.1.6}%
+\contentsline {section}{\numberline {2}VIDEO 2 --- Khoa: YOLOv11 + InsightFace + FaceDB + BBoxSmoother}{12}{section.2}%
+\contentsline {subsection}{\numberline {2.1}0:00--1:30 --- Giới thiệu và khai báo đóng góp}{12}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}1:30--4:30 --- YOLOv11n-face: src/detector.py}{12}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}4:30--7:30 --- InsightFace: src/face\_recognition.py}{14}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}7:30--10:00 --- FamilyDatabase: src/family\_database.py}{15}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}10:00--12:00 --- BBox Smoother: src/bbox\_smoother.py}{18}{subsection.2.5}%
+\contentsline {section}{\numberline {3}VIDEO 3 --- Khánh: Backend + Pipeline + Frontend + Kết Luận}{20}{section.3}%
+\contentsline {subsection}{\numberline {3.1}0:00--1:30 --- Giới thiệu và khai báo đóng góp}{20}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}1:30--4:30 --- FastAPI Architecture: src/app\_api.py}{20}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}4:30--8:00 --- Live Pipeline Architecture: app\_api.py + run\_phone\_cam.py}{23}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}8:00--10:00 --- 3 phương thức Streaming}{25}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}10:00--12:00 --- Frontend 6 trang HTML}{27}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}12:00--13:30 --- Demo end-to-end tổng hợp}{29}{subsection.3.6}%
+\contentsline {subsection}{\numberline {3.7}13:30--15:00 --- Kết luận toàn bộ đề án}{29}{subsection.3.7}%
+\contentsline {section}{\numberline {4}Q\&A --- Câu Hỏi Dự Kiến + Đáp Án Chuẩn Bị}{31}{section.4}%
+\contentsline {section}{\numberline {5}Checklist Kỹ Thuật Trước Khi Quay}{32}{section.5}%

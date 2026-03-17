@@ -1,0 +1,1140 @@
+% ============================================================
+%  KỊCH BẢN THUYẾT TRÌNH CHI TIẾT
+%  Hệ Thống: XLA Face Privacy System
+%  Nhóm: Đạt (Leader/Security) · Khánh (Backend/API) · Khoa (YOLO/Registry)
+%  Thời lượng: ~30 phút
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% --- Encoding & Language ---
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+
+% --- Layout ---
+\usepackage[margin=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+
+% --- Color & Box ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings}
+
+% --- Code listing ---
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{NavyBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  frame=single,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  backgroundcolor=\color{gray!8},
+}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+
+% --- Icons / Symbols ---
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{fontawesome5}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+% --- Section styling ---
+\usepackage{titlesec}
+\titleformat{\section}[block]
+  {\large\bfseries\color{NavyBlue}}
+  {\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}[block]
+  {\normalsize\bfseries\color{MidnightBlue}}
+  {\thesubsection}{0.5em}{}
+
+% --- Header / Footer ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{NavyBlue}{\textbf{XLA Face Privacy System}}}
+\rhead{\textcolor{gray}{Kịch Bản Thuyết Trình}}
+\cfoot{\thepage}
+
+% --- Hyperlinks ---
+\usepackage[hidelinks]{hyperref}
+
+% --- Custom environments ---
+
+% Dialog box (lời thoại của người trình bày)
+\newtcolorbox{dialog}[2][]{
+  title={\textbf{#2}},
+  colback=blue!4,
+  colframe=NavyBlue!60,
+  fonttitle=\small\bfseries,
+  left=4pt, right=4pt, top=4pt, bottom=4pt,
+  breakable,
+  #1
+}
+
+% Action box (hành động thao tác)
+\newtcolorbox{action}[1][]{
+  title={\faCogs\ \textbf{THAO TÁC}},
+  colback=OliveGreen!6,
+  colframe=OliveGreen!70,
+  fonttitle=\small\bfseries,
+  left=4pt, right=4pt,
+  breakable,
+  #1
+}
+
+% Note box (ghi chú kỹ thuật)
+\newtcolorbox{note}[1][]{
+  title={\textbf{LƯU Ý}},
+  colback=Goldenrod!10,
+  colframe=Goldenrod!80,
+  fonttitle=\small\bfseries,
+  left=4pt, right=4pt,
+  breakable,
+  #1
+}
+
+% Warning box
+\newtcolorbox{warn}[1][]{
+  title={\textbf{CẢNH BÁO}},
+  colback=red!5,
+  colframe=red!60,
+  fonttitle=\small\bfseries,
+  left=4pt, right=4pt,
+  breakable,
+  #1
+}
+
+% Timing badge macro
+\newcommand{\timing}[1]{%
+  \hfill\colorbox{NavyBlue!20}{\texttt{\small #1}}%
+}
+
+% Person label macros
+\newcommand{\dat}{\textcolor{BrickRed}{\textbf{[ĐẠT]}}}
+\newcommand{\khanh}{\textcolor{MidnightBlue}{\textbf{[KHÁNH]}}}
+\newcommand{\khoa}{\textcolor{OliveGreen}{\textbf{[KHOA]}}}
+
+% File path macro
+\newcommand{\fpath}[1]{\texttt{\textcolor{purple}{#1}}}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+% ---- TITLE PAGE ----
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\color{NavyBlue} Kịch Bản Thuyết Trình Chi Tiết\par}
+\vspace{0.5cm}
+{\Large\color{MidnightBlue} XLA Face Privacy System\par}
+\vspace{0.3cm}
+{\large\color{gray} Môn Xử Lý Ảnh\par}
+\vspace{1.5cm}
+
+\begin{tcolorbox}[colback=NavyBlue!8, colframe=NavyBlue, width=0.85\textwidth]
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lll}
+\textbf{Vai trò} & \textbf{Thành viên} & \textbf{Phụ trách} \\
+\hline
+\textcolor{BrickRed}{\textbf{Leader / Security}} & \textcolor{BrickRed}{\textbf{Đạt}} &
+AES-256-GCM · PBKDF2 · Blur Engine \\
+Backend / API & Khánh & FastAPI · Pipeline · Streaming \\
+YOLO / Registry & Khoa & YOLOv11 · InsightFace · FaceDB \\
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{1.5cm}
+\begin{tabular}{ll}
+\textbf{Thời lượng:} & $\approx$ 30 phút \\
+\textbf{Ngày:} & \today \\
+\textbf{Repository:} & \texttt{github.com/Poicitaco/XLA\_T3} \\
+\textbf{Branch:} & \texttt{feature/cipher} \\
+\end{tabular}
+
+\vspace{1.5cm}
+\begin{note}
+\textbf{Chuẩn bị trước khi trình bày:}
+\begin{itemize}
+  \item Server đang chạy: \texttt{uvicorn src.app\_api:app --host 0.0.0.0 --port 8000}
+  \item Admin password đã được setup (POST /admin/setup)
+  \item Có ít nhất 2 clip \texttt{.enc} trong \fpath{data/clips/secure/}
+  \item VS Code mở sẵn: \fpath{src/clip\_recorder.py}, \fpath{src/admin\_auth.py}, \fpath{src/privacy.py}, \fpath{src/face\_recognition.py}
+  \item Browser: 3 tab sẵn sàng tại \texttt{localhost:8000}
+  \item Font size VS Code $\geq 16$, zoom browser 110\%
+\end{itemize}
+\end{note}
+\end{titlepage}
+
+% ---- TABLE OF CONTENTS ----
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Tổng Quan Kịch Bản \timing{0:00 – 30:00}}
+% ============================================================
+
+\begin{tcolorbox}[colback=NavyBlue!5, colframe=NavyBlue]
+\centering
+\renewcommand{\arraystretch}{1.6}
+\begin{tabularx}{\textwidth}{clXl}
+\toprule
+\textbf{Phần} & \textbf{Người trình bày} & \textbf{Nội dung} & \textbf{Thời gian} \\
+\midrule
+1 & \textcolor{BrickRed}{\textbf{Đạt}} & Mở đầu, vấn đề, kiến trúc tổng thể & 0:00--6:00 \\
+2 & \textcolor{OliveGreen}{\textbf{Khoa}} & YOLO Detection + InsightFace + Face Registry & 6:00--12:00 \\
+3 & \textcolor{MidnightBlue}{\textbf{Khánh}} & FastAPI Backend + Live Pipeline + Streaming & 12:00--18:00 \\
+4 & \textcolor{BrickRed}{\textbf{Đạt}} & Security Layer (Blur/Encrypt/Decrypt) & 18:00--25:00 \\
+5 & \textbf{Cả nhóm} & Demo end-to-end + Q\&A & 25:00--30:00 \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+% ============================================================
+\section{Phần 1 — Đạt: Mở Đầu và Kiến Trúc \timing{0:00 – 6:00}}
+% ============================================================
+
+\subsection{Đặt vấn đề \timing{0:00 – 1:30}}
+
+\begin{dialog}{\dat\ Lời mở đầu}
+"Xin chào thầy cô và các bạn. Em là Đạt, đại diện nhóm chúng em
+trình bày đồ án môn Xử Lý Ảnh với đề tài:
+\textbf{Hệ thống camera thông minh bảo vệ quyền riêng tư khuôn mặt theo thời gian thực.}"
+
+\vspace{0.3em}
+"Câu hỏi đặt ra: Khi camera an ninh quay mọi người đi qua
+--- khách, người giúp việc, hàng xóm ---
+họ có đồng ý bị nhận dạng và lưu trữ khuôn mặt không?
+Theo luật GDPR và quy định bảo vệ dữ liệu Việt Nam,
+câu trả lời là \textbf{không}.
+Nhưng nếu xóa hết camera thì ta lại mất bằng chứng khi có sự cố."
+
+\vspace{0.3em}
+"Hệ thống của nhóm em giải quyết đúng mâu thuẫn này:
+\textbf{bảo vệ quyền riêng tư theo mặc định, đồng thời không mất đi bằng chứng.}"
+\end{dialog}
+
+\begin{note}
+Nói chắc, đứng thẳng, nhìn vào mắt thầy cô khi nói câu định nghĩa cuối.
+Đây là câu ``hook'' quan trọng nhất trong phần mở đầu.
+\end{note}
+
+\subsection{Giới thiệu hai tầng bảo vệ \timing{1:30 – 3:00}}
+
+\begin{action}
+Chuyển sang slide \textbf{``Dual Storage Architecture''}.
+Dùng bút laser hoặc tay chỉ vào từng tầng khi giải thích.
+\end{action}
+
+\begin{dialog}{\dat\ Hai tầng bảo vệ}
+"Hệ thống hoạt động theo nguyên lý \textbf{Dual Storage}.
+Mỗi khi camera phát hiện khuôn mặt, hệ thống ghi lại \textbf{đồng thời hai bản}:
+
+\vspace{0.5em}
+\textbf{Tầng 1 --- Blurred Stream:}
+Video khuôn mặt đã bị che giấu, lưu định dạng MP4 thông thường.
+Bất kỳ ai trong hệ thống đều có thể xem --- không phân biệt được danh tính người trong clip.
+
+\vspace{0.5em}
+\textbf{Tầng 2 --- Encrypted Store:}
+Video gốc hoàn toàn nguyên vẹn, được mã hóa bằng AES-256-GCM
+và lưu dưới dạng file \texttt{.enc}.
+\textit{Chỉ} người quản trị biết mật khẩu mới giải mã được.
+Dùng khi cần điều tra pháp lý."
+\end{dialog}
+
+\subsection{Kiến trúc tổng thể \timing{3:00 – 5:00}}
+
+\begin{action}
+Mở VS Code, trỏ vào cây thư mục bên trái theo từng dòng.
+Đọc to tên file và giải thích ngắn.
+\end{action}
+
+\begin{dialog}{\dat\ Kiến trúc 3 tầng}
+"Kiến trúc hệ thống gồm 3 tầng:"
+
+\vspace{0.5em}
+"\textbf{Tầng Detection} --- \texttt{src/detector.py}, \texttt{src/face\_recognition.py}:
+Khoa phụ trách. YOLOv11 phát hiện khuôn mặt, InsightFace trích xuất embedding
+để nhận diện thành viên gia đình."
+
+\vspace{0.5em}
+"\textbf{Tầng Backend} --- \texttt{src/app\_api.py}, \texttt{src/backend\_api.py}:
+Khánh phụ trách. FastAPI xử lý real-time pipeline,
+phân luồng video đến đúng module, phục vụ giao diện frontend qua REST và WebSocket."
+
+\vspace{0.5em}
+"\textbf{Tầng Security} --- \texttt{src/privacy.py}, \texttt{src/clip\_recorder.py}, \texttt{src/admin\_auth.py}:
+Em phụ trách. Blur engine xử lý 7 chế độ che giấu,
+mã hóa AES-256-GCM với key derive từ PBKDF2-SHA256."
+\end{dialog}
+
+\begin{action}
+Show nhanh cấu trúc thư mục trong terminal:
+\begin{lstlisting}[language=bash]
+Get-ChildItem src/ | Select-Object Name
+\end{lstlisting}
+\end{action}
+
+\subsection{Chuyển sang Khoa \timing{5:30 – 6:00}}
+
+\begin{dialog}{\dat\ Chuyển phần}
+"Bây giờ em mời \textbf{Khoa} trình bày về phần nền tảng của pipeline ---
+hệ thống phát hiện và nhận diện khuôn mặt.
+Khoa ơi."
+\end{dialog}
+
+% ============================================================
+\section{Phần 2 — Khoa: YOLO + InsightFace + Face Registry \timing{6:00 – 12:00}}
+% ============================================================
+
+\subsection{YOLOv11 Face Detection \timing{6:00 – 8:00}}
+
+\begin{action}
+Mở file \fpath{src/detector.py}. Scroll đến class \texttt{FaceDetector},
+highlight phần \texttt{\_\_init\_\_} và method \texttt{detect\_faces}.
+\end{action}
+
+\begin{dialog}{\khoa\ YOLOv11 Detector}
+"Em dùng \textbf{YOLOv11n-face} --- phiên bản nano của YOLO thế hệ 11,
+được fine-tune đặc biệt để phát hiện khuôn mặt.
+Model weights nằm tại \texttt{models/yolov11n-face.pt}."
+\end{dialog}
+
+\begin{action}
+Chỉ vào file \fpath{src/detector.py}, highlight đoạn khởi tạo:
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/detector.py --- Khởi tạo YOLO}]
+class FaceDetector:
+    def __init__(
+        self,
+        model_path: str = "models/yolov11n-face.pt",
+        conf_threshold: float = 0.35,   # Nguong tin cay
+        iou_threshold:  float = 0.50,   # Non-Maximum Suppression
+        imgsz:          int   = 640,    # Kich thuoc anh inference
+    ) -> None:
+        yolo_cls = self._resolve_yolo_class()
+        self.model = yolo_cls(model_path)
+\end{lstlisting}
+
+\begin{dialog}{\khoa\ Giải thích tham số}
+"Ba tham số quan trọng:
+
+\textbf{conf\_threshold = 0.35}: Chỉ chấp nhận detection có độ tin cậy trên 35\%.
+Nếu để thấp quá sẽ có nhiều false positive --- nhầm đồ vật thành mặt người.
+
+\textbf{iou\_threshold = 0.50}: Ngưỡng IoU cho Non-Maximum Suppression.
+Khi hai bounding box chồng nhau quá 50\% thì giữ lại box có confidence cao hơn.
+
+\textbf{imgsz = 640}: YOLO resize frame về 640×640 trước khi inference
+để đảm bảo hiệu suất nhất quán bất kể độ phân giải camera."
+\end{dialog}
+
+\begin{action}
+Scroll xuống method \texttt{detect\_faces}, highlight vòng lặp kết quả:
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/detector.py --- detect\_faces}]
+def detect_faces(self, frame: np.ndarray) -> List[List[int]]:
+    results = self.model(
+        frame,
+        imgsz=self.imgsz,
+        conf=self.conf_threshold,
+        iou=self.iou_threshold,
+        verbose=False,
+    )
+    boxes = []
+    for r in results:
+        for box in r.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            # Chuyen tu [x1,y1,x2,y2] sang [x,y,w,h]
+            boxes.append([x1, y1, x2 - x1, y2 - y1])
+    return boxes
+\end{lstlisting}
+
+\begin{dialog}{\khoa\ Format bounding box}
+"YOLO trả về tọa độ góc trên trái và góc dưới phải \texttt{[x1,y1,x2,y2]}.
+Em convert sang định dạng \texttt{[x, y, width, height]}
+--- định dạng phổ biến hơn khi vẽ rectangle với OpenCV."
+\end{dialog}
+
+\subsection{InsightFace Embedding \timing{8:00 – 10:00}}
+
+\begin{action}
+Mở file \fpath{src/face\_recognition.py}. Highlight class \texttt{FaceRecognizer}.
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/face\_recognition.py --- InsightFace setup}]
+from insightface.app import FaceAnalysis
+
+class FaceRecognizer:
+    def __init__(
+        self,
+        model: str = "buffalo_l",       # Model buffalo_l: 512-dim embedding
+        det_size: tuple = (256, 256),   # Kich thuoc detect noi bo InsightFace
+    ) -> None:
+        self.app = FaceAnalysis(
+            name=model,
+            providers=["CPUExecutionProvider"]  # Chay tren CPU
+        )
+        self.app.prepare(ctx_id=0, det_size=det_size)
+\end{lstlisting}
+
+\begin{dialog}{\khoa\ InsightFace Buffalo-L}
+"InsightFace \textbf{buffalo\_l} là model nhận diện khuôn mặt state-of-the-art,
+tạo ra vector embedding \textbf{512 chiều} --- gọi là ``vân tay số'' của khuôn mặt.
+
+Mỗi người có một vector embedding đặc trưng.
+Để nhận diện, em tính \textbf{cosine similarity} giữa embedding đang quan sát
+và embedding đã đăng ký trong database:"
+\end{dialog}
+
+\begin{lstlisting}[language=Python, caption={src/face\_recognition.py --- Cosine Similarity}]
+@staticmethod
+def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+    a_norm = np.linalg.norm(a)
+    b_norm = np.linalg.norm(b)
+    if a_norm == 0.0 or b_norm == 0.0:
+        return -1.0
+    # Gia tri tu -1 (nguoc hoan toan) den +1 (giong hoan toan)
+    return float(np.dot(a, b) / (a_norm * b_norm))
+\end{lstlisting}
+
+\begin{dialog}{\khoa\ Ngưỡng nhận diện}
+"Giá trị similarity từ \textbf{-1 đến +1}.
+Ngưỡng mặc định là \textbf{0.35}: nếu similarity $> 0.35$,
+đây là thành viên đã đăng ký $\rightarrow$ \textit{không blur}.
+Nếu similarity $\leq 0.35$ $\rightarrow$ người lạ $\rightarrow$ \textit{bị blur}."
+\end{dialog}
+
+\begin{note}
+Minh hoạ trực quan: ``Nếu trong database em có vector của Khoa,
+và camera nhìn thấy Khoa, similarity sẽ khoảng 0.85.
+Một người lạ chưa đăng ký sẽ cho similarity âm hoặc gần 0.''
+\end{note}
+
+\subsection{Face Registry Demo \timing{10:00 – 12:00}}
+
+\begin{action}
+Mở browser, chuyển đến tab \texttt{http://localhost:8000/admin/face-registry.html}.
+Chỉ vào từng thành phần của UI.
+\end{action}
+
+\begin{dialog}{\khoa\ Demo Face Registry}
+"Đây là trang đăng ký thành viên.
+Quy trình đăng ký rất đơn giản:
+nhập tên thành viên, upload ảnh khuôn mặt.
+Backend tự động trích xuất embedding và lưu vào database."
+\end{dialog}
+
+\begin{action}
+Mở VS Code, trỏ vào thư mục \fpath{data/members/}:
+\begin{lstlisting}[language=bash]
+Get-ChildItem data/members/ -Recurse |
+  Where-Object { -not $_.PSIsContainer } |
+  Group-Object DirectoryName |
+  Select-Object Name, Count
+\end{lstlisting}
+\end{action}
+
+\begin{dialog}{\khoa\ Giải thích dữ liệu}
+"Hiện tại database có 2 thành viên: \textbf{Đạt} và \textbf{Khoa},
+mỗi người \textbf{100 ảnh mẫu}.
+Nhiều ảnh mẫu từ nhiều góc độ và điều kiện ánh sáng khác nhau
+giúp embedding ổn định hơn và giảm thiểu nhận diện sai.
+
+File JSON lưu embedding được persist tại
+\texttt{data/family\_members.json}."
+\end{dialog}
+
+\begin{action}
+Show nhanh file \fpath{data/family\_members.json},
+highlight cấu trúc: \texttt{member\_id}, \texttt{name}, \texttt{threshold}, \texttt{embeddings} (danh sách vector).
+\end{action}
+
+\begin{dialog}{\khoa\ Chuyển phần}
+"Em xin bàn giao cho Khánh trình bày về Backend API
+và hệ thống pipeline thời gian thực."
+\end{dialog}
+
+% ============================================================
+\section{Phần 3 — Khánh: Backend API + Live Pipeline \timing{12:00 – 18:00}}
+% ============================================================
+
+\subsection{FastAPI Architecture \timing{12:00 – 14:00}}
+
+\begin{action}
+Mở file \fpath{src/app\_api.py}. Scroll lên đầu file,
+highlight phần docstring liệt kê tất cả endpoint.
+\end{action}
+
+\begin{dialog}{\khanh\ Giới thiệu FastAPI}
+"Backend em xây dựng bằng \textbf{FastAPI} ---
+Python async web framework, tự động generate OpenAPI documentation.
+
+Toàn bộ API được chia thành nhóm chức năng rõ ràng:"
+\end{dialog}
+
+\begin{lstlisting}[language=Python, caption={src/app\_api.py --- Endpoint catalog}]
+# Health / Info
+GET  /health          # Kiem tra server song
+GET  /info            # Version, capabilities, mode list
+GET  /presets         # 4 preset: fast/balanced/strong/strict
+
+# Xu ly anh tinh (stateless)
+POST /anonymize       # Cha mat trong 1 anh upload
+POST /lock            # Ma hoa AES-GCM tung vung mat
+POST /unlock          # Giai ma, phuc hoi mat goc
+POST /recognize       # Nhan dien tat ca mat trong anh
+
+# Camera va Pipeline
+GET  /cameras         # Liet ke camera kha dung
+POST /pipeline/start  # Bat pipeline camera
+DELETE /pipeline/stop # Tat pipeline
+GET  /pipeline/status # Trang thai + thong ke live
+PATCH /pipeline/config# Cap nhat config khong can restart
+
+# Streaming
+GET  /stream/mjpeg    # MJPEG stream (dung cho <img src="">)
+GET  /stream/sse      # Server-Sent Events
+WS   /stream/ws       # WebSocket (?format=binary|json)
+
+# Clip management
+GET  /clips           # Danh sach clip da luu
+POST /clips/decrypt   # Giai ma clip (admin only)
+DELETE /clips/{id}    # Xoa mot clip
+\end{lstlisting}
+
+\begin{dialog}{\khanh\ CORS và Security}
+"Một điểm quan trọng trong cấu hình backend:"
+\end{dialog}
+
+\begin{lstlisting}[language=Python, caption={src/app\_api.py --- CORS middleware}]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],     # Dev mode; production nen gioi han
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+\end{lstlisting}
+
+\subsection{Live Pipeline Architecture \timing{14:00 – 16:00}}
+
+\begin{action}
+Mở browser, chuyển đến \texttt{http://localhost:8000/admin/dashboard.html}.
+Chỉ cho thầy cô xem layout tổng thể trước khi start pipeline.
+\end{action}
+
+\begin{dialog}{\khanh\ Giải thích pipeline}
+"Khi nhấn Start, backend khởi động một background thread.
+Luồng xử lý như sau:"
+\end{dialog}
+
+\begin{lstlisting}[language=Python, caption={Pipeline flow (minh họa)}]
+# 1. Mo camera
+cap = cv2.VideoCapture(camera_id)
+
+# 2. FrameReader: doc frame tu camera theo thread rieng
+# -> giam delay so voi doc dong bo
+
+# 3. Moi frame:
+if frame_index % detect_every == 0:
+    boxes = detector.detect_faces(frame)   # YOLO
+    boxes = smoother.smooth(boxes)         # EMA smoothing
+
+# 4. RecognitionWorker: nhan dien async
+#    So sanh embedding voi FamilyDatabase
+#    -> identity: "Dat" | "Khoa" | None (nguoi la)
+
+# 5. anonymize_faces():
+#    Nhung mat co identity=None -> BLUR
+#    Nhung mat co identity != None -> giu nguyen + ve ten
+
+# 6. ClipRecorder.push_frame():
+#    raw frame  -> .enc (AES-256-GCM)
+#    display frame -> .mp4 (blurred)
+\end{lstlisting}
+
+\begin{action}
+Thao tác live: chọn camera từ dropdown, mode \textbf{headcloak}, click \textbf{Start Pipeline}.
+Chờ stream hiện lên, chỉ cho thầy cô thấy:
+(a) người đã đăng ký không bị blur, (b) người lạ bị che hoàn toàn.
+\end{action}
+
+\begin{dialog}{\khanh\ Bbox Smoother}
+"Một chi tiết kỹ thuật nhỏ nhưng quan trọng:
+chúng em có module \texttt{bbox\_smoother.py} dùng \textbf{Exponential Moving Average}
+để làm mịn bounding box qua các frame.
+
+Không có smoother, bounding box sẽ nhảy lung tung frame-by-frame.
+Với EMA alpha = 0.7, box di chuyển mượt mà và ổn định hơn nhiều."
+\end{dialog}
+
+\subsection{Hot-reload Config \timing{16:00 – 17:30}}
+
+\begin{action}
+Trong khi pipeline đang chạy, dùng UI đổi mode từ \texttt{headcloak} sang \texttt{pixelate}.
+Chỉ cho thầy cô thấy thay đổi ngay lập tức trên stream.
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/app\_api.py --- PATCH /pipeline/config}]
+@app.patch("/pipeline/config")
+async def update_config(req: ConfigUpdateRequest):
+    """Cap nhat config pipeline KHONG can restart server."""
+    global _pipeline_session
+    if _pipeline_session is None:
+        raise HTTPException(404, "Pipeline not running")
+
+    # Atomic update: thay the config object in-place
+    new_cfg = dc_replace(_pipeline_session.config, **req.dict(...))
+    _pipeline_session.config = new_cfg
+    return {"ok": True, "config": asdict(new_cfg)}
+\end{lstlisting}
+
+\begin{dialog}{\khanh\ Hot-reload}
+"Endpoint PATCH \texttt{/pipeline/config} cho phép thay đổi
+toàn bộ tham số của pipeline \textit{mà không cần tắt server}.
+Đây là tính năng production-ready quan trọng ---
+trong thực tế admin không thể restart camera mỗi lần cần đổi mode."
+\end{dialog}
+
+\subsection{Chuyển sang Đạt \timing{17:30 – 18:00}}
+
+\begin{dialog}{\khanh\ Chuyển phần}
+"Em xin bàn giao lại cho Đạt để trình bày phần quan trọng nhất của hệ thống ---
+tầng bảo mật, mã hóa và decryption. Đạt ơi."
+\end{dialog}
+
+% ============================================================
+\section{Phần 4 — Đạt: Security Layer \timing{18:00 – 25:00}}
+% ============================================================
+
+\begin{note}
+Đây là phần \textbf{dài và quan trọng nhất} của toàn bài.
+Đạt cần trình bày tự tin, chắc chắn, và giải thích đủ sâu
+để thầy cô thấy rõ kiến thức bảo mật thực sự.
+Đừng đọc code --- giải thích ý nghĩa từng dòng.
+\end{note}
+
+\subsection{Tại sao cần mã hóa? \timing{18:00 – 19:30}}
+
+\begin{action}
+Quay lại slide \textbf{``Dual Storage — Why Encryption?''}.
+\end{action}
+
+\begin{dialog}{\dat\ Động lực mã hóa}
+"Khánh vừa demo pipeline blur rất đẹp.
+Nhưng nếu chỉ dừng ở blur thì hệ thống có một lỗ hổng nghiêm trọng:
+\textbf{bằng chứng bị mất}.
+
+Giả sử tối nay có trộm đột nhập. Camera ghi lại clip.
+Nhưng clip đã blur hoàn toàn --- khuôn mặt kẻ trộm không còn.
+Video đó \textit{vô dụng} cho điều tra.
+
+Giải pháp: lưu song song hai bản ---
+bản public đã blur để mọi người xem bình thường,
+và bản gốc mã hóa chỉ admin mới giải mã được.
+
+Đây là triết lý thiết kế: \textbf{Privacy by Default, Evidence on Demand.}"
+\end{dialog}
+
+\subsection{AES-256-GCM Encryption \timing{19:30 – 21:30}}
+
+\begin{action}
+Mở file \fpath{src/clip\_recorder.py}. Scroll đến hàm \texttt{encrypt\_clip}
+(khoảng dòng 110). Highlight toàn bộ hàm.
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/clip\_recorder.py --- encrypt\_clip}]
+def encrypt_clip(
+    frames: List[np.ndarray],
+    fps: float,
+    password: str
+) -> bytes:
+    """
+    Ma hoa frames bang AES-256-GCM.
+    Output: [ 32B salt ][ 12B nonce ][ AES-GCM ciphertext + tag ]
+    """
+    # Buoc 1: Serialize frames thanh JPEG stream
+    plaintext = _pack_frames(frames, fps)
+
+    # Buoc 2: Sinh ngau nhien, moi clip mot salt RIENG
+    salt  = secrets.token_bytes(32)   # 256-bit salt
+    nonce = secrets.token_bytes(12)   # 96-bit nonce cho GCM
+
+    # Buoc 3: Derive key tu password + salt qua PBKDF2
+    key = derive_clip_key(password, salt)  # -> 32 bytes (AES-256)
+
+    # Buoc 4: Ma hoa AES-256-GCM
+    ct = AESGCM(key).encrypt(nonce, plaintext, None)
+
+    # Buoc 5: Ghi file: salt | nonce | ciphertext
+    return salt + nonce + ct
+\end{lstlisting}
+
+\begin{dialog}{\dat\ Giải thích từng bước}
+"\textbf{Bước 1 --- Serialize:}
+Frames được nén thành JPEG quality 90 rồi đóng gói
+theo format length-prefixed: \texttt{[4B số frame][4B fps][4B len][jpeg bytes]...}
+Tại sao JPEG 90? Đủ chất lượng để nhận diện pháp lý, file nhỏ hơn raw.
+
+\vspace{0.5em}
+\textbf{Bước 2 --- Random salt per clip:}
+Điểm cực kỳ quan trọng: \textit{mỗi clip có một salt 32-byte ngẫu nhiên riêng}.
+Dù admin dùng cùng một password,
+key của clip A và clip B \textbf{hoàn toàn khác nhau}.
+Hacker lấy được key của một clip cũng không dùng được cho clip khác.
+
+\vspace{0.5em}
+\textbf{Bước 3 --- PBKDF2 Key Derivation:}
+Password $\rightarrow$ \texttt{PBKDF2-SHA256(password, salt, 390000 iterations)} $\rightarrow$ 32-byte key.
+Tôi sẽ giải thích chi tiết phần này ngay sau.
+
+\vspace{0.5em}
+\textbf{Bước 4 --- AES-256-GCM:}
+Tại sao \textit{GCM} chứ không phải CBC hay CTR?
+GCM là \textbf{Authenticated Encryption} ---
+ngoài mã hóa, còn tạo ra Authentication Tag để đảm bảo toàn vẹn.
+Nếu ai sửa nội dung file \texttt{.enc} dù chỉ 1 bit,
+decrypt sẽ fail ngay --- không trả về dữ liệu sai,
+điều cực kỳ quan trọng với bằng chứng pháp lý.
+
+\vspace{0.5em}
+\textbf{Bước 5 --- File format:}
+File \texttt{.enc} = \texttt{salt(32B)} + \texttt{nonce(12B)} + \texttt{ciphertext}.
+Không có overhead gì --- compact và self-contained."
+\end{dialog}
+
+\subsection{PBKDF2-SHA256 Key Derivation \timing{21:30 – 23:00}}
+
+\begin{action}
+Mở file \fpath{src/admin\_auth.py}. Scroll đến đầu file,
+highlight hằng số \texttt{\_ITERATIONS} và hàm \texttt{\_pbkdf2}.
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/admin\_auth.py --- PBKDF2}]
+# OWASP 2023 minimum for PBKDF2-SHA256
+_ITERATIONS = 390_000
+_KEY_LEN    = 32   # 256-bit AES key
+
+def _pbkdf2(password: str, salt: bytes,
+            iterations: int = _ITERATIONS) -> bytes:
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=_KEY_LEN,      # Output: 32 bytes
+        salt=salt,
+        iterations=iterations,
+    )
+    return kdf.derive(password.encode("utf-8"))
+\end{lstlisting}
+
+\begin{dialog}{\dat\ Giải thích PBKDF2}
+"\textbf{PBKDF2} là \textit{Password-Based Key Derivation Function 2.}
+Nó biến một password ngắn, dễ nhớ thành một key mật mã học đủ mạnh.
+
+Con số \textbf{390.000 iterations} không phải chọn ngẫu nhiên ---
+đây là \textbf{chuẩn OWASP 2023} cho PBKDF2-SHA256.
+
+Ý nghĩa thực tế:
+Để thử một password, máy tính phải tính SHA256 \textit{390.000 lần}.
+Với một máy hiện đại chạy 1 triệu hash/giây,
+brute-force 8 ký tự mixed-case + số + symbol
+tốn khoảng \textbf{hàng trăm ngàn năm}.
+
+Và password admin \textbf{không bao giờ lưu dưới dạng plaintext}.
+Nhìn vào file credentials:"
+\end{dialog}
+
+\begin{action}
+Mở \fpath{data/admin\_credentials.json}, chỉ cho thầy cô xem.
+\end{action}
+
+\begin{lstlisting}[caption={data/admin\_credentials.json}]
+{
+  "salt": "base64-encoded-32-bytes...",
+  "hash": "base64-encoded-pbkdf2-hash...",
+  "iterations": 390000,
+  "created_at": 1741234567.89
+}
+\end{lstlisting}
+
+\begin{dialog}{\dat\ Credentials file}
+"File này chỉ chứa \textbf{salt} và \textbf{hash}.
+Không có password, không có key, không có gì có thể reverse.
+Ngay cả em --- người viết code hệ thống ---
+cũng \textit{không biết} password admin là gì
+nếu không được admin cung cấp trực tiếp."
+\end{dialog}
+
+\subsection{Constant-Time Comparison \timing{23:00 – 23:45}}
+
+\begin{action}
+Trong file \fpath{src/admin\_auth.py}, highlight hàm \texttt{\_ct\_equal}.
+\end{action}
+
+\begin{lstlisting}[language=Python, caption={src/admin\_auth.py --- Timing Attack Prevention}]
+def _ct_equal(a: bytes, b: bytes) -> bool:
+    """
+    Constant-time comparison - ngan Timing Attack.
+    Python '==' dung lai ngay khi gap byte khac.
+    hmac.compare_digest LUON so sanh het ca chuoi.
+    """
+    return hmac.compare_digest(a, b)
+\end{lstlisting}
+
+\begin{dialog}{\dat\ Timing Attack}
+"Đây là một detail security nhỏ nhưng thể hiện tư duy bảo mật chuyên sâu.
+
+Nếu dùng \texttt{a == b} bình thường, Python so sánh từng byte
+và dừng lại ngay khi gặp byte khác nhau.
+Hacker có thể đo thời gian response của server:
+- Nếu response nhanh $\rightarrow$ sai từ byte đầu tiên
+- Nếu response chậm hơn chút xíu $\rightarrow$ vài byte đầu đúng rồi
+
+Qua hàng nghìn lần thử, hacker có thể đoán dần password đúng từng byte.
+Đây gọi là \textbf{Timing Attack}.
+
+\texttt{hmac.compare\_digest} luôn chạy một thời gian cố định
+bất kể input khác nhau ở đâu $\rightarrow$ loại bỏ hoàn toàn timing leak."
+\end{dialog}
+
+\subsection{Blur Engine --- 7 Privacy Modes \timing{23:45 – 24:30}}
+
+\begin{action}
+Mở file \fpath{src/privacy.py}. Scroll nhanh qua
+các hàm \texttt{\_fast\_gaussian\_blur}, \texttt{\_pixelate}, \texttt{\_head\_cloak},
+\texttt{\_obliterate\_features} để thầy cô thấy sự đa dạng.
+\end{action}
+
+\begin{dialog}{\dat\ 7 Privacy Modes}
+"Hệ thống hỗ trợ \textbf{7 chế độ ẩn danh}
+từ nhẹ đến cực mạnh:"
+\end{dialog}
+
+\begin{tcolorbox}[colback=gray!5, colframe=NavyBlue!60, title=\textbf{7 Privacy Modes}]
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{llXl}
+\toprule
+\textbf{Mode} & \textbf{Kỹ thuật} & \textbf{Mô tả} & \textbf{Tốc độ} \\
+\midrule
+\texttt{blur} & Gaussian Blur & Làm mờ Gaussian downscale 20\% & Nhanh \\
+\texttt{pixelate} & Bilinear + Nearest & Pixel hóa mosaic 16px block & Nhanh \\
+\texttt{solid} & Constant fill & Hình chữ nhật màu đặc \#282828 & Rất nhanh \\
+\texttt{headcloak} & Mix + Noise + Blur & Che đầu + thêm noise ngẫu nhiên & Trung bình \\
+\texttt{neckup} & Expand + Cloak & Che từ cổ trở lên & Trung bình \\
+\texttt{obliterate} & 4-step pipeline & Compress $\rightarrow$ Scramble $\rightarrow$ Blur $\rightarrow$ Quantize & Chậm \\
+\texttt{silhouette} & Extreme cloak & Randomize tone + noise + GBlur + Quantize & Chậm nhất \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\begin{lstlisting}[language=Python, caption={src/privacy.py --- obliterate (mạnh nhất)}]
+def _obliterate_features(roi, obliterate_scale, ...):
+    """4-buoc pha huy thong tin nhan dang - KHONG the khoi phuc"""
+
+    # Buoc 1: Compress xuong 8% -> xoa het chi tiet mat
+    work = cv2.resize(roi, (w*0.08, h*0.08), INTER_AREA)
+    work = cv2.resize(work, (w, h), INTER_NEAREST)
+
+    # Buoc 2: Xao tron block 12x12 -> pha vo quan he hinh hoc
+    work = _scramble_blocks(work, block_size=12, seed=1337)
+
+    # Buoc 3: Gaussian Blur 35x35 -> xoa canh con lai
+    work = cv2.GaussianBlur(work, (35, 35), 0)
+
+    # Buoc 4: Quantize mau ve 10 muc -> xoa texture tinh te
+    work = _quantize_colors(work, levels=10)
+    return work
+\end{lstlisting}
+
+\subsection{Demo Decrypt trên Secure Archive \timing{24:30 – 25:00}}
+
+\begin{action}
+Mở browser, chuyển sang tab \texttt{http://localhost:8000/admin/secure-archive.html}.
+\end{action}
+
+\begin{dialog}{\dat\ Demo decrypt}
+"Đây là Secure Archive --- trang chỉ admin truy cập.
+Danh sách các clip \texttt{.enc} đã được lưu.
+
+Em sẽ decrypt một clip:"
+\end{dialog}
+
+\begin{action}
+Thao tác:
+\begin{enumerate}
+  \item Click vào một clip trong danh sách
+  \item Click \textbf{Decrypt \& Play}
+  \item Nhập admin password vào modal
+  \item Clip gốc (chưa blur) hiển thị
+\end{enumerate}
+\end{action}
+
+\begin{dialog}{\dat\ Giải thích decrypt}
+"Và đây là clip gốc --- khuôn mặt hoàn toàn rõ nét.
+
+Nếu nhập sai password, server trả về lỗi:
+\textit{`Decryption failed – wrong password or corrupted clip'}---
+không leak bất kỳ thông tin nào về độ gần đúng của password.
+
+Lưu ý: decrypt xảy ra \textit{server-side}.
+File \texttt{.enc} không bao giờ gửi xuống browser.
+Chỉ video đã decode được stream về --- thêm một lớp bảo vệ."
+\end{dialog}
+
+% ============================================================
+\section{Phần 5 — Demo End-to-End + Q\&A \timing{25:00 – 30:00}}
+% ============================================================
+
+\subsection{Demo end-to-end hoàn chỉnh \timing{25:00 – 27:30}}
+
+\begin{dialog}{\dat\ Giới thiệu demo}
+"Bây giờ chúng em sẽ demo toàn bộ flow từ đầu đến cuối."
+\end{dialog}
+
+\subsubsection*{Bước 1: Reset và start pipeline}
+
+\begin{action}
+Khánh thao tác: stop pipeline nếu đang chạy, start lại với mode \textbf{obliterate}.
+\end{action}
+
+\begin{dialog}{\khanh\ }
+"Pipeline đã start với chế độ obliterate --- mạnh nhất."
+\end{dialog}
+
+\subsubsection*{Bước 2: Thành viên đã đăng ký}
+
+\begin{action}
+Khoa đứng trước camera.
+\end{action}
+
+\begin{dialog}{\dat\ }
+"Khoa đã được đăng ký trong database.
+Hệ thống nhận ra Khoa với similarity cao ---
+khuôn mặt \textbf{không bị blur}, và tên hiển thị bên cạnh."
+\end{dialog}
+
+\begin{action}
+Đạt đứng trước camera.
+\end{action}
+
+\begin{dialog}{\dat\ }
+"Đạt cũng đã đăng ký --- nhận ra, không blur."
+\end{dialog}
+
+\subsubsection*{Bước 3: Người lạ}
+
+\begin{action}
+Khánh (chưa đăng ký) đứng trước camera.
+\end{action}
+
+\begin{dialog}{\dat\ }
+"Khánh chưa đăng ký vào database.
+Hệ thống không nhận ra $\rightarrow$ khuôn mặt bị \textbf{obliterate hoàn toàn}.
+Không ai xem stream này có thể biết Khánh trông như thế nào."
+\end{dialog}
+
+\subsubsection*{Bước 4: Mở Secure Archive}
+
+\begin{action}
+Đạt mở \texttt{http://localhost:8000/admin/secure-archive.html},
+decrypt clip vừa ghi.
+\end{action}
+
+\begin{dialog}{\dat\ }
+"Clip vừa ghi đã tự động lưu vào \texttt{data/clips/secure/}.
+Sau khi decrypt, ta thấy khuôn mặt đầy đủ của Khánh trong clip gốc.
+
+\textbf{Đây chính là mục tiêu:}
+Khánh được bảo vệ quyền riêng tư khi xem video công khai,
+nhưng bằng chứng vẫn được bảo toàn hoàn chỉnh cho admin."
+\end{dialog}
+
+\subsection{Privacy Modes Showcase \timing{27:30 – 29:00}}
+
+\begin{action}
+Đạt lần lượt switch qua từng mode trên dashboard,
+chỉ cho thầy cô thấy kết quả trực tiếp trên stream.
+\end{action}
+
+\begin{tcolorbox}[colback=NavyBlue!4, colframe=NavyBlue, title=\textbf{Demo sequence}]
+\begin{enumerate}
+  \item \texttt{blur} --- \textit{``Cơ bản, vẫn còn thấy outline khuôn mặt mờ mờ''}
+  \item \texttt{pixelate} --- \textit{``Mosaic, style camera truyền hình. Nhanh hơn blur''}
+  \item \texttt{headcloak} (default) --- \textit{``Che toàn đầu + noise. Mặc định của hệ thống''}
+  \item \texttt{obliterate} --- \textit{``4-bước pipeline, không còn trace nào. Dùng cho bảo vệ cao nhất''}
+  \item \texttt{silhouette} --- \textit{``Cực mạnh: che đầu và vai, quantize màu còn 6 mức''}
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Kết luận \timing{29:00 – 30:00}}
+
+\begin{dialog}{\dat\ Kết luận}
+"Tóm lại, hệ thống chúng em đạt được \textbf{3 mục tiêu chính}:
+
+\vspace{0.5em}
+\textbf{1. Privacy bởi vì mặc định (Privacy by Default):}
+Bất kỳ người lạ nào đi vào vùng quan sát đều bị ẩn danh hoá ngay lập tức,
+không cần can thiệp thủ công.
+
+\vspace{0.5em}
+\textbf{2. Security đúng nghĩa:}
+AES-256-GCM + PBKDF2-SHA256 390.000 iterations + constant-time comparison.
+Không có backdoor, không có plaintext password, không có timing leak.
+
+\vspace{0.5em}
+\textbf{3. Usability thực tế:}
+REST API đầy đủ cho frontend integration,
+hot-reload config không cần restart,
+7 chế độ blur để phù hợp nhiều use case.
+
+\vspace{0.5em}
+Nhóm chúng em xin cảm ơn thầy cô và \textbf{sẵn sàng trả lời câu hỏi}."
+\end{dialog}
+
+% ============================================================
+\section{Câu Hỏi Thường Gặp --- Đáp Án Chuẩn Bị Sẵn}
+% ============================================================
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue, title=\textbf{Q1: Tại sao dùng AES-GCM mà không phải AES-CBC?},
+  breakable]
+\textbf{Trả lời (Đạt):}
+AES-GCM là \textit{Authenticated Encryption with Associated Data (AEAD)}.
+Ngoài mã hóa dữ liệu, GCM còn tạo ra một \textbf{Authentication Tag 128-bit}.
+Khi decrypt, nếu ciphertext bị sửa đổi dù chỉ 1 bit, authentication sẽ fail.
+
+AES-CBC chỉ mã hóa --- không đảm bảo toàn vẹn.
+Kẻ tấn công có thể chỉnh sửa file \texttt{.enc}
+và nhận lại dữ liệu sai mà không biết.
+
+Với bằng chứng pháp lý, \textbf{integrity là bắt buộc, không phải tùy chọn}.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue, title=\textbf{Q2: Nếu admin quên mật khẩu thì sao?},
+  breakable]
+\textbf{Trả lời (Đạt):}
+Không khôi phục được --- đây là \textit{design có chủ ý}.
+
+Hệ thống không lưu plaintext, không có secret recovery key, không có backdoor.
+Đây là nguyên tắc \textbf{Zero Knowledge of Plaintext}.
+
+Trong scope đồ án, ta chọn \textit{security over convenience}.
+Trong production thực tế, có thể áp dụng thêm cơ chế
+\textbf{Key Escrow} hoặc \textbf{Shamir Secret Sharing}
+để chia key giữa nhiều người được ủy quyền.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue, title=\textbf{Q3: Tại sao 390.000 iterations, không phải nhiều hơn?},
+  breakable]
+\textbf{Trả lời (Đạt):}
+Con số này là khuyến nghị của \textbf{OWASP 2023} cho PBKDF2-SHA256
+trên phần cứng phổ thông năm 2023.
+
+Đây là \textit{balance}: đủ chậm để brute-force không khả thi,
+nhưng đủ nhanh để user thực tế không cảm thấy lag khi encrypt/decrypt
+một clip (xảy ra rất ít, không phải mỗi frame).
+
+Nếu CPU server mạnh hơn, có thể tăng lên 600.000+ iterations
+theo khuyến nghị mới hơn.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue, title=\textbf{Q4: Real-time có bị lag không? FPS bao nhiêu?},
+  breakable]
+\textbf{Trả lời (Khánh):}
+YOLO detect mỗi 2 frame (\texttt{detect\_every=2}).
+Process width 640px với preset \texttt{balanced}.
+Trên CPU mid-range đạt khoảng \textbf{15--20 FPS} --- đủ cho camera giám sát.
+
+Nếu cần nhanh hơn:
+Chuyển preset sang \texttt{fast}: YOLO size 416, pixelate, detect mỗi 3 frame,
+có thể đạt 25--30 FPS.
+
+Nếu có GPU, thay \texttt{CPUExecutionProvider} bằng \texttt{CUDAExecutionProvider}
+cho InsightFace, tốc độ nhân diện bào nhận diện tăng gấp 5--10 lần.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue, title=\textbf{Q5: Nhận diện nhầm thì sao? Privacy leakage?},
+  breakable]
+\textbf{Trả lời (Khoa):}
+False negative (nhận diện sai thành viên là người lạ) $\rightarrow$
+thành viên bị blur nhưng clip gốc vẫn có.
+Không ảnh hưởng security.
+
+False positive (người lạ nhầm thành thành viên) $\rightarrow$
+người lạ không bị blur trong stream.
+Đây là rủi ro privacy.
+
+Để giảm thiểu, ngưỡng threshold được calibrate cẩn thận với 100 ảnh mẫu/người.
+Threshold 0.35 được chọn sau benchmarking
+để minimize false positive ở mức chấp nhận được.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue, title=\textbf{Q6: GDPR / Luật bảo vệ dữ liệu?},
+  breakable]
+\textbf{Trả lời (Đạt):}
+Hệ thống thiết kế theo nguyên tắc \textbf{Privacy by Design} (GDPR Article 25):
+\begin{itemize}
+  \item Dữ liệu biometric (embedding) chỉ lưu trong mạng nội bộ
+  \item Clip gốc mã hóa, giới hạn truy cập
+  \item Có thể delete clip và member bất cứ lúc nào
+  \item Không gửi ảnh khuôn mặt ra bên ngoài server
+\end{itemize}
+Trong production cần bổ sung: audit log, consent management, data retention policy.
+\end{tcolorbox}
+
+% ============================================================
+\section{Checklist Kỹ Thuật Trước Buổi Trình Bày}
+% ============================================================
+
+\begin{tcolorbox}[colback=OliveGreen!5, colframe=OliveGreen, title=\textbf{Checklist 30 phút trước}]
+\begin{itemize}
+  \item[$\square$] Server đang chạy trên port 8000
+  \item[$\square$] Admin credentials tồn tại: \texttt{Test-Path data/admin\_credentials.json}
+  \item[$\square$] Có ít nhất 2 clip \texttt{.enc} trong \texttt{data/clips/secure/}
+  \item[$\square$] Camera nhận diện được: \texttt{GET http://localhost:8000/cameras}
+  \item[$\square$] Thành viên Đạt và Khoa đã trong database
+  \item[$\square$] VS Code: font size $\geq 16$, file explorer bên trái đóng bớt folder dư
+  \item[$\square$] Browser: 3 tab mở sẵn, zoom 110\%
+  \item[$\square$] Tắt notification Windows (Focus Assist: Alarms only)
+  \item[$\square$] Tắt screensaver và sleep
+  \item[$\square$] Backup: có sẵn clip \texttt{.enc} test nếu camera lỗi live
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=red!5, colframe=red!60, title=\textbf{Tình huống khẩn cấp}]
+\textbf{Camera không hoạt động:}
+Dùng clip demo quay sẵn. Giải thích: ``Do giới hạn phòng thi, em demo trước.''
+
+\textbf{Server crash:}
+\texttt{uvicorn src.app\_api:app --port 8000} --- khởi động lại $< 10$ giây.
+
+\textbf{Quên từ:}
+Không sao --- dừng, nhìn vào file code, giải thích từ code.
+Code là ``notes'' của lập trình viên.
+
+\textbf{Câu hỏi không biết:}
+``Em chưa nghiên cứu sâu phần này,
+nhưng theo kiến thức của em là... Thầy/cô có thể cho em bổ sung thêm không?''
+\end{tcolorbox}
+
+\vspace{1cm}
+\begin{center}
+\large\textbf{\textcolor{NavyBlue}{--- Chúc nhóm trình bày thành công! ---}}
+\end{center}
+
+\end{document}

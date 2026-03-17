@@ -1,0 +1,100 @@
+\begin{thebibliography}{10}
+
+\bibitem{Astrom_Wittenmark_2008}
+Karl~Johan \AA{}str{\"o}m and Bj{\"o}rn Wittenmark.
+\newblock {\em Adaptive Control}.
+\newblock Dover Publications, 2nd edition, 2008.
+
+\bibitem{Bagnell_Schneider_2001}
+J.~Andrew Bagnell and Jeff Schneider.
+\newblock Autonomous helicopter control using reinforcement learning policy
+  search methods.
+\newblock In {\em Proceedings of the IEEE International Conference on Robotics
+  and Automation (ICRA)}, pages 1615--1620, 2001.
+
+\bibitem{Chebotar_2014}
+Yevgen Chebotar, Mrinal Kalakrishnan, Ali Yahya, Adrian Li, Stefan Schaal, and
+  Sergey Levine.
+\newblock Path integral guided policy search.
+\newblock In {\em IEEE International Conference on Robotics and Automation
+  (ICRA)}, 2014.
+
+\bibitem{Deisenroth_2015}
+Marc~Peter Deisenroth, Dieter Fox, and Carl~Edward Rasmussen.
+\newblock Gaussian processes for data-efficient learning in robotics and
+  control.
+\newblock {\em IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  37(2):408--423, 2015.
+
+\bibitem{Deisenroth_Huber_2014}
+Marc~Peter Deisenroth and Marco~Fabrizio Huber.
+\newblock Efficient reinforcement learning using {G}aussian processes.
+\newblock In {\em KI 2014: Advances in Artificial Intelligence}, 2014.
+
+\bibitem{Deisenroth_2009}
+Marc~Peter Deisenroth, Carl~Edward Rasmussen, and Jan Peters.
+\newblock Gaussian process dynamic programming.
+\newblock volume~72, pages 1508--1524, 2009.
+
+\bibitem{Engel_2005}
+Yaakov Engel, Shie Mannor, and Ron Meir.
+\newblock Reinforcement learning with {G}aussian processes.
+\newblock In {\em Proceedings of the 22nd International Conference on Machine
+  Learning (ICML)}, pages 201--208, 2005.
+
+\bibitem{Kober_Peters_2011}
+Jens Kober and Jan Peters.
+\newblock Policy search for motor primitives in robotics.
+\newblock {\em Machine Learning}, 84:171--203, 2011.
+
+\bibitem{Lagoudakis_Parr_2003}
+Michail~G. Lagoudakis and Ronald Parr.
+\newblock Least-squares policy iteration.
+\newblock volume~4, pages 1107--1149, 2003.
+
+\bibitem{MacKay_2003}
+David J.~C. MacKay.
+\newblock {\em Information Theory, Inference, and Learning Algorithms}.
+\newblock Cambridge University Press, 2003.
+
+\bibitem{Ng_Jordan_2000}
+Andrew~Y. Ng and Michael~I. Jordan.
+\newblock {PEGASUS}: A policy search method for large {MDP}s and {POMDP}s.
+\newblock In {\em Proceedings of the 16th Conference on Uncertainty in
+  Artificial Intelligence (UAI)}, pages 406--415, 2000.
+
+\bibitem{Pan_Theodorou_2014}
+Yunpeng Pan and Evangelos Theodorou.
+\newblock Probabilistic differential dynamic programming.
+\newblock In {\em Advances in Neural Information Processing Systems (NIPS)},
+  pages 1907--1915, 2014.
+
+\bibitem{Rasmussen_Williams_2006}
+Carl~Edward Rasmussen and Christopher K.~I. Williams.
+\newblock {\em Gaussian Processes for Machine Learning}.
+\newblock MIT Press, Cambridge, MA, 2006.
+
+\bibitem{Schneider_1997}
+Jeff~G. Schneider.
+\newblock Exploiting model uncertainty estimates for safe dynamic control
+  learning.
+\newblock In {\em Advances in Neural Information Processing Systems (NIPS)},
+  volume~9, pages 1047--1053, 1997.
+
+\bibitem{Snelson_Ghahramani_2006}
+Edward Snelson and Zoubin Ghahramani.
+\newblock Sparse {G}aussian processes using pseudo-inputs.
+\newblock In {\em Advances in Neural Information Processing Systems (NIPS)},
+  volume~18, pages 1257--1264, 2006.
+
+\bibitem{Sutton_Barto_1998}
+Richard~S. Sutton and Andrew~G. Barto.
+\newblock {\em Reinforcement Learning: An Introduction}.
+\newblock MIT Press, Cambridge, MA, 1998.
+
+\bibitem{Watkins_1989}
+Christopher J. C.~H. Watkins.
+\newblock Learning from delayed rewards.
+\newblock {\em PhD Thesis, King's College, Cambridge}, 1989.
+
+\end{thebibliography}

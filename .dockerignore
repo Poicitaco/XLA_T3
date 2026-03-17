@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.vscode/
+*.md
+
+# Secrets & runtime data (mounted as volumes)
+data/
+
+# Evaluation & tests (not needed at runtime)
+evaluation/
+tests/
+scripts/
+docs/
+baocao_xla/
+template_baocao/

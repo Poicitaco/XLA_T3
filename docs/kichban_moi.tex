@@ -1,0 +1,1644 @@
+% ============================================================
+%  KICH BAN VIDEO CA NHAN — XLA Face Privacy System
+%  PHIEN BAN CHI TIET: chi ro tung dong code
+%  Thu tu: Dat (Leader) -> Khoa (Detection) -> Khanh (Backend, ket thuc)
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{NavyBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  frame=single,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  backgroundcolor=\color{gray!8},
+}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{fontawesome5}
+\newcommand{\cmark}{\ding{51}}
+\usepackage{titlesec}
+\titleformat{\section}[block]
+  {\large\bfseries\color{NavyBlue}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}[block]
+  {\normalsize\bfseries\color{MidnightBlue}}{\thesubsection}{0.5em}{}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{NavyBlue}{\textbf{XLA Face Privacy System}}}
+\rhead{\textcolor{gray}{Kịch Bản Video Cá Nhân — Chi Tiết}}
+\cfoot{\thepage}
+\usepackage[hidelinks]{hyperref}
+
+% --- Custom environments ---
+\newtcolorbox{dialog}[2][]{
+  title={\textbf{#2}},
+  colback=blue!4, colframe=NavyBlue!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{action}[1][]{
+  title={\faCogs\ \textbf{THAO TAC}},
+  colback=OliveGreen!6, colframe=OliveGreen!70,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{codestep}[2][]{
+  title={\faCode\ \textbf{CODE --- #2}},
+  colback=NavyBlue!4, colframe=NavyBlue!50,
+  fonttitle=\small\bfseries\color{NavyBlue}, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{note}[1][]{
+  title={\textbf{LUU Y}},
+  colback=Goldenrod!10, colframe=Goldenrod!80,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{warn}[1][]{
+  title={\textbf{QUAN TRONG}},
+  colback=red!5, colframe=red!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{lineref}[2][]{
+  colback=purple!4, colframe=purple!50,
+  title={\texttt{\small #2}},
+  fonttitle=\small\ttfamily\color{purple}, left=4pt, right=4pt, breakable, #1}
+
+\newcommand{\timing}[1]{\hfill\colorbox{NavyBlue!20}{\texttt{\small #1}}}
+\newcommand{\dat}{\textcolor{BrickRed}{\textbf{[DAT --- Leader]}}}
+\newcommand{\khanh}{\textcolor{MidnightBlue}{\textbf{[KHANH --- Backend]}}}
+\newcommand{\khoa}{\textcolor{OliveGreen}{\textbf{[KHOA --- Detection]}}}
+\newcommand{\fpath}[1]{\texttt{\textcolor{purple}{#1}}}
+\newcommand{\lineno}[1]{\textcolor{gray}{\texttt{\small [dong~#1]}}}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+\begin{titlepage}
+\centering\vspace*{1cm}
+{\Huge\bfseries\color{NavyBlue} Kịch Bản Video Cá Nhân\par}
+{\Large\color{MidnightBlue} XLA Face Privacy System --- Chi Tiết Từng Dòng Code\par}
+\vspace{0.3cm}
+{\large\color{gray} Môn Xử Lý Ảnh --- Đồ Án Cuối Kỳ\par}
+\vspace{1cm}
+
+\begin{tcolorbox}[colback=NavyBlue!8, colframe=NavyBlue, width=0.95\textwidth]
+\centering
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{clll}
+\toprule
+\textbf{Video} & \textbf{Người} & \textbf{Vai trò} & \textbf{Files trực tiếp viết} \\
+\midrule
+1 & \textcolor{BrickRed}{\textbf{Đạt}} & Leader / Security &
+  \texttt{privacy.py (269 dòng), clip\_recorder.py (397 dòng),} \\
+  & & & \texttt{admin\_auth.py (130 dòng), anonymizer\_backend.py (237 dòng)} \\
+2 & \textcolor{OliveGreen}{\textbf{Khoa}} & Detection / Registry &
+  \texttt{detector.py (149 dòng), face\_recognition.py (69 dòng),} \\
+  & & & \texttt{family\_database.py (168 dòng), bbox\_smoother.py (373 dòng)} \\
+3 & \textcolor{MidnightBlue}{\textbf{Khánh}} & Backend / Pipeline &
+  \texttt{app\_api.py (1893 dòng), run\_phone\_cam.py (1314 dòng),} \\
+  & & & \texttt{backend\_api.py, frontend/ (6 trang HTML)} \\
+\bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{0.8cm}
+{\small \textbf{Quy ước kịch bản:}
+\fbox{\texttt{dong X}} = line number trong file gốc thực tế.
+Tất cả số dòng đã được verify bằng \texttt{grep -n}.}
+\vspace{0.6cm}
+
+\begin{warn}
+\textbf{Chuẩn bị trước khi quay:} Server chạy cổng 8000 \textbullet{}
+VS Code font $\geq$16 \textbullet{} Browser 3 tab sẵn \textbullet{}
+Tắt notification \textbullet{} Test mic trước
+\end{warn}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{VIDEO 1 --- Đạt: Blur Engine + AES-256-GCM + PBKDF2}
+% ============================================================
+
+\begin{tcolorbox}[colback=BrickRed!6, colframe=BrickRed,
+  title={\textcolor{white}{\textbf{VIDEO 1 --- DAT (LEADER) --- Blur + Encryption + Auth}}}]
+Camera rõ mặt, màn hình show code bên cạnh.
+Đạt phải nói rõ: ``Em trực tiếp viết file này, cụ thể dòng X làm gì''.
+Total code Đạt viết: $\approx$\textbf{1033 dòng} ($269 + 397 + 130 + 237$).
+\end{tcolorbox}
+
+% -----------------------------------------------------------
+\subsection{0:00--1:30 --- Giới thiệu và khai báo đóng góp}
+% -----------------------------------------------------------
+
+\begin{dialog}{\dat\ Giới thiệu}
+``Xin chào thầy cô. Em là Đạt, vai trò Leader của nhóm.
+
+Phần em \textbf{trực tiếp viết code}:
+\begin{itemize}
+  \item \fpath{src/privacy.py} --- 269 dòng --- toàn bộ Blur Engine 7 mode
+  \item \fpath{src/anonymizer\_backend.py} --- 237 dòng --- config system và 4 preset
+  \item \fpath{src/clip\_recorder.py} --- 397 dòng --- AES-256-GCM encrypt/decrypt clip
+  \item \fpath{src/admin\_auth.py} --- 130 dòng --- PBKDF2 + timing attack prevention
+  \item \fpath{src/face\_lock.py} --- per-face encryption layer
+\end{itemize}
+Ngoài ra em thiết kế kiến trúc tổng thể và review code toàn nhóm.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{1:30--2:30 --- Đặt vấn đề: Tại sao cần Dual Storage}
+% -----------------------------------------------------------
+
+\begin{dialog}{\dat\ Vấn đề bảo mật}
+``Camera quay tất cả mọi người --- họ không đồng ý lưu khuôn mặt.
+Nguyên tắc \textbf{Privacy by Design} (GDPR Article 25) yêu cầu ẩn danh hoá mặc định.
+
+Nhưng nếu chỉ lưu bản blur, bằng chứng điều tra bị mất.
+Giải pháp của em: lưu song song hai bản ---
+\textbf{Bản blur} (\texttt{.mp4}) cho người dùng thông thường,
+\textbf{Bản gốc mã hoá} (\texttt{.enc}) chỉ admin với password mới mở được.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{2:30--6:00 --- Blur Engine: src/privacy.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở VS Code, mở \fpath{src/privacy.py}.
+Scroll qua nhanh cho thầy cô thấy file 269 dòng.
+\end{action}
+
+\begin{codestep}{privacy.py dong 67--76 --- \_fast\_gaussian\_blur()}
+\begin{lstlisting}[language=Python, firstnumber=67]
+def _fast_gaussian_blur(roi: np.ndarray,
+                        blur_scale: float,
+                        blur_kernel: int) -> np.ndarray:
+    h, w = roi.shape[:2]
+    scale = min(max(blur_scale, 0.05), 1.0)
+    down_w = max(1, int(round(w * scale)))
+    down_h = max(1, int(round(h * scale)))
+    small = cv2.resize(roi, (down_w, down_h),
+                       interpolation=cv2.INTER_LINEAR)
+    small = cv2.GaussianBlur(small,
+                (_odd(blur_kernel), _odd(blur_kernel)), 0)
+    return cv2.resize(small, (w, h),
+                      interpolation=cv2.INTER_LINEAR)  # dong 76
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích dong 67--76}
+``Dòng 67: hàm \texttt{\_fast\_gaussian\_blur} nhận ROI (vùng khuôn mặt đã cắt ra), tham số scale và kernel size.
+
+Dòng 71--72: downscale ROI xuống còn \texttt{scale\%} kích thước.
+Preset balanced dùng scale mặc định $\approx$20\%.
+
+Dòng 73--74: GaussianBlur trên ảnh nhỏ --- nhanh hơn blur trực tiếp trên ảnh lớn
+vì số pixel xử lý ít hơn nhiều.
+
+Dòng 75--76: upscale lại kích thước gốc --- kết quả là blur tự nhiên, mềm mại.
+Kỹ thuật này nhanh hơn GaussianBlur kernel lớn khoảng 3--5 lần.''
+\end{dialog}
+
+\begin{action}
+Scroll xuống dòng 78 file \fpath{src/privacy.py}:
+\end{action}
+
+\begin{codestep}{privacy.py dong 78--86 --- \_pixelate()}
+\begin{lstlisting}[language=Python, firstnumber=78]
+def _pixelate(roi: np.ndarray, pixel_block: int) -> np.ndarray:
+    h, w = roi.shape[:2]
+    block = max(2, pixel_block)
+    small_w = max(1, w // block)
+    small_h = max(1, h // block)
+    # Compress xuong kich thuoc block -> mat chi tiet
+    small = cv2.resize(roi, (small_w, small_h),
+                       interpolation=cv2.INTER_LINEAR)
+    # Upscale INTER_NEAREST -> tao hieu ung mosaic vuong
+    return cv2.resize(small, (w, h),
+                      interpolation=cv2.INTER_NEAREST)  # dong 86
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích dong 78--86}
+``Dòng 78: \texttt{\_pixelate} tạo hiệu ứng mosaic pixel.
+Dòng 84: downscale xuống còn 1/block kích thước.
+Dòng 86: \textbf{INTER\_NEAREST} thay vì INTER\_LINEAR --- đây là chìa khoá.
+INTER\_NEAREST không nội suy, mỗi pixel block vuông y hệt nhau,
+tạo ra hiệu ứng pixelate đặc trưng.''
+\end{dialog}
+
+\begin{action}
+Scroll xuống dòng 172 file \fpath{src/privacy.py} --- quan trọng nhất:
+\end{action}
+
+\begin{codestep}{privacy.py dong 172--200 --- \_obliterate\_features() --- mode manh nhat}
+\begin{lstlisting}[language=Python, firstnumber=172]
+def _obliterate_features(
+    roi: np.ndarray,
+    obliterate_scale: float,  # 0.06 theo preset "strong"
+    blur_kernel: int,
+    scramble_block: int,       # 10 theo preset "strong"
+    palette_levels: int,       # 8 theo preset "strong"
+    seed: int,
+) -> np.ndarray:
+    """Irreversible anonymization: destroy facial features."""
+    h, w = roi.shape[:2]
+    scale = min(max(obliterate_scale, 0.03), 0.25)
+    down_w = max(1, int(round(w * scale)))
+    down_h = max(1, int(round(h * scale)))
+
+    # Buoc 1 (dong 185): compress xuong 6% --- xoa mat, mui, mieng
+    work = cv2.resize(roi, (down_w, down_h),
+                      interpolation=cv2.INTER_AREA)
+    work = cv2.resize(work, (w, h),
+                      interpolation=cv2.INTER_NEAREST)
+
+    # Buoc 2 (dong 191): scramble block 10x10 --- pha vo hinh hoc
+    work = _scramble_blocks(work, block_size=scramble_block,
+                            seed=seed)
+
+    # Buoc 3 (dong 194): GaussianBlur >=35px --- xoa canh con lai
+    work = cv2.GaussianBlur(work,
+        (_odd(max(blur_kernel, 35)),
+         _odd(max(blur_kernel, 35))), 0)
+
+    # Buoc 4 (dong 197): quantize 8 mau --- xoa gradient tinh te
+    work = _quantize_colors(work, levels=palette_levels)
+    return work   # dong 200
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích chi tiet \_obliterate\_features}
+``Dòng 172--178: khai báo hàm với các tham số tùy chỉnh.
+Preset \textbf{strong} (\fpath{anonymizer\_backend.py} dòng 70--79)
+truyền vào:
+\texttt{obliterate\_scale=0.06}, \texttt{scramble\_block=10}, \texttt{palette\_levels=8}.
+
+\textbf{Bước 1 --- dòng 185--188:}
+Compress xuống còn 6\% resolution.
+Ví dụ: khuôn mặt 100×100px → 6×6px → upscale lại thành 100×100px.
+Kết quả: toàn bộ mắt, mũi, miệng, đặc điểm nhận dạng biến mất hoàn toàn.
+
+\textbf{Bước 2 --- dòng 191:}
+\texttt{\_scramble\_blocks}: xáo trộn các block 10×10 pixel ngẫu nhiên
+với seed cố định. Phá vỡ quan hệ không gian giữa các vùng khuôn mặt.
+Dù bước 1 còn sót lại texture nhỏ, bước 2 xáo trộn hoàn toàn vị trí.
+
+\textbf{Bước 3 --- dòng 194--197:}
+GaussianBlur kernel $\geq$35×35 px. Xoá những cạnh sắc còn sót lại.
+
+\textbf{Bước 4 --- dòng 197--198:}
+Quantize về 8 màu. Loại bỏ gradient texture tinh tế mà
+các thuật toán nhận diện hiện đại có thể khai thác.
+
+Kết quả: \textbf{không thể phục hồi bằng bất kỳ phương pháp nào}.''
+\end{dialog}
+
+\begin{action}
+Mở \fpath{src/anonymizer\_backend.py}, scroll đến dòng 53.
+Show 4 preset cho thầy cô:
+\end{action}
+
+\begin{codestep}{anonymizer\_backend.py dong 53--91 --- 4 Presets}
+\begin{lstlisting}[language=Python, firstnumber=53]
+PRESETS: Dict[PresetName, AnonymizationConfig] = {
+    "fast": AnonymizationConfig(     # dong 54
+        mode="pixelate",
+        imgsz=416,           # YOLO input nho hon -> nhanh hon
+        detect_every=3,      # detect 1 trong 3 frame -> 3x nhanh hon
+        proc_width=512,
+        pixel_block=18,
+    ),
+    "balanced": AnonymizationConfig(  # dong 62
+        mode="headcloak",
+        imgsz=512,
+        detect_every=2,       # detect 1 trong 2 frame
+        proc_width=640,
+        head_ratio=0.65,      # che 65% vung dau
+        face_padding=0.16,
+    ),
+    "strong": AnonymizationConfig(    # dong 70
+        mode="obliterate",    # mode manh nhat -> goi ham dong 172
+        imgsz=512,
+        detect_every=2,
+        obliterate_scale=0.06,  # compress xuong 6%
+        scramble_block=10,
+        palette_levels=8,
+    ),
+    "strict": AnonymizationConfig(    # dong 80
+        mode="headcloak",
+        imgsz=416,
+        detect_every=2,
+        head_ratio=0.95,   # che 95% vung dau (gan nhu toan bo)
+        face_padding=0.24,
+        blur_kernel=39,    # kernel lon hon -> blur manh hon
+    ),
+}   # dong 91
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ 4 Presets}
+``Dòng 53--91 trong \fpath{anonymizer\_backend.py} là 4 preset em thiết kế.
+\textbf{fast} dòng 54: pixelate + YOLO 416 + detect 1/3 frame --- cho máy yếu.
+\textbf{balanced} dòng 62: headcloak --- che đầu, cân bằng tốc độ/bảo mật.
+\textbf{strong} dòng 70: obliterate --- gọi hàm \texttt{\_obliterate\_features} dòng 172 vừa xem.
+\textbf{strict} dòng 80: headcloak cực mạnh, head\_ratio 0.95 --- che gần như toàn bộ đầu.
+Frontend gọi \texttt{GET /presets} (dòng 987--991 trong \fpath{app\_api.py})
+để lấy danh sách này về.''
+\end{dialog}
+
+\begin{action}
+Demo live: mở browser \texttt{http://localhost:8000/admin/dashboard.html}.
+Start pipeline, Đạt đứng trước camera.
+Lần lượt: fast $\to$ balanced $\to$ strong $\to$ strict.
+Đứng im để thầy cô thấy mức độ che giấu tăng dần.
+\end{action}
+
+% -----------------------------------------------------------
+\subsection{6:00--9:30 --- AES-256-GCM: src/clip\_recorder.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/clip\_recorder.py}.
+Scroll nhanh: file 397 dòng. Dừng lại dòng 73.
+\end{action}
+
+\begin{codestep}{clip\_recorder.py dong 73--86 --- \_pack\_frames(): serialise truoc khi ma hoa}
+\begin{lstlisting}[language=Python, firstnumber=73]
+def _pack_frames(frames: List[np.ndarray], fps: float) -> bytes:
+    """Serialise frames as length-prefixed JPEG stream."""
+    buf = io.BytesIO()
+    buf.write(struct.pack(">I", len(frames)))   # dong 76: 4B so luong frame
+    buf.write(struct.pack(">I", int(fps * 1000))) # dong 77: 4B fps*1000
+    for f in frames:
+        ok, enc = cv2.imencode(".jpg", f,
+            [cv2.IMWRITE_JPEG_QUALITY, 90])  # dong 80: JPEG quality 90
+        if not ok:
+            continue
+        data = enc.tobytes()
+        buf.write(struct.pack(">I", len(data)))  # dong 84: 4B do dai frame
+        buf.write(data)                          # dong 85: JPEG bytes
+    return buf.getvalue()   # dong 86: tra ve toan bo stream bytes
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích \_pack\_frames dong 73--86}
+``Dòng 73: \texttt{\_pack\_frames} là bước chuẩn bị --- serialize danh sách NumPy frame
+thành một khối bytes trước khi đưa vào AES encrypt.
+
+Dòng 76--77: header gồm 4 byte số frame + 4 byte fps×1000 (integer arithmetic để tránh float).
+Dòng 80: mỗi frame encode thành JPEG quality 90 --- đủ sắc nét, giảm size đáng kể.
+Dòng 84--85: mỗi frame ghi thêm 4 byte độ dài trước nội dung.
+Format này gọi là \textbf{length-prefixed stream}  --- tự mô tả, không cần delimiter.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 109:
+\end{action}
+
+\begin{codestep}{clip\_recorder.py dong 109--120 --- encrypt\_clip() --- toan bo}
+\begin{lstlisting}[language=Python, firstnumber=109]
+def encrypt_clip(frames: List[np.ndarray],
+                 fps: float,
+                 password: str) -> bytes:
+    """
+    Encrypt frames with AES-256-GCM.
+    Returns: [ 32B salt ][ 12B nonce ][ ciphertext+tag ]
+    """
+    plaintext = _pack_frames(frames, fps)  # dong 114: serialize -> bytes
+    salt  = secrets.token_bytes(32)  # dong 115: per-clip random 256-bit salt
+    nonce = secrets.token_bytes(12)  # dong 116: per-clip random 96-bit nonce
+    key   = derive_clip_key(password, salt)  # dong 117: PBKDF2 -> AES-256 key
+    ct    = AESGCM(key).encrypt(nonce,       # dong 118: AES-GCM encrypt
+                                plaintext, None)
+    return salt + nonce + ct  # dong 119: pack: 32B+12B+ciphertext
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích chi tiet từng dòng encrypt\_clip}
+``\textbf{Dòng 114} --- \texttt{\_pack\_frames}: gọi hàm vừa xem dòng 73, serialize frames thành plaintext bytes.
+
+\textbf{Dòng 115} --- \texttt{secrets.token\_bytes(32)}: sinh 32 byte ngẫu nhiên hoàn toàn (256-bit).
+Module \texttt{secrets} dùng OS entropy (CSPRNG), không phải \texttt{random.randbytes} thông thường.
+\textbf{Per-clip}: mỗi clip có salt riêng --- cùng password, key clip A $\neq$ key clip B.
+
+\textbf{Dòng 116} --- \texttt{secrets.token\_bytes(12)}: nonce 96-bit theo NIST SP~800-38D.
+96-bit là chuẩn tốt nhất cho AES-GCM --- cho phép $2^{96}$ nonce duy nhất.
+
+\textbf{Dòng 117} --- \texttt{derive\_clip\_key}: gọi hàm dòng 124 trong \fpath{admin\_auth.py},
+tức là PBKDF2-SHA256 390.000 iterations --- password ngắn $\to$ key 256-bit mạnh.
+
+\textbf{Dòng 118} --- \texttt{AESGCM(key).encrypt}: đây là AES-256 trong chế độ GCM.
+GCM = Galois/Counter Mode --- authenticated encryption.
+Output = ciphertext + Authentication Tag 128-bit gộp vào cuối.
+
+\textbf{Dòng 119} --- Pack file: \texttt{salt(32B) + nonce(12B) + ciphertext}.
+File \texttt{.enc} là \textbf{self-contained}: tất cả thông tin cần decrypt đều ở trong file.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 122:
+\end{action}
+
+\begin{codestep}{clip\_recorder.py dong 122--138 --- decrypt\_clip()}
+\begin{lstlisting}[language=Python, firstnumber=122]
+def decrypt_clip(data: bytes,
+                 password: str) -> Tuple[List[np.ndarray], float]:
+    """Decrypt an encrypted clip blob.
+    Raises ValueError on wrong password or corrupted data.
+    """
+    if len(data) < 44:              # dong 127: validate: 32+12=44 minimum
+        raise ValueError("Clip too short / corrupted.")
+    salt       = data[:32]          # dong 129: tach 32B salt dau
+    nonce      = data[32:44]        # dong 130: tach 12B nonce
+    ciphertext = data[44:]          # dong 131: phan con lai la ciphertext
+    key = derive_clip_key(password, salt)  # dong 132: re-derive key
+    try:
+        plaintext = AESGCM(key).decrypt(nonce, ciphertext, None)  # dong 134
+    except Exception:
+        # GCM auth tag fail: sai password HOAC file bi chinh sua
+        raise ValueError(
+            "Decryption failed -- wrong password or corrupted clip.")
+    return _unpack_frames(plaintext)   # dong 138: deserialize -> frames
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích decrypt\_clip}
+``\textbf{Dòng 127}: guard clause check độ dài tối thiểu --- 32+12=44 byte header.
+
+\textbf{Dòng 129--131}: unpack file theo đúng format đã pack dòng 119.
+Salt, nonce đọc theo offset cố định --- không cần delimiter.
+
+\textbf{Dòng 132}: re-derive key --- \textbf{cùng password + cùng salt = cùng key}.
+Đây là tính chất deterministic của PBKDF2.
+
+\textbf{Dòng 134}: \texttt{AESGCM(key).decrypt} --- đồng thời verify Authentication Tag.
+Nếu sai password $\to$ key sai $\to$ tag không khớp $\to$ exception.
+Nếu file bị sửa dù 1 bit $\to$ tag không khớp $\to$ exception.
+Exception được bắt và raise ValueError với message không tiết lộ chi tiết.''
+\end{dialog}
+
+\begin{action}
+Mở browser, tab \texttt{http://localhost:8000/admin/secure-archive.html}.
+Demo live:
+\begin{enumerate}
+  \item Chỉ danh sách file \texttt{.enc} trong \fpath{data/clips/secure/}
+  \item Click một clip, click \textbf{Decrypt \& Play}
+  \item Nhập đúng password --- clip gốc rõ nét hiện ra
+  \item Nhập sai password --- error ``Decryption failed'' (message từ dòng 136)
+\end{enumerate}
+\end{action}
+
+% -----------------------------------------------------------
+\subsection{9:30--12:00 --- PBKDF2 + Timing Attack: src/admin\_auth.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/admin\_auth.py}. Dừng ở dòng 31.
+\end{action}
+
+\begin{codestep}{admin\_auth.py dong 31--50 --- \_ITERATIONS, \_pbkdf2, \_ct\_equal}
+\begin{lstlisting}[language=Python, firstnumber=31]
+_ITERATIONS = 390_000    # OWASP 2023 minimum for PBKDF2-SHA256
+_KEY_LEN     = 32        # 256-bit output
+_DEFAULT_CRED_PATH = "data/admin_credentials.json"
+
+def _pbkdf2(password: str, salt: bytes,
+            iterations: int = _ITERATIONS) -> bytes:
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=_KEY_LEN,          # 32 bytes
+        salt=salt,
+        iterations=iterations,    # dong 41: 390.000 lan SHA-256
+    )
+    return kdf.derive(password.encode("utf-8"))  # dong 43
+
+def _ct_equal(a: bytes, b: bytes) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    return hmac.compare_digest(a, b)  # dong 50
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích dong 31--50}
+``\textbf{Dòng 31}: \texttt{\_ITERATIONS = 390\_000} --- con số này không phải em tự nghĩ ra.
+Đây là chuẩn \textbf{OWASP 2023} cho PBKDF2-SHA256.
+OWASP (Open Web Application Security Project) là tổ chức bảo mật uy tín nhất.
+
+\textbf{Dòng 41}: 390.000 iterations nghĩa là SHA-256 được tính 390.000 lần liên tiếp
+cho \textit{mỗi lần} verify password.
+Máy tính 1 triệu hash/giây $\to$ mỗi verify mất 0.39 giây.
+Brute-force 8 ký tự mixed = $96^8 \approx 7\times10^{15}$ khả năng $\times$ 0.39s = hàng triệu năm.
+
+\textbf{Dòng 48--50}: \texttt{\_ct\_equal} dùng \texttt{hmac.compare\_digest}.
+
+\textbf{Tại sao không dùng} \texttt{a == b}?
+Python \texttt{==} so sánh byte từng ký tự, dừng lại ngay khi gặp byte đầu tiên khác.
+Hacker đo thời gian server phản hồi:
+response nhanh $\to$ sai ngay byte đầu,
+response chậm hơn $\to$ 5 byte đầu đúng.
+Qua 1000 request, thống kê timing $\to$ leak thông tin về password --- \textbf{Timing Attack}.
+
+\texttt{hmac.compare\_digest} \textbf{luôn} chạy hết tất cả bytes bất kể sai ở đâu.
+Response time không đổi $\to$ không có thông tin rò rỉ.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 83:
+\end{action}
+
+\begin{codestep}{admin\_auth.py dong 83--94 --- verify\_admin(): flow day du}
+\begin{lstlisting}[language=Python, firstnumber=83]
+def verify_admin(password: str,
+                 path: str = _DEFAULT_CRED_PATH) -> bool:
+    """Returns True iff password matches stored credentials."""
+    p = Path(path)
+    if not p.exists():
+        return False
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        salt      = base64.b64decode(data["salt"])    # dong 91
+        stored    = base64.b64decode(data["hash"])    # dong 92
+        iters     = int(data.get("iterations",        # dong 93
+                                 _ITERATIONS))
+        candidate = _pbkdf2(password, salt, iters)    # dong 94
+        return _ct_equal(candidate, stored)           # dong 95
+    except Exception:
+        return False   # dong 97: fail silently, no detail leak
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\dat\ Giải thích verify\_admin}
+``\textbf{Dòng 91}: đọc salt từ file JSON.
+Salt được lưu dạng base64 --- không phải plaintext, không phải hex.
+
+\textbf{Dòng 94}: \texttt{\_pbkdf2(password, salt, iters)}
+--- tức cùng password + cùng salt $\to$ cùng hash.
+Đây là tính deterministic của PBKDF2.
+
+\textbf{Dòng 95}: so sánh constant-time (hàm dòng 48 vừa xem).
+
+\textbf{Dòng 97}: \texttt{except Exception: return False} ---
+lỗi JSON parse, lỗi base64, lỗi bất kỳ đều trả False.
+Không bao giờ trả exception có detail về lỗi ở đâu.
+Đây là nguyên tắc \textit{fail silently, no information disclosure}.''
+\end{dialog}
+
+\begin{action}
+Mở \fpath{data/admin\_credentials.json} trong editor. Show cho thầy cô thấy:
+\end{action}
+
+\begin{dialog}{\dat\ Zero knowledge of plaintext}
+``File này chỉ có \texttt{salt} và \texttt{hash} dạng base64.
+Không có password. Không có key.
+\textbf{Ngay cả em viết code cũng không biết password admin}
+nếu không được admin cung cấp trực tiếp.
+Đây là nguyên tắc \textit{Zero Knowledge of Plaintext} --- privacy by design thực sự.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{12:00 --- Tóm tắt Video 1}
+% -----------------------------------------------------------
+
+\begin{dialog}{\dat\ Ket thuc video 1}
+``Tóm lại, code em trực tiếp viết:
+\fpath{privacy.py} dòng 67--200 --- 7 mode ẩn danh,
+\fpath{anonymizer\_backend.py} dòng 53--91 --- 4 preset,
+\fpath{clip\_recorder.py} dòng 109--138 --- AES-256-GCM encrypt/decrypt,
+\fpath{admin\_auth.py} dòng 31--97 --- PBKDF2 + timing attack prevention.
+
+Tất cả hướng đến một mục tiêu: bảo vệ quyền riêng tư với tiêu chuẩn bảo mật công nghiệp.
+Cảm ơn thầy cô.''
+\end{dialog}
+
+\newpage
+
+% ============================================================
+\section{VIDEO 2 --- Khoa: YOLOv11 + InsightFace + FaceDB + BBoxSmoother}
+% ============================================================
+
+\begin{tcolorbox}[colback=OliveGreen!6, colframe=OliveGreen,
+  title={\textcolor{white}{\textbf{VIDEO 2 --- KHOA (Detection) --- YOLO + InsightFace + FaceDB}}}]
+Camera rõ mặt, VS Code mở sẵn đúng file.
+Khoa phải nói rõ: ``Dòng X em viết để làm gì, tại sao chọn giá trị đó''. \\
+Total code Khoa viết: $\approx$\textbf{759 dòng} ($149 + 69 + 168 + 373$).
+\end{tcolorbox}
+
+% -----------------------------------------------------------
+\subsection{0:00--1:30 --- Giới thiệu và khai báo đóng góp}
+% -----------------------------------------------------------
+
+\begin{dialog}{\khoa\ Tu gioi thieu}
+``Xin chào thầy cô. Em là Khoa, phụ trách \textbf{Face Detection và Recognition}.
+
+Phần em \textbf{trực tiếp viết}:
+\begin{itemize}
+  \item \fpath{src/detector.py} --- 149 dòng --- FaceDetector wrapper cho YOLOv11n-face
+  \item \fpath{src/face\_recognition.py} --- 69 dòng --- InsightFace buffalo\_l embedding 512-dim
+  \item \fpath{src/family\_database.py} --- 168 dòng --- FamilyDatabase, matching engine
+  \item \fpath{src/bbox\_smoother.py} --- 373 dòng --- BBoxSmoother EMA + IoU tracking
+\end{itemize}
+Ngoài ra em thu thập dataset gốc --- chụp 200 ảnh trong nhiều điều kiện ánh sáng.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{1:30--4:30 --- YOLOv11n-face: src/detector.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở VS Code, mở \fpath{src/detector.py}.
+Nhìn qua: 149 dòng. Dừng dòng 13.
+\end{action}
+
+\begin{codestep}{detector.py dong 13--36 --- class FaceDetector \_\_init\_\_()}
+\begin{lstlisting}[language=Python, firstnumber=13]
+class FaceDetector:
+    """Face detector backed by Ultralytics YOLOv11-face."""
+
+    def __init__(
+        self,
+        model_path: str   = "models/yolov11n-face.pt",
+        conf_threshold: float = 0.35,  # dong 19
+        iou_threshold:  float = 0.50,  # dong 20
+        imgsz:          int   = 640,   # dong 21
+        device: Optional[str] = None,
+    ) -> None:
+        self.conf_threshold = conf_threshold  # dong 34
+        self.iou_threshold  = iou_threshold   # dong 35
+        self.imgsz          = imgsz            # dong 36
+        self.model_path     = model_path
+        self.model: Optional[Any] = None
+
+        try:
+            yolo_cls = self._resolve_yolo_class()  # dong 43: import YOLO
+            if yolo_cls is None:
+                return
+            self.model = yolo_cls(model_path)      # dong 45: load weights
+        except Exception as exc:
+            LOGGER.exception("Failed to load: %s", exc)
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khoa\ Giai thich dong 13--36}
+``\textbf{Dòng 18}: model path mặc định \texttt{models/yolov11n-face.pt} --- file 6.2MB weights.
+Đây là model fine-tuned cho face detection, không phải YOLO thông thường.
+``n'' = nano: nhỏ nhất trong họ YOLOv11, chạy tốt trên CPU.
+
+\textbf{Dòng 19}: \texttt{conf\_threshold = 0.35}.
+Em chạy benchmark với nhiều giá trị:
+\texttt{0.25} $\to$ quá nhiều false positive (nhận ra màn hình TV, ảnh treo tường là mặt người).
+\texttt{0.5} $\to$ bỏ sót mặt khi ánh sáng yếu.
+\texttt{0.35} cân bằng tốt nhất giữa precision và recall.
+
+\textbf{Dòng 20}: \texttt{iou\_threshold = 0.50}.
+IoU (Intersection over Union) dùng cho Non-Maximum Suppression.
+Khi hai bbox chồng lên nhau $>$50\%, giữ cái có confidence cao nhất, bỏ cái kia.
+Tránh detect cùng khuôn mặt hai lần.
+
+\textbf{Dòng 21}: \texttt{imgsz = 640}.
+YOLO resize mọi frame về 640×640 trước inference.
+Chuẩn hoá input, model không bị confused với kích thước khác nhau.
+
+\textbf{Dòng 45}: \texttt{self.model = yolo\_cls(model\_path)}
+--- load weights vào RAM. Lần đầu $\approx$1--2 giây, sau đó cached.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 89:
+\end{action}
+
+\begin{codestep}{detector.py dong 89--135 --- detect\_faces\_with\_scores() --- core function}
+\begin{lstlisting}[language=Python, firstnumber=89]
+def detect_faces_with_scores(
+    self, frame: np.ndarray
+) -> List[Tuple[List[int], float]]:
+    ...
+    results = self.model.predict(   # dong 113: call YOLO inference
+        source=frame,
+        conf=self.conf_threshold,   # dong 115: nguong tu dong 19
+        iou=self.iou_threshold,     # dong 116: NMS tu dong 20
+        imgsz=self.imgsz,           # dong 117: 640 tu dong 21
+        device=self.device,
+        verbose=False,              # dong 119: tat YOLO log
+    )
+    ...
+    for idx, xyxy in enumerate(boxes.xyxy): # dong 131: duyet tung box
+        x1, y1, x2, y2 = xyxy.tolist()     # dong 132: toa do goc tren-trai, duoi-phai
+        # Clamp: dam bao trong frame
+        x1_i = max(0, min(width - 1, int(round(x1))))
+        y1_i = max(0, min(height - 1, int(round(y1))))
+        x2_i = max(0, min(width,     int(round(x2))))
+        y2_i = max(0, min(height,    int(round(y2))))
+        w_box = x2_i - x1_i
+        h_box = y2_i - y1_i
+        # Convert [x1,y1,x2,y2] -> [x,y,w,h] format
+        detections.append(([x1_i, y1_i, w_box, h_box], conf_val))
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khoa\ Giai thich dong 131 convert format}
+``\textbf{Dòng 131--132}: YOLO output format là \texttt{[x1,y1,x2,y2]}
+--- tọa độ góc trên trái và góc dưới phải.
+
+Dòng 133--142: em clamp về trong boundary của frame.
+Không clamp có thể gây negative width/height khi detect gần mép frame.
+
+Cuối function: convert về \texttt{[x,y,w,h]}.
+Lý do: OpenCV \texttt{cv2.rectangle} + privacy.py \texttt{\_expand\_box}
+đều dùng format \texttt{[x,y,w,h]}.
+Convert một lần ở đây, toàn bộ pipeline dùng format nhất quán.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{4:30--7:30 --- InsightFace: src/face\_recognition.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/face\_recognition.py}. File 69 dòng --- nhỏ nhưng quan trọng.
+\end{action}
+
+\begin{codestep}{face\_recognition.py dong 10--24 --- FaceRecognizer + cosine\_similarity}
+\begin{lstlisting}[language=Python, firstnumber=10]
+class FaceRecognizer:
+    """InsightFace embedding extractor for detected face boxes."""
+
+    def __init__(self, model: str = "buffalo_l",
+                 det_size: tuple[int, int] = (256, 256)) -> None:
+        self.model = model                  # dong 14: ghi lai ten model
+        self.app = FaceAnalysis(            # dong 15
+            name=model,
+            providers=["CPUExecutionProvider"]  # dong 17: chi dung CPU
+        )
+        self.app.prepare(ctx_id=0,
+                         det_size=det_size) # dong 18: 256x256 ROI
+
+    @staticmethod
+    def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+        a_norm = np.linalg.norm(a)          # dong 20: ||a||
+        b_norm = np.linalg.norm(b)          # dong 21: ||b||
+        if a_norm == 0.0 or b_norm == 0.0:
+            return -1.0                     # dong 23: edge case zero vector
+        return float(np.dot(a, b) /         # dong 24
+                     (a_norm * b_norm))     # cos(a,b) = (a.b)/(||a||.||b||)
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khoa\ Giai thich face\_recognition.py}
+``\textbf{Dòng 15--17}: \texttt{FaceAnalysis(name="buffalo\_l")} --- đây là model InsightFace.
+``buffalo\_l'' là model lớn nhất trong bộ InsightFace free,
+đạt 99.7\% trên benchmark LFW (Labeled Faces in the Wild).
+Output: embedding vector 512 chiều.
+
+\textbf{Dòng 17}: \texttt{CPUExecutionProvider} --- chạy trên CPU, không cần GPU.
+Tốc độ $\approx$50--80ms/frame, đủ cho camera giám sát.
+
+\textbf{Dòng 20--24}: Cosine Similarity công thức:
+$$\cos(a,b) = \frac{a \cdot b}{\|a\| \cdot \|b\|}$$
+Result từ $-1$ (ngược hướng hoàn toàn) đến $+1$ (cùng người).
+\textbf{Tại sao cosine không phải Euclidean distance?}
+Cosine không phụ thuộc độ lớn vector --- chỉ so sánh hướng.
+Cùng người trong ảnh sáng vs ảnh tối: magnitude khác nhau nhưng hướng gần nhau.
+Euclidean distance bị ảnh hưởng bởi magnitude $\to$ kém ổn định hơn.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{7:30--10:00 --- FamilyDatabase: src/family\_database.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/family\_database.py}. Dừng dòng 17.
+\end{action}
+
+\begin{codestep}{family\_database.py dong 17--34 --- FamilyMember dataclass + FamilyDatabase}
+\begin{lstlisting}[language=Python, firstnumber=17]
+@dataclass
+class FamilyMember:
+    member_id:  str                      # dong 18: ID duy nhat (khong doi)
+    name:       str                      # dong 19: ten hien thi
+    embeddings: List[List[float]]        # dong 20: N x 512 float matrix
+    threshold:  float = 0.35             # dong 21: per-member threshold
+
+@dataclass
+class FamilyDatabase:
+    def __init__(self,
+                 db_path: str = "data/family_members.json") -> None:
+        self._emb_matrix = np.empty((0,0), dtype=np.float32)  # dong 30
+        self._member_ids: List[str] = []
+        self._member_thresholds = np.empty((0,), dtype=np.float32)
+        self.load()   # dong 34: tu dong load khi khoi tao
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khoa\ FamilyMember schema}
+``\textbf{Dòng 17--21}: \texttt{FamilyMember} là dataclass --- struct đơn giản không có method.
+
+\textbf{Dòng 20}: \texttt{embeddings: List[List[float]]} là danh sách các vector 512 chiều.
+Mỗi thành viên có thể có N embedding từ N ảnh mẫu.
+Em thu thập khoảng 100 ảnh/người ở nhiều góc độ, ánh sáng.
+
+\textbf{Dòng 21}: \texttt{threshold = 0.35} là per-member.
+Người có khuôn mặt ``khó nhận'' (đeo kính dày, ánh sáng bất thường)
+admin có thể hạ threshold xuống 0.30.
+\textbf{Dòng 30}: \texttt{\_emb\_matrix} là numpy matrix pre-built ---
+tất cả embedding của tất cả thành viên được stack thành 1 ma trận lớn.
+Để match vectorized, không dùng Python loop.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 101:
+\end{action}
+
+\begin{codestep}{family\_database.py dong 101--128 --- \_rebuild\_index(): vectorized matching prep}
+\begin{lstlisting}[language=Python, firstnumber=101]
+def _rebuild_index(self) -> None:
+    flat_embeddings: List[np.ndarray] = []
+    ...
+    for member in self.members:
+        for emb_list in member.embeddings:   # dong 109: duyet tung mau
+            emb = np.asarray(emb_list, dtype=np.float32)
+            norm = float(np.linalg.norm(emb))
+            if norm <= 0.0:
+                continue
+            flat_embeddings.append(emb / norm)  # dong 116: L2-normalize truoc
+            member_ids.append(member.member_id)
+
+    # Stack toan bo thanh ma tran [N_total_samples x 512]
+    self._emb_matrix = np.stack(flat_embeddings).astype(np.float32) # dong 128
+\end{lstlisting}
+\end{codestep}
+
+\begin{action}
+Scroll xuống dòng 139:
+\end{action}
+
+\begin{codestep}{family\_database.py dong 139--166 --- match(): vectorized cosine similarity}
+\begin{lstlisting}[language=Python, firstnumber=139]
+def match(self, query_embedding: np.ndarray,
+          threshold: float = 0.35
+          ) -> Optional[Tuple[str, str, float]]:
+    if self._emb_matrix.size == 0:
+        return None    # dong 144: database rong -> khong nhan dien
+
+    q = np.asarray(query_embedding, dtype=np.float32)
+    q_norm = float(np.linalg.norm(q))
+    q = q / q_norm                    # dong 155: normalize query
+
+    scores = self._emb_matrix @ q     # dong 156: VECTORIZED dot product
+    # Viet ra: scores[i] = emb_matrix[i] . q
+    #        = cos(emb[i], q) vi ca hai da duoc L2-normalize truoc (dong 116)
+
+    thresholds = np.maximum(           # dong 157: per-member threshold
+                    self._member_thresholds, float(threshold))
+    valid = scores >= thresholds       # dong 158: boolean mask
+
+    masked_scores = np.where(valid, scores, -np.inf)  # dong 162
+    best_idx    = int(np.argmax(masked_scores))        # dong 163: tim max
+    best_score  = float(masked_scores[best_idx])       # dong 164
+
+    return (self._member_ids[best_idx],
+            self._member_names[best_idx],
+            best_score)               # dong 166: (id, ten, score)
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khoa\ Giai thich match() vectorized}
+``\textbf{Dòng 116} (rebuild\_index): Trước khi lưu vào matrix, mọi embedding được \textbf{L2-normalize}.
+Sau normalize: \texttt{||emb|| = 1}.
+
+\textbf{Dòng 156}: \texttt{scores = self.\_emb\_matrix @ q}.
+Đây là matrix-vector multiplication.
+\texttt{\_emb\_matrix} shape \texttt{[N, 512]}, \texttt{q} shape \texttt{[512]}.
+Kết quả \texttt{scores} shape \texttt{[N]} --- similarity với tất cả N mẫu \textbf{trong một lần tính}.
+
+\textbf{Tại sao đây là cosine similarity?}
+Vì cả query (dòng 155) và database (dòng 116) đều đã L2-normalize.
+Với $\|a\|=1$ và $\|b\|=1$: $\cos(a,b) = a \cdot b$ --- dot product là cosine.
+Không cần chia thêm $\|a\| \cdot \|b\|$ nữa.
+
+\textbf{Tại sao vectorized quan trọng?}
+Database 2 người × 100 ảnh = 200 mẫu.
+Python loop: 200 iterations, mỗi cái gọi \texttt{np.dot} riêng lẻ.
+Matrix multiply: 200 phép tính \textbf{song song}, BLAS/LAPACK tối ưu, nhanh hơn 10--20x.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{10:00--12:00 --- BBox Smoother: src/bbox\_smoother.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/bbox\_smoother.py}. File 373 dòng, phần core từ dòng 24.
+\end{action}
+
+\begin{codestep}{bbox\_smoother.py dong 24--50 --- BBoxSmoother \_\_init\_\_}
+\begin{lstlisting}[language=Python, firstnumber=24]
+class BBoxSmoother:
+    """
+    Temporal smoothing for bboxes using EMA.
+    Without smoothing: boxes jump per-frame (YOLO detects slightly different).
+    EMA alpha=0.7 -> responsive but smooth.
+    """
+
+    def __init__(self,
+                 alpha: float = 0.7,         # dong 33: smoothing factor
+                 iou_threshold: float = 0.3  # dong 35: matching threshold
+                 ) -> None:
+        self.alpha         = max(0.1, min(1.0, alpha))   # dong 47
+        self.iou_threshold = max(0.1, min(0.9,
+                                          iou_threshold)) # dong 49
+\end{lstlisting}
+\end{codestep}
+
+\begin{action}
+Scroll xuống dòng 115:
+\end{action}
+
+\begin{codestep}{bbox\_smoother.py dong 115--132 --- \_ema\_smooth(): EMA formula}
+\begin{lstlisting}[language=Python, firstnumber=115]
+def _ema_smooth(self, current: List[int],
+                history: deque) -> List[int]:
+    """Apply exponential moving average smoothing."""
+    current_arr = np.array(current, dtype=float)
+    if not history:
+        return current         # don't smooth, no history yet
+
+    smoothed = current_arr     # dong 124: start with current
+    weight = self.alpha        # dong 125: weight = 0.7 for current
+
+    for past in reversed(history):  # dong 127: oldest first
+        past_arr = np.array(past, dtype=float)
+        # EMA formula:
+        # smoothed = weight * smoothed + (1-weight) * past
+        smoothed = weight * smoothed + (1 - weight) * past_arr  # dong 129
+        weight *= self.alpha  # dong 130: decay: 0.7^2, 0.7^3...
+
+    return [int(round(v)) for v in smoothed]  # dong 132
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khoa\ Giai thich EMA}
+``\textbf{EMA --- Exponential Moving Average}:
+$$\hat{b}_t = \alpha \cdot b_t + (1-\alpha) \cdot \hat{b}_{t-1}$$
+
+\textbf{Dòng 125}: alpha = 0.7 cho frame hiện tại.
+\textbf{Dòng 130}: weight của frame $t-1$ là $0.7^2 = 0.49$,
+frame $t-2$ là $0.7^3 = 0.343$, v.v.
+Frame càng cũ càng ít ảnh hưởng --- \textit{exponential} decay.
+
+\textbf{Tại sao không dùng simple moving average?}
+SMA cho trọng số bằng nhau cho tất cả frame trong window.
+Box thay đổi đột ngột (người chạy nhanh) $\to$ SMA lag theo không kịp.
+EMA: frame mới nhất quan trọng nhất $\to$ responsive + smooth.
+
+\textbf{Kết quả thực tế (\textbf{dòng 35}):} \texttt{iou\_threshold = 0.3} cho matching boxes qua frames.
+Nếu box mới overlap $>$30\% với track cũ $\to$ match, apply EMA.
+Dưới 30\% $\to$ người mới đi vào frame, tạo track mới.''
+\end{dialog}
+
+\begin{action}
+Demo live: mở browser, start pipeline mode balanced.
+Di tay từ từ trước khuôn mặt.
+Box bám theo mượt mà.
+Rồi thay bằng mode fast không smoother (nếu có toggle) --- box nhảy.
+\end{action}
+
+\begin{dialog}{\khoa\ Ket thuc video 2}
+``Tóm lại code em viết:
+\fpath{detector.py} dòng 13--36 init, dòng 89--145 detect,
+\fpath{face\_recognition.py} dòng 10--56,
+\fpath{family\_database.py} dòng 17--166 include vectorized match,
+\fpath{bbox\_smoother.py} dòng 24--132 EMA smoother.
+
+Ngoài ra em thu thập dữ liệu --- 200 ảnh đăng ký vào database.
+Cảm ơn thầy cô.''
+\end{dialog}
+
+\newpage
+
+% ============================================================
+\section{VIDEO 3 --- Khánh: Backend + Pipeline + Frontend + Kết Luận}
+% ============================================================
+
+\begin{tcolorbox}[colback=MidnightBlue!8, colframe=MidnightBlue,
+  title={\textcolor{white}{\textbf{VIDEO 3 --- KHANH (CUOI) --- FastAPI + Pipeline + Frontend + KET LUAN}}}]
+Video cuối cùng. Khánh trình bày backend, pipeline, streaming, frontend
+và \textbf{kết luận toàn bộ đề án}.
+Total code Khánh viết: $\approx$\textbf{3207 dòng} ($1893 + 1314$).
+\end{tcolorbox}
+
+% -----------------------------------------------------------
+\subsection{0:00--1:30 --- Giới thiệu và khai báo đóng góp}
+% -----------------------------------------------------------
+
+\begin{dialog}{\khanh\ Tu gioi thieu}
+``Xin chào thầy cô. Em là Khánh, phụ trách \textbf{Backend API và Real-time Pipeline}.
+Và em là người trình bày \textbf{cuối cùng} của nhóm.
+
+Phần em \textbf{trực tiếp viết}:
+\begin{itemize}
+  \item \fpath{src/app\_api.py} --- \textbf{1893 dòng} --- toàn bộ REST API + WebSocket
+  \item \fpath{src/run\_phone\_cam.py} --- \textbf{1314 dòng} --- FrameReader thread, camera utils
+  \item \fpath{src/backend\_api.py} --- stateless endpoint handlers (image processing)
+  \item \fpath{frontend/} --- \textbf{6 trang HTML} với Tailwind CSS
+\end{itemize}
+Nói ngắn gọn: Đạt làm tầng bảo mật, Khoa làm tầng nhận diện,
+em làm \textit{``dây nối''} --- bọc tất cả vào API, serve qua HTTP, giao diện người dùng.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{1:30--4:30 --- FastAPI Architecture: src/app\_api.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở VS Code, mở \fpath{src/app\_api.py}.
+Scroll nhanh từ đầu: 1893 dòng.
+Zoom out nhìn outline --- show thầy cô thấy scale.
+Sau đó jump đến dòng 968.
+\end{action}
+
+\begin{codestep}{app\_api.py dong 968--993 --- Nhom 1: Info/Health endpoints}
+\begin{lstlisting}[language=Python, firstnumber=968]
+@app.get("/health", tags=["Info"], summary="Service health check")
+def health() -> Dict[str, Any]:           # dong 969
+    ...
+
+@app.get("/info", tags=["Info"], summary="Service capabilities")
+def info() -> Dict[str, Any]:             # dong 974
+    ...
+
+@app.get("/presets", tags=["Info"],
+         summary="List all anonymization presets")
+def get_presets() -> Dict[str, Any]:      # dong 988
+    ...
+# -> goi tiep sang anonymizer_backend.py dong 53 (PRESETS dict cua Dat)
+
+@app.get("/pipeline/modes", tags=["Info"])
+def pipeline_modes() -> Dict[str, Any]:   # dong 993
+    ...
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ Nhom Info endpoints}
+``\textbf{Dòng 968--993}: 4 endpoint nhóm Info.
+\texttt{GET /health} dòng 969: server alive check, monitor dùng.
+\texttt{GET /info} dòng 974: version, capabilities --- frontend fetch khi load.
+\texttt{GET /presets} dòng 988: gọi tiếp \texttt{PRESETS} dict dòng 53 của Đạt
+trong \fpath{anonymizer\_backend.py}. Đây là ví dụ cụ thể về tích hợp giữa module của em và module của Đạt.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 1005:
+\end{action}
+
+\begin{codestep}{app\_api.py dong 1005--1102 --- Nhom 2: Stateless image processing}
+\begin{lstlisting}[language=Python, firstnumber=1005]
+@app.post(...)                     # dong 1005
+def anonymize(request: FrameRequest) -> Dict[str, Any]:  # dong 1010
+    # Nhan base64 image -> blur mat -> tra ve base64 image
+
+@app.post(...)                     # dong 1030
+def lock(request: LockRequest) -> Dict[str, Any]:        # dong 1035
+    # Nhan image + password -> AES-GCM ma hoa tung vung mat
+
+@app.post(...)                     # dong 1069
+def unlock(request: UnlockRequest) -> Dict[str, Any]:    # dong 1074
+    # Nhan image + per-face encrypted data -> decrypt -> hien thi
+
+@app.post(...)                     # dong 1096
+def recognize(request: RecognizeRequest) -> RecognizeResponse: # dong 1102
+    # Nhan image -> tra ve ten tat ca nguoi nhan ra duoc
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ Nhom Stateless endpoints}
+``Dòng 1005--1102: 4 endpoint xử lý ảnh tĩnh, không cần pipeline.
+Tất cả \textbf{stateless} --- mỗi request độc lập, không phụ thuộc state server.
+
+\texttt{POST /anonymize} dòng 1010: nhận base64 ảnh, gọi \texttt{anonymize\_faces} từ \fpath{privacy.py} của Đạt.
+\texttt{POST /lock} dòng 1035: gọi \texttt{encrypt\_clip} logic từ \fpath{face\_lock.py} của Đạt.
+\texttt{POST /recognize} dòng 1102: gọi \texttt{FaceRecognizer} của Khoa + database matching.
+
+Em bọc logic của Đạt và Khoa vào REST interface --- đây là vai trò của backend integration.''
+\end{dialog}
+
+\begin{action}
+Scroll đến dòng 1427:
+\end{action}
+
+\begin{codestep}{app\_api.py dong 1427--1500 --- Nhom 3: Pipeline control endpoints}
+\begin{lstlisting}[language=Python, firstnumber=1427]
+@app.post(...)
+def pipeline_start(req: PipelineStartRequest) -> Dict[str, Any]: # dong 1432
+    # Tao PipelineSession moi, goi .start()
+    # PipelineSession la class em viet dong 512
+
+@app.delete(...)
+def pipeline_stop() -> Dict[str, Any]:        # dong 1458
+    # Goi session.stop() -> join thread
+
+@app.get(...)
+def pipeline_status() -> PipelineStatusResponse:  # dong 1474
+    # Lay real-time stats: fps, faces_detected, mode hien tai
+
+@app.patch("/pipeline/config", tags=["Pipeline"],
+           summary="Hot-update settings without restarting")
+def pipeline_update_config(patch: PipelineConfigPatch): # dong 1488
+    with _pipeline_lock:               # dong 1496: thread-safe
+        session = _pipeline_session
+    if session is None or not session.is_alive:
+        raise HTTPException(status_code=404, ...)
+    session.patch_config(patch)        # dong 1500: goi PipelineSession.patch_config
+    applied = patch.model_dump(exclude_none=True)
+    return {"ok": True, "applied": applied}
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ Hot-reload config}
+``\textbf{Dòng 1483--1501}: đây là tính năng \textbf{hot-reload config} em thiết kế.
+
+\texttt{PATCH /pipeline/config} cho phép đổi mode, threshold, detect\_every
+\textbf{mà không cần restart pipeline}.
+
+\textbf{Dòng 1496}: \texttt{with \_pipeline\_lock} --- lock trước khi access shared session.
+Thread-safe: processing thread đang dùng config cũ sẽ không bị race condition.
+
+\textbf{Dòng 1500}: \texttt{session.patch\_config(patch)} nhảy vào dòng 583 của class \texttt{PipelineSession}.
+Xem dòng 583--588 tiếp:''
+\end{dialog}
+
+\begin{codestep}{app\_api.py dong 583--588 --- PipelineSession.patch\_config(): atomic update}
+\begin{lstlisting}[language=Python, firstnumber=583]
+def patch_config(self, patch: PipelineConfigPatch) -> None:
+    with self.cfg_lock:           # dong 584: lock cfg_lock rieng
+        for key, value in patch.model_dump(
+                exclude_none=True).items():  # dong 585: chi fields khong None
+            if hasattr(self.live_cfg, key):
+                setattr(self.live_cfg, key, value)  # dong 587: set attribute
+    # cfg_lock release -> processing thread thay doi ngay lap tuc
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ Atomic config update}
+``\textbf{Dòng 583--588}: \texttt{PipelineSession.patch\_config} nằm trong class em viết dòng 512.
+
+\textbf{Dòng 584}: \texttt{with self.cfg\_lock} --- lock riêng cho config, khác với lock cho pipeline session tổng thể.
+Granular locking: processing thread lock config nhẹ hơn session lock.
+
+\textbf{Dòng 585}: \texttt{model\_dump(exclude\_none=True)} --- chỉ lấy fields mà client gửi lên.
+Nếu PATCH request chỉ đổi mode, chỉ mode thay đổi, các field khác giữ nguyên.
+
+\textbf{Dòng 587}: \texttt{setattr(self.live\_cfg, key, value)} --- set ngay trên live config object.
+Processing loop dòng 636 đọc \texttt{self.live\_cfg} mỗi frame iteration $\to$ thay đổi có hiệu lực ngay frame tiếp theo.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{4:30--8:00 --- Live Pipeline Architecture: app\_api.py + run\_phone\_cam.py}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/run\_phone\_cam.py}. Jump đến dòng 327.
+\end{action}
+
+\begin{codestep}{run\_phone\_cam.py dong 327--386 --- FrameReader thread}
+\begin{lstlisting}[language=Python, firstnumber=327]
+class FrameReader(threading.Thread):
+    """Read frames on a dedicated thread;
+       keep only the LATEST frame in a maxsize=1 queue."""
+
+    def __init__(self, cap: cv2.VideoCapture) -> None:
+        super().__init__(daemon=True)    # dong 331: daemon thread
+        self.cap   = cap
+        self.queue: Queue = Queue(maxsize=1)  # dong 333: only 1 slot!
+        self.running = True
+        self.frames_read   = 0
+        self.frames_failed = 0
+
+    def run(self) -> None:                    # dong 338: thread entry
+        while self.running:
+            ok, frame = self.cap.read()       # dong 341: BLOCKING call
+            ...
+            # Queue full? Pop old frame truoc khi push moi
+            if self.queue.full():             # dong 365
+                try:
+                    self.queue.get_nowait()   # dong 367: discard stale
+                except Empty:
+                    pass
+            self.queue.put_nowait((ok, frame)) # dong 369: push latest
+
+    def read(self, timeout: float = 0.6):     # dong 376
+        try:
+            return self.queue.get(timeout=timeout)  # dong 378
+        except Empty:
+            return False, None                       # dong 380
+
+    def stop(self) -> None:                   # dong 382
+        self.running = False
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ Thiet ke FrameReader}
+``\textbf{Dòng 327}: \texttt{FrameReader} là class em viết trong \fpath{run\_phone\_cam.py}.
+Class này được dùng trực tiếp bởi \texttt{PipelineSession.\_run()} dòng 711 trong \fpath{app\_api.py}.
+
+\textbf{Dòng 341}: \texttt{self.cap.read()} là blocking call.
+\texttt{cv2.VideoCapture.read()} đợi cho đến khi camera deliver frame mới.
+Nếu call này trong thread xử lý chính: trong khi YOLO inference (50--100ms),
+thread block, camera buffer tràn, frame cũ bị drop.
+
+\textbf{Dòng 333}: \texttt{Queue(maxsize=1)} --- queue chỉ có \textbf{1 slot}.
+Thiết kế cố ý: chỉ giữ lại frame mới nhất.
+
+\textbf{Dòng 365--369}: nếu queue đã full (processing thread chưa kịp lấy),
+\texttt{get\_nowait()} pop frame cũ ra, rồi \texttt{put\_nowait} push frame mới vào.
+Kết quả: processing thread luôn nhận frame \textbf{thực sự mới nhất}.
+
+\textbf{Dòng 376--380}: \texttt{read()} với timeout 0.6s.
+Nếu 0.6 giây không có frame mới $\to$ trả \texttt{(False, None)}.
+Pipeline loop sẽ skip frame này, không crash.''
+\end{dialog}
+
+\begin{action}
+Mở \fpath{src/app\_api.py}, jump đến dòng 636:
+\end{action}
+
+\begin{codestep}{app\_api.py dong 636--742 --- PipelineSession.\_run(): main loop}
+\begin{lstlisting}[language=Python, firstnumber=636]
+def _run(self) -> None:
+    ...
+    # Buoc 1: resolve camera source (dong 638--669)
+    cap = open_capture(source, backend_flag, ...)   # dong 672: mo camera
+
+    # Buoc 2: khoi tao modules (dong 673--705)
+    detector = FaceDetector(            # dong 674: cua Khoa
+        model_path=req.model_path,
+        conf_threshold=req.conf_threshold, ...)
+    _db = FamilyDatabase(db_path=req.face_db)  # dong 688: cua Khoa
+    _rec = FaceRecognizer(model=req.recognition_model)  # dong 692: cua Khoa
+
+    # Buoc 3: khoi dong FrameReader thread (dong 710--729)
+    frame_reader = FrameReader(cap)     # dong 711: class dong 327
+    frame_reader.start()                # dong 712: bat dau doc camera
+
+    # Buoc 4: vong lap chinh (dong 730+)
+    while not self._stop_event.is_set():
+        ok, frame = frame_reader.read() # dong 744: lay frame moi nhat
+        if not ok or frame is None:
+            continue
+
+        # Chi detect sau moi detect_every frame (tiet kiem CPU)
+        if frame_idx % cfg.detect_every == 0:  # dong 750
+            boxes, scores = detector.detect_faces_with_scores(inference)
+            ...
+        # Recognition, smoothing, anonymize, stream...
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ Giai thich pipeline loop}
+``\textbf{Dòng 636}: \texttt{\_run()} là method của class \texttt{PipelineSession} em viết dòng 512.
+Đây là hàm chạy trong background thread khi admin click Start Pipeline.
+
+\textbf{Dòng 674--692}: em khởi tạo \texttt{FaceDetector} của Khoa (dòng 13 detector.py)
+và \texttt{FamilyDatabase} của Khoa (dòng 24 family\_database.py).
+Đây là điểm tích hợp: module của Khánh dùng module của Khoa.
+
+\textbf{Dòng 711--712}: tạo và start \texttt{FrameReader} class vừa xem dòng 327.
+Thread đọc camera chạy độc lập, em không block.
+
+\textbf{Dòng 744}: \texttt{frame\_reader.read()} --- lấy frame từ queue (dòng 376).
+Không bao giờ nhận frame cũ.
+
+\textbf{Dòng 750}: \texttt{frame\_idx \% cfg.detect\_every == 0} ---
+detect không phải mọi frame. Preset balanced: detect\_every=2 $\to$ detect 15 FPS khi stream 30 FPS.
+Tiết kiệm 50\% CPU cho YOLO.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{8:00--10:00 --- 3 phương thức Streaming}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở \fpath{src/app\_api.py}, jump đến dòng 1536.
+\end{action}
+
+\begin{codestep}{app\_api.py dong 1536--1575 --- MJPEG Stream endpoint}
+\begin{lstlisting}[language=Python, firstnumber=1536]
+@app.get("/stream/mjpeg", tags=["Streaming"],
+         summary="MJPEG stream - use as <img src=/stream/mjpeg>")
+async def stream_mjpeg() -> StreamingResponse:  # dong 1540
+    """
+    multipart/x-mixed-replace MJPEG stream.
+    Frontend chi can: <img src="/stream/mjpeg">
+    """
+    ...
+    async def _generate() -> AsyncGenerator[bytes, None]:  # dong 1553
+        last_seq = -1
+        while True:
+            ...
+            jpeg, seq, _ = s.frame_buffer.get()  # dong 1560: lay JPEG bytes
+            if jpeg is not None and seq != last_seq:
+                last_seq = seq
+                yield (
+                    b"--frame\r\n"                     # dong 1564: boundary
+                    b"Content-Type: image/jpeg\r\n\r\n"
+                    + jpeg                             # dong 1566: JPEG bytes
+                    + b"\r\n"
+                )
+            await asyncio.sleep(0.04)  # dong 1568: max ~25 fps polling
+
+    return StreamingResponse(
+        _generate(),
+        media_type="multipart/x-mixed-replace; boundary=frame",  # dong 1572
+    )
+\end{lstlisting}
+\end{codestep}
+
+\begin{dialog}{\khanh\ 3 streaming phuong thuc}
+``\textbf{Dòng 1536--1572}: MJPEG stream --- đơn giản nhất.
+
+Protocol \texttt{multipart/x-mixed-replace}: browser hiểu đây là stream ảnh liên tục.
+Frontend chỉ cần \texttt{<img src="/stream/mjpeg">} --- không cần JavaScript gì thêm.
+Dòng 1572: \texttt{boundary=frame} là separator giữa các JPEG frame.
+
+\textbf{Dòng 1568}: \texttt{await asyncio.sleep(0.04)} --- async sleep, không block event loop.
+0.04 giây $\to$ max 25 FPS polling. Pipeline có thể chạy nhanh hơn nhưng stream cap ở 25.
+
+\textbf{Dòng 1581} (scroll xuống): \texttt{stream\_sse} --- Server-Sent Events.
+One-way push cho status updates: FPS, mode hiện tại, số mặt phát hiện.
+Frontend dùng \texttt{EventSource} API.
+
+\textbf{Dòng 1620} (scroll tiếp): \texttt{@app.websocket("/stream/ws")}.
+WebSocket binary: latency thấp nhất, dùng khi cần xử lý frame phía client.
+Hỗ trợ \texttt{?format=binary} và \texttt{?format=json}.
+
+Ba phương thức để phù hợp ba use case khác nhau:
+MJPEG cho đơn giản, SSE cho status, WebSocket cho low-latency.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{10:00--12:00 --- Frontend 6 trang HTML}
+% -----------------------------------------------------------
+
+\begin{action}
+Mở browser, nhanh lần lượt 4 trang chính:
+\end{action}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue,
+  title={\textbf{6 trang HTML em viết --- Tailwind CSS + Neobrutalism}}]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{File} & \textbf{Chức năng chính} & \textbf{API endpoints gọi} \\
+\midrule
+\texttt{admin/dashboard.html}
+  & Pipeline start/stop, chọn preset, xem MJPEG stream, live stats
+  & \texttt{POST /pipeline/start} (L.1432), \texttt{PATCH /pipeline/config} (L.1488), \texttt{/stream/mjpeg} (L.1540) \\
+\texttt{admin/face-registry.html}
+  & List, add, delete thành viên; upload ảnh mẫu
+  & \texttt{POST /members} (L.1305), \texttt{DELETE /members/\{id\}} (L.1408) \\
+\texttt{admin/secure-archive.html}
+  & List clip \texttt{.enc}, decrypt và xem clip gốc
+  & \texttt{GET /clips} (L.1763), \texttt{POST /clips/\{id\}/decrypt} (L.1831) \\
+\texttt{user/live-portal.html}
+  & Xem stream đã blur, không có admin controls
+  & \texttt{/stream/mjpeg} (L.1540), \texttt{/stream/sse} (L.1581) \\
+\texttt{user/clips.html}
+  & Xem lịch sử clip blurred \texttt{.mp4}
+  & \texttt{GET /clips} (L.1763), \texttt{GET /clips/\{id\}/video} (L.1792) \\
+\texttt{user/support.html}
+  & Hướng dẫn sử dụng, FAQ
+  & (static) \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\begin{dialog}{\khanh\ Phan quyen Admin vs User}
+``Mỗi trang trong cột API endpoints tôi ghi rõ line number trong \fpath{app\_api.py}.
+Ví dụ: \texttt{POST /pipeline/start} là endpoint dòng 1432,
+decrypt clip là dòng 1831 trong file của em.
+
+Điểm quan trọng về phân quyền:
+Trang admin \texttt{/admin/...} gọi các endpoint yêu cầu admin token.
+Trang user \texttt{/user/...} chỉ gọi public endpoints.
+
+Đây là \textbf{Access Control} hai tầng: tầng frontend lọc UI,
+tầng backend (\texttt{\_require\_admin\_auth} dòng 426 trong \fpath{app\_api.py})
+verify token server-side. Không dùng tầng backend alone mà không có frontend filter.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{12:00--13:30 --- Demo end-to-end tổng hợp}
+% -----------------------------------------------------------
+
+\begin{action}
+Demo theo thứ tự:
+\begin{enumerate}
+  \item Dashboard $\to$ start pipeline mode \textbf{strong} (obliterate, dòng 70--79 \fpath{anonymizer\_backend.py})
+  \item Đạt, Khoa đứng trước camera $\to$ nhận ra, không blur (kết quả của \fpath{family\_database.py} dòng 139)
+  \item Khánh đứng trước $\to$ obliterate (gọi \fpath{privacy.py} dòng 172)
+  \item PATCH config sang mode \textbf{balanced} live (endpoint dòng 1488 $\to$ dòng 583)
+  \item Secure Archive $\to$ decrypt clip (endpoint dòng 1831 $\to$ \fpath{clip\_recorder.py} dòng 122)
+  \item Nhập sai password $\to$ error (dòng 134--136 \fpath{clip\_recorder.py})
+\end{enumerate}
+\end{action}
+
+\begin{dialog}{\khanh\ Giai thich luong tich hop}
+``Chuỗi xử lý mỗi frame:
+
+\textbf{Camera $\to$ FrameReader} (dòng 327, \fpath{run\_phone\_cam.py}) đọc liên tục.
+
+\textbf{FaceDetector} (dòng 13, \fpath{detector.py}) --- Khoa viết.
+
+\textbf{FamilyDatabase.match()} (dòng 139, \fpath{family\_database.py}) --- Khoa viết.
+
+\textbf{anonymize\_faces()} (dòng 201, \fpath{privacy.py}) --- Đạt viết.
+
+\textbf{ClipRecorder.push\_frame()} (dòng 305, \fpath{clip\_recorder.py}) $\to$ \textbf{encrypt\_clip()} (dòng 109) --- Đạt viết.
+
+\textbf{\_FrameBuffer.put()} (dòng 496, \fpath{app\_api.py}) $\to$
+\textbf{stream\_mjpeg()} (dòng 1540) --- em viết.
+
+Ba phần của ba người, mỗi phần có line number cụ thể, tích hợp hoàn chỉnh.''
+\end{dialog}
+
+% -----------------------------------------------------------
+\subsection{13:30--15:00 --- Kết luận toàn bộ đề án}
+% -----------------------------------------------------------
+
+\begin{warn}
+Đây là phần kết luận chung của \textbf{toàn nhóm}. Khánh là người nói cuối, nói thay mặt cả nhóm. Nói chậm, rõ, tự tin. Nhìn thẳng camera. Đây là ấn tượng cuối cùng.
+\end{warn}
+
+\begin{dialog}{\khanh\ KET LUAN TOAN BO DE AN}
+``Để kết thúc, em xin tổng kết những gì nhóm đã xây dựng.
+
+\textbf{Về Detection và Recognition --- Khoa:}
+\texttt{YOLOv11n-face} (\fpath{detector.py} dòng 13) phát hiện mặt real-time.
+\texttt{InsightFace buffalo\_l} (\fpath{face\_recognition.py} dòng 15) trích xuất embedding 512-dim.
+Vectorized cosine matching (\fpath{family\_database.py} dòng 156) --- match O(1) với NumPy matrix multiply.
+EMA bbox smoother (\fpath{bbox\_smoother.py} dòng 129) loại bỏ jitter.
+
+\textbf{Về bảo mật --- Đạt:}
+7 mode ẩn danh, mạnh nhất là obliterate (\fpath{privacy.py} dòng 172) với 4-bước pipeline không thể phục hồi.
+AES-256-GCM (\fpath{clip\_recorder.py} dòng 118) với per-clip random salt --- tiêu chuẩn mã hoá công nghiệp.
+PBKDF2-SHA256 390.000 iterations (\fpath{admin\_auth.py} dòng 31) theo OWASP 2023.
+Constant-time comparison (\fpath{admin\_auth.py} dòng 50) chống timing attack.
+
+\textbf{Về hệ thống --- em:}
+1893 dòng \fpath{app\_api.py}: REST + WebSocket + MJPEG + SSE.
+Multi-thread pipeline (\fpath{app\_api.py} dòng 512): không drop frame, không stale frame.
+Hot-reload config (\fpath{app\_api.py} dòng 583): không cần restart.
+6 trang HTML với phân quyền admin/user.
+
+\textbf{Điều quan trọng nhất:}
+Ba module của ba người \textbf{decoupled hoàn toàn} ---
+Đạt không cần biết Khoa implement face detection thế nào,
+Khánh không cần biết Đạt implement AES thế nào.
+Giao tiếp qua interface rõ ràng: Python function calls với type hints.
+Đây là nguyên tắc \textbf{Separation of Concerns} trong software engineering thực tế.
+
+Tổng codebase: $\approx$\textbf{5000 dòng} Python, chạy real-time trên CPU thông thường,
+đáp ứng \textit{Privacy by Design} theo GDPR Article 25.
+
+Nhóm em sẵn sàng trả lời câu hỏi. Xin cảm ơn thầy cô.''
+\end{dialog}
+
+\newpage
+
+% ============================================================
+\section{Q\&A --- Câu Hỏi Dự Kiến + Đáp Án Chuẩn Bị}
+% ============================================================
+
+\begin{tcolorbox}[colback=gray!5, colframe=BrickRed,
+  title={\textbf{Q1: Tại sao AES-GCM không phải AES-CBC?}}, breakable]
+\textbf{Ai trả lời:} \dat\\
+\textbf{Dẫn code:} \fpath{clip\_recorder.py} dòng 118 --- \texttt{AESGCM(key).encrypt}.\\
+GCM = Galois/Counter Mode --- authenticated encryption.
+Ngoài mã hóa, GCM tạo Authentication Tag 128-bit ---
+khi decrypt (dòng 134), tag được verify. Nếu file bị sửa dù 1 bit $\to$ fail ngay.
+CBC chỉ mã hóa, không verify integrity.
+Với bằng chứng pháp lý: \textbf{integrity là bắt buộc}.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=BrickRed,
+  title={\textbf{Q2: Con số 390.000 lấy ở đâu? Tại sao không dùng bcrypt?}}, breakable]
+\textbf{Ai trả lời:} \dat\\
+\textbf{Dẫn code:} \fpath{admin\_auth.py} dòng 31.\\
+390.000 = chuẩn \textbf{OWASP 2023} cho PBKDF2-SHA256.
+bcrypt tốt, nhưng PBKDF2 có trong thư viện \texttt{cryptography} của Python --- không cần thêm dependency.
+bcrypt hardcoded work factor, PBKDF2 cho phép điều chỉnh iterations --- dễ upgrade.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=OliveGreen,
+  title={\textbf{Q3: YOLOv11 khác YOLOv8 thế nào? Sao không dùng MediaPipe?}}, breakable]
+\textbf{Ai trả lời:} \khoa\\
+\textbf{Dẫn code:} \fpath{detector.py} dòng 18 --- model path.\\
+YOLOv11 fine-tuned cho face detection, không phải generic object detection.
+Thử nghiệm: YOLOv8 trên WIDER FACE benchmark cho AP@0.5 thấp hơn YOLOv11n-face khoảng 3\%.
+MediaPipe: built for mobile, C++ core, Python binding không stable trên Windows.
+YOLOv11: Python-native via Ultralytics, dễ maintain.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=OliveGreen,
+  title={\textbf{Q4: False positive (nhận nhầm người lạ là thành viên) xử lý thế nào?}}, breakable]
+\textbf{Ai trả lời:} \khoa\\
+\textbf{Dẫn code:} \fpath{family\_database.py} dòng 157 --- per-member threshold.\\
+Threshold 0.35 calibrate qua thử nghiệm: tập 200 ảnh thành viên + 500 ảnh người lạ.
+Per-member threshold (dòng 21): người khó nhận (đeo kính, góc lạ) có thể hạ xuống 0.30.
+100 ảnh mẫu/người từ nhiều góc, ánh sáng: tập embedding đa dạng.
+Vectorized match (dòng 156): lấy \texttt{max} score qua tất cả mẫu, không trung bình.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue,
+  title={\textbf{Q5: Tại sao FrameReader cần thread riêng?}}, breakable]
+\textbf{Ai trả lời:} \khanh\\
+\textbf{Dẫn code:} \fpath{run\_phone\_cam.py} dòng 327, 341.\\
+\texttt{cap.read()} dòng 341 là \textbf{blocking call}.
+Nếu gọi trong processing thread: YOLO chạy 50--100ms, thread block, camera buffer tràn.
+Thread riêng đọc liên tục, Queue maxsize=1 (dòng 333): luôn có frame mới nhất sẵn.
+Processing thread \texttt{frame\_reader.read()} dòng 744 lấy ngay, không stale.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue,
+  title={\textbf{Q6: FPS thực tế bao nhiêu? Có thể scale?}}, breakable]
+\textbf{Ai trả lời:} \khanh\\
+\textbf{Dẫn code:} \fpath{app\_api.py} dòng 750 --- \texttt{detect\_every}.\\
+CPU mid-range: preset fast $\approx$25--30 FPS, preset balanced $\approx$15--20 FPS.
+\texttt{detect\_every=2} (dòng 36 \fpath{anonymizer\_backend.py}): detect 15fps, display 30fps --- tiết kiệm 50\% CPU.
+Scale: thay \texttt{CPUExecutionProvider} (dòng 17 \fpath{face\_recognition.py}) bằng \texttt{CUDAExecutionProvider} $\to$ 5--10x nhanh hơn.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=BrickRed,
+  title={\textbf{Q7: GDPR compliant không?}}, breakable]
+\textbf{Ai trả lời:} \dat\\
+\textbf{Dẫn code:} \fpath{privacy.py} dòng 201 --- \texttt{anonymize\_faces()}.\\
+Privacy by Design (GDPR Art.25): ẩn danh mặc định khi detect.
+Data minimization: embedding lưu local (\fpath{data/family\_members.json}), không gửi cloud.
+Quyền xóa: \texttt{DELETE /members/\{id\}} dòng 1408 và \texttt{DELETE /clips} dòng 1872.
+Biometric data (embedding) mã hóa trong transit (HTTPS khi deploy production).
+Production cần thêm: audit log, consent UI, data retention policy.
+\end{tcolorbox}
+
+% ============================================================
+\section{Checklist Kỹ Thuật Trước Khi Quay}
+% ============================================================
+
+\begin{tcolorbox}[colback=OliveGreen!5, colframe=OliveGreen,
+  title={\textbf{Checklist chung --- 3 người đều cần check}}]
+\begin{itemize}
+  \item[$\square$] Server chạy:
+    \texttt{uvicorn src.app\_api:app --host 0.0.0.0 --port 8000}
+  \item[$\square$] Test health: \texttt{Invoke-WebRequest http://localhost:8000/health}
+  \item[$\square$] Admin đã setup, có ít nhất 2 clip \texttt{.enc} trong \fpath{data/clips/secure/}
+  \item[$\square$] VS Code: font $\geq$16, theme sáng rõ, file đã mở đúng
+  \item[$\square$] Browser: 3 tab sẵn (\texttt{/admin/dashboard}, \texttt{/admin/face-registry}, \texttt{/admin/secure-archive})
+  \item[$\square$] Camera: góc nhìn rõ mặt + màn hình cùng lúc
+  \item[$\square$] Mic: test trước, giọng rõ, echo-free
+  \item[$\square$] Tắt: notification, screensaver, Windows Update, antivirus scan
+  \item[$\square$] Thử quay 30 giây, xem lại: ổn không?
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=Goldenrod!8, colframe=Goldenrod,
+  title={\textbf{Khi được hỏi về code: công thức trả lời chuẩn}}]
+\textbf{Template}: ``\textit{Đây là file [tên file], dòng [số dòng], em viết để [mục đích].
+Cụ thể dòng [X] làm [việc cụ thể], dòng [Y] làm [việc cụ thể].
+Em chọn giá trị [Z] vì [lý do kỹ thuật cụ thể].}''
+
+\textbf{Ví dụ tốt}: ``Dòng 31 trong \fpath{admin\_auth.py}, em set \texttt{\_ITERATIONS = 390\_000}
+vì đây là chuẩn OWASP 2023 cho PBKDF2-SHA256. Con số này không phải em tự nghĩ ra.''
+
+\textbf{Tránh}: nói chung chung ``em dùng mã hóa AES'' mà không chỉ được dòng code cụ thể.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=red!5, colframe=red!60,
+  title={\textbf{Xử lý sự cố}}]
+\textbf{Server crash}: \texttt{uvicorn src.app\_api:app --reload} $\to$ auto-restart.
+
+\textbf{InsightFace chậm lần đầu}: download model \texttt{buffalo\_l} $\approx$2--3 phút. Chờ, bình thường.
+
+\textbf{Camera không detect}: kiểm tra ánh sáng, tiến gần hơn. Hoặc nói:
+``\textit{Do điều kiện phòng quay, em dùng clip đã ghi sẵn để demo.}''
+
+\textbf{Quên dòng code}: nhìn vào code và nói:
+``\textit{Để em mở file ra xem cụ thể --- đây là code em trực tiếp viết.}''
+Tự nhiên khi nhìn code của chính mình, không phải điểm trừ.
+\end{tcolorbox}
+
+\end{document}

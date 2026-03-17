@@ -1,0 +1,166 @@
+\section{Dự báo dài hạn}
+\label{SEC_predictions}
+
+Như đã trình bày ở Mục \ref{SUB_SEC_policy_eval}, bài toán trọng tâm trong đánh giá chính sách là \textbf{tính phân phối trạng thái dài hạn} $p(x_1), p(x_2), \dots, p(x_T)$ khi đầu vào của mô hình GP là một phân phối (không phải điểm tất định). Đây được gọi là bài toán \textit{prediction with uncertain inputs}, vốn không có lời giải giải tích chính xác cho mô hình GP với kernel SE.
+
+Phần này trình bày hai phương pháp xấp xỉ được đề xuất trong bài báo \cite{Deisenroth_2015}: \textbf{khớp moment} (moment matching) và \textbf{tuyến tính hóa} (linearization), sau đó so sánh chúng.
+
+\subsection{Phân phối joint trạng thái--điều khiển}
+\label{SUB_SEC_joint_distribution}
+
+Xét một bước dự báo điển hình. Gọi $p(x_t) = \mathcal{N}(x_t \mid m_t, \mathbf{S}_t)$ là phân phối trạng thái xấp xỉ. Với chính sách $\pi^\theta$, phân phối điều khiển được tính bằng cách truyền $p(x_t)$ qua chính sách (xem Mục \ref{SEC_policy}), cho ra $p(u_t) \approx \mathcal{N}(u_t \mid m_{u_t}, \mathbf{S}_{u_t})$.
+
+Phân phối joint:
+\begin{equation}
+    p(\tilde{x}_t) = p\!\begin{pmatrix} x_t \\ u_t \end{pmatrix} = \mathcal{N}\!\left(\tilde{x}_t \;\middle|\; \tilde{m}_t = \begin{pmatrix}m_t \\ m_{u_t}\end{pmatrix},\; \tilde{\mathbf{S}}_t = \begin{pmatrix}\mathbf{S}_t & \mathbf{S}_{xu} \\ \mathbf{S}_{xu}^\top & \mathbf{S}_{u_t}\end{pmatrix}\right),
+    \label{joint_state_control}
+\end{equation}
+trong đó $\mathbf{S}_{xu} = \mathrm{cov}[x_t, u_t]$ được tính từ các moment chính sách (Mục \ref{SEC_policy}). Nếu chính sách tất định (như chính sách tuyến tính $u_t = \pi(x_t)$), ta có $\mathbf{S}_{u_t} = \pi_\theta \mathbf{S}_t \pi_\theta^\top$ và $\mathbf{S}_{xu} = \mathbf{S}_t \pi_\theta^\top$.
+
+\subsection{Phương pháp khớp moment}
+\label{SUB_SEC_moment_matching}
+
+\subsubsection{Ý tưởng cơ bản}
+\label{SUB_SUB_SEC_mm_idea}
+
+Thay vì tính phân phối chính xác của $p(x_{t+1})$ (không phải Gaussian), phương pháp \textbf{khớp moment} (moment matching, MM) \textit{xấp xỉ} nó bởi một Gaussian $\mathcal{N}(x_{t+1} \mid m_{t+1}, \mathbf{S}_{t+1})$ có cùng hai moment đầu tiên (trung bình và hiệp phương sai). Hai moment này được tính \textit{giải tích} bằng cách tích phân GP trên $p(\tilde{x}_t)$.
+
+\subsubsection{Tính trung bình dự báo}
+\label{SUB_SUB_SEC_mm_mean}
+
+Bởi cấu trúc tuyến tính của trung bình hậu nghiệm GP ($\mu_f(\tilde{x}_t) = \mathbf{k}^\top(\tilde{x}_t) \boldsymbol{\beta}$), kỳ vọng trên phân phối đầu vào có lời giải giải tích. Với chiều $a$:
+\begin{equation}
+    m^a_{t+1} = \mathbb{E}_{\tilde{x}_t}[\mu_{fa}(\tilde{x}_t)] = \sum_{i=1}^{n} \beta_{ai}\, q_{ai},
+    \label{mm_mean}
+\end{equation}
+trong đó mỗi phần tử $q_{ai}$ là tích phân của kernel với phân phối đầu vào Gaussian:
+\begin{align}
+    q_{ai} &= \int k_a(\tilde{x}_i, \tilde{x}_t)\, \mathcal{N}(\tilde{x}_t \mid \tilde{m}_t, \tilde{\mathbf{S}}_t)\, \mathrm{d}\tilde{x}_t \notag \\
+    &= \sigma_{fa}^2 \,\bigl|\tilde{\mathbf{S}}_t \mathbf{L}_a^{-1} + \mathbf{I}\bigr|^{-1/2} \exp\!\Bigl(-\tfrac{1}{2} \mathbf{n}_i^\top (\tilde{\mathbf{S}}_t + \mathbf{L}_a)^{-1} \mathbf{n}_i\Bigr),
+    \label{q_ai}
+\end{align}
+trong đó $\mathbf{n}_i = \tilde{x}_i - \tilde{m}_t$ là vector khoảng cách giữa điểm huấn luyện thứ $i$ và trung bình đầu vào.
+
+Tích phân \eqref{q_ai} có dạng giải tích vì kernel SE là hàm Gaussian, và tích của hai hàm Gaussian cũng là Gaussian.
+
+\subsubsection{Tính phương sai dự báo}
+\label{SUB_SUB_SEC_mm_variance}
+
+\textbf{Phần phương sai chéo-không} ($a = b$): Phương sai gồm hai thành phần -- phương sai do sự không chắc chắn về đầu vào và phương sai do sự không chắc chắn về mô hình:
+\begin{equation}
+    \sigma^2_{aa} = \mathbb{E}_{\tilde{x}_t}[\mathrm{var}_f[\Delta_a \mid \tilde{x}_t]] + \mathrm{var}_{\tilde{x}_t}[\mathbb{E}_f[\Delta_a \mid \tilde{x}_t]] = \sigma_{fa}^2 - \mathrm{tr}\bigl((\mathbf{K}_a + \sigma_{wa}^2 \mathbf{I})^{-1} \mathbf{Q}_{aa}\bigr) + \mathbf{q}_a^\top \boldsymbol{\beta}_a \boldsymbol{\beta}_a^\top \mathbf{q}_a - (m^a_{t+1})^2,
+    \label{mm_variance_diagonal}
+\end{equation}
+trong đó ma trận $\mathbf{Q}_{aa}$ có phần tử:
+\begin{equation}
+    [Q_{aa}]_{ij} = \int k_a(\tilde{x}_i, \tilde{x}_t) k_a(\tilde{x}_j, \tilde{x}_t)\, \mathcal{N}(\tilde{x}_t \mid \tilde{m}_t, \tilde{\mathbf{S}}_t)\, \mathrm{d}\tilde{x}_t.
+    \label{Q_matrix}
+\end{equation}
+Tích phân \eqref{Q_matrix} cũng có lời giải giải tích:
+\begin{equation}
+    [Q_{aa}]_{ij} = \frac{\sigma_{fa}^4}{\sqrt{|\mathbf{R}_{aa}|}} k_a(\tilde{x}_i, \tilde{m}_t)\, k_a(\tilde{x}_j, \tilde{m}_t) \exp\!\Bigl(-\tfrac{1}{2} \mathbf{z}_{ij}^\top \mathbf{T}_{aa}^{-1} \mathbf{z}_{ij}\Bigr),
+    \label{Q_solution}
+\end{equation}
+với $\mathbf{R}_{aa} = \mathbf{I} + 2\tilde{\mathbf{S}}_t \mathbf{L}_a^{-1}$, $\mathbf{z}_{ij} = \tilde{x}_i - \tilde{x}_j$ và $\mathbf{T}_{aa}^{-1}$ là một nghịch đảo ma trận biến đổi phụ.
+
+\textbf{Phần hiệp phương sai chéo} ($a \neq b$): Hiệp phương sai giữa hai chiều đầu ra $a$ và $b$:
+\begin{equation}
+    \sigma^2_{ab} = \boldsymbol{\beta}_a^\top \mathbf{Q}_{ab} \boldsymbol{\beta}_b - m^a_{t+1} m^b_{t+1},
+    \label{mm_covariance_offdiag}
+\end{equation}
+trong đó ma trận $\mathbf{Q}_{ab}$ (tương tự \eqref{Q_solution} nhưng với hai kernel khác nhau $k_a$ và $k_b$):
+\begin{equation}
+    [Q_{ab}]_{ij} = \frac{\sigma_{fa}^2 \sigma_{fb}^2}{\sqrt{|\mathbf{R}_{ab}|}} k_a(\tilde{x}_i, \tilde{m}_t)\, k_b(\tilde{x}_j, \tilde{m}_t) \exp\!\Bigl(-\tfrac{1}{2} \mathbf{z}_{ij}^\top \mathbf{T}_{ab}^{-1} \mathbf{z}_{ij}\Bigr),\quad \mathbf{R}_{ab} = \mathbf{I} + \tilde{\mathbf{S}}_t(\mathbf{L}_a^{-1} + \mathbf{L}_b^{-1}).
+    \label{Q_ab_solution}
+\end{equation}
+
+\textbf{Cập nhật trạng thái:} Cuối cùng, phân phối trạng thái kế tiếp:
+\begin{align}
+    m_{t+1} &= m_t + m^\Delta_{t+1}, \label{state_mean_update} \\
+    \mathbf{S}_{t+1} &= \mathbf{S}_t + \boldsymbol{\Sigma}^\Delta_{t+1} + \mathrm{cov}[x_t, \Delta_t] + \mathrm{cov}[\Delta_t, x_t],
+    \label{state_cov_update}
+\end{align}
+trong đó số hạng hiệp phương sai $\mathrm{cov}[x_t, \Delta_t]$ cũng có lời giải giải tích.
+
+\subsubsection{Độ phức tạp tính toán}
+\label{SUB_SUB_SEC_mm_complexity}
+
+Tại mỗi bước thời gian, phương pháp MM đòi hỏi tính toán $D(D+1)/2$ ma trận $\mathbf{Q}_{ab}$, mỗi ma trận kích thước $n \times n$. Tổng độ phức tạp mỗi bước:
+\begin{equation}
+    \mathcal{O}(n^2 D^2 (D+F)),
+\end{equation}
+trong đó $n$ là số điểm dữ liệu, $D$ là chiều trạng thái, $F$ là chiều điều khiển.
+
+\subsection{Phương pháp tuyến tính hóa}
+\label{SUB_SEC_linearization}
+
+\subsubsection{Ý tưởng cơ bản}
+\label{SUB_SUB_SEC_lin_idea}
+
+Phương pháp \textbf{tuyến tính hóa} xấp xỉ trung bình GP bằng khai triển Taylor bậc nhất tại điểm trung bình đầu vào $\tilde{m}_t$:
+\begin{equation}
+    \mu_{fa}(\tilde{x}_t) \approx \mu_{fa}(\tilde{m}_t) + \mathbf{W}_a^\top (\tilde{x}_t - \tilde{m}_t),
+    \label{linearization_approx}
+\end{equation}
+trong đó $\mathbf{W}_a = \nabla_{\tilde{x}} \mu_{fa}(\tilde{x})\big|_{\tilde{x}=\tilde{m}_t}$ là gradient của trung bình GP tại $\tilde{m}_t$.
+
+\subsubsection{Moment xấp xỉ}
+\label{SUB_SUB_SEC_lin_moments}
+
+Dưới xấp xỉ \eqref{linearization_approx}, các moment dự báo có dạng đơn giản:
+
+\textbf{Trung bình:}
+\begin{equation}
+    m^a_\Delta \approx \mu_{fa}(\tilde{m}_t),
+    \label{lin_mean}
+\end{equation}
+
+\textbf{Phương sai:}
+\begin{equation}
+    \sigma^2_{\Delta,\text{lin}} \approx \mathbf{W}^\top \tilde{\mathbf{S}}_t \mathbf{W} + \mathbf{S}_w,
+    \label{lin_variance}
+\end{equation}
+trong đó $\mathbf{W}$ là ma trận Jacobian của vector $[\mu_{f1}, \dots, \mu_{fD}]$ tại $\tilde{m}_t$, và $\mathbf{S}_w$ là ma trận phương sai mô hình (diagonal, từ giá trị phương sai GP tại $\tilde{m}_t$):
+\begin{equation}
+    [\mathbf{S}_w]_{aa} = \sigma^2_{fa}(\tilde{m}_t) = k_a(\tilde{m}_t, \tilde{m}_t) - \mathbf{k}_a^\top(\tilde{m}_t)(\mathbf{K}_a + \sigma^2_{wa}\mathbf{I})^{-1}\mathbf{k}_a(\tilde{m}_t).
+    \label{model_uncertainty_at_mean}
+\end{equation}
+
+\subsubsection{Độ phức tạp và hạn chế}
+\label{SUB_SUB_SEC_lin_complexity}
+
+Độ phức tạp của tuyến tính hóa mỗi bước:
+\begin{equation}
+    \mathcal{O}(n^2 D (D+F)),
+\end{equation}
+\textbf{nhanh hơn khoảng 5--10 lần} so với moment matching trong các thí nghiệm thực tế.
+
+Tuy nhiên, tuyến tính hóa có hạn chế: khi phân phối đầu vào $p(\tilde{x}_t)$ trải rộng (độ lệch chuẩn lớn), xấp xỉ bậc nhất kém chính xác, dẫn đến phân phối dự báo \textit{quá chật} (tighter/over-confident). Điều này làm giảm hiệu quả khám phá và ảnh hưởng đến chất lượng chính sách.
+\begin{nx}[Trực giác: khi nào MM vượt trội tuyến tính hóa?]
+\label{NX_mm_vs_lin_intuition}
+Hai phương pháp khác nhau ở cách \textit{lan truyền bất định}. Tuyến tính hóa nhìn hàm GP như một mặt phẳng tại điểm trung bình: điều này đúng khi phân phối hẹp (sai số nhỏ) nhưng sai khi phân phối rộng. Trong các giai đoạn đầu học, phân phối trạng thái rất rộng vì chính sách chưa tốt: đây chính xác là lúc tuyến tính hóa dễ cho ra kết quả sậ nhầm. MM không làm vậy: nó tích phân GP trên toàn bộ phân phối, tự động nắm bắt độ cong của mô hình. Hệu quả: với hệ phi tuyến mạnh (con lắc đôi, cart-pole), tuyến tính hóa có thể sai lệch $>10\%$ về phương sai dự báo so với MM, dẫn đến tỹ lệ thành công thấp hơn 12 điểm phần trăm.
+\end{nx}
+\subsection{So sánh hai phương pháp}
+\label{SUB_SEC_mm_vs_lin}
+
+Bảng \ref{TAB_mm_vs_lin} so sánh hai phương pháp xấp xỉ:
+
+\begin{table}[h!]
+\centering
+\caption{So sánh phương pháp khớp moment và tuyến tính hóa}
+\label{TAB_mm_vs_lin}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Tiêu chí} & \textbf{Khớp moment (MM)} & \textbf{Tuyến tính hóa} \\\hline
+Độ phức tạp mỗi bước & $\mathcal{O}(n^2 D^2(D+F))$ & $\mathcal{O}(n^2 D(D+F))$ \\\hline
+Tốc độ tương đối & Chậm hơn & Nhanh hơn 5--10$\times$ \\\hline
+Chất lượng xấp xỉ & Tốt hơn & Kém hơn (overconfident) \\\hline
+Tỉ lệ thành công (cart-pole) & 95\% & 83\% \\\hline
+Tính phù hợp & Đề xuất chính & Phù hợp khi cần tốc độ \\\hline
+\end{tabular}
+\end{table}
+
+\begin{nx}
+    Trong tất cả các thí nghiệm, phương pháp khớp moment cho kết quả tốt hơn tuyến tính hóa về tỉ lệ thành công và số lần tương tác cần thiết. Điều này nhất quán với phân tích lý thuyết: khớp moment bảo toàn sự không chắc chắn của đầu vào tốt hơn, dẫn đến thám hiểm hiệu quả hơn trong giai đoạn đầu học.
+\end{nx}
+\medskip

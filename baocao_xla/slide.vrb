@@ -1,0 +1,47 @@
+\frametitle{Admin Authentication --- PBKDF2 + Timing-safe}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{lstlisting}[language=Python,
+  caption={admin\_auth.py}]
+_ITERATIONS = 390_000  # OWASP 2023
+
+def _pbkdf2(password, salt,
+            iters=_ITERATIONS):
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,   # 256-bit key
+        salt=salt,
+        iterations=iters,
+    )
+    return kdf.derive(
+        password.encode("utf-8"))
+
+def _ct_equal(a: bytes, b: bytes):
+    """Chong Timing Attack."""
+    # '==' dung o byte sai dau tien
+    # -> attacker do thoi gian -> guess
+    # hmac.compare_digest: CONSTANT TIME
+    return hmac.compare_digest(a, b)
+\end{lstlisting}
+\column{0.44\textwidth}
+\begin{block}{\faDatabase\ Credentials File}
+\footnotesize
+\begin{lstlisting}[numbers=none]
+{
+  "salt": "aGVsbG8h...",
+  "hash": "c2VjcmV0...",
+  "iterations": 390000
+}
+\end{lstlisting}
+\textbf{Không lưu plaintext password.}\\
+Ngay cả developer không biết.
+\end{block}
+\begin{alertblock}{\faExclamationTriangle\ Timing Attack}
+\footnotesize
+\texttt{a == b} dừng ở byte sai đầu\\
+$\Rightarrow$ thời gian response khác nhau\\
+$\Rightarrow$ hacker đoán được từng byte\\[3pt]
+\texttt{hmac.compare\_digest}: luôn chạy hết\\
+$\Rightarrow$ constant-time, không leak
+\end{alertblock}
+\end{columns}

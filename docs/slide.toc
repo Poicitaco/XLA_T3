@@ -1,0 +1,8 @@
+\babel@toc {vietnamese}{}\relax 
+\beamer@sectionintoc {1}{Vấn Đề \& Giải Pháp}{2}{0}{1}
+\beamer@sectionintoc {2}{Kiến Trúc Hệ Thống}{4}{0}{2}
+\beamer@sectionintoc {3}{Detection \& Recognition}{6}{0}{3}
+\beamer@sectionintoc {4}{Backend \& Pipeline}{9}{0}{4}
+\beamer@sectionintoc {5}{Security Layer}{11}{0}{5}
+\beamer@sectionintoc {6}{Demo}{15}{0}{6}
+\beamer@sectionintoc {7}{Kết Luận}{17}{0}{7}
