@@ -1,0 +1,103 @@
+\section{Hàm chi phí}
+\label{SEC_cost}
+
+Hàm chi phí $c(x_t): \mathbb{R}^D \to [0,1]$ định nghĩa mục tiêu của bài toán điều khiển. Thiết kế hàm chi phí ảnh hưởng lớn đến hiệu quả học và hành vi thám hiểm của tác tử. Phần này trình bày hàm chi phí \textit{bão hòa} (saturating cost) được PILCO sử dụng và phân tích cơ chế thám hiểm--khai thác tự nhiên của nó.
+
+\subsection{Hàm chi phí bão hòa}
+\label{SUB_SEC_saturating_cost}
+
+\subsubsection{Định nghĩa}
+\label{SUB_SUB_SEC_cost_def}
+
+Hàm chi phí tức thời tại trạng thái $x_t$:
+\begin{equation}
+    c(x_t) = 1 - \exp\!\Bigl(-\tfrac{1}{2}(x_t - x_{\mathrm{target}})^\top \mathbf{T}^{-1} (x_t - x_{\mathrm{target}})\Bigr),
+    \label{saturating_cost}
+\end{equation}
+trong đó $x_{\mathrm{target}} \in \mathbb{R}^D$ là trạng thái mục tiêu và $\mathbf{T} \in \mathbb{R}^{D \times D}$ là ma trận nửa xác định dương điều chỉnh độ rộng của phần phạt.
+
+\textbf{Tính chất:}
+\begin{itemize}
+    \item $c(x_t) = 0$ khi $x_t = x_{\mathrm{target}}$ (không phạt khi đạt mục tiêu).
+    \item $c(x_t) \to 1$ khi $\|x_t - x_{\mathrm{target}}\| \to \infty$ (phạt tối đa khi xa mục tiêu).
+    \item $c(x_t) \in [0, 1]$ với mọi $x_t$ (bị chặn).
+    \item Bề mặt đẳng trị là các elip xác định bởi $\mathbf{T}$.
+\end{itemize}
+
+So sánh với chi phí bình phương truyền thống $c_{\mathrm{quad}}(x) = (x - x_{\mathrm{target}})^\top \mathbf{Q} (x - x_{\mathrm{target}})$: hàm bão hòa bị chặn, nên các trạng thái rất xa mục tiêu không bị phạt vô hạn. Điều này tạo ra \textbf{cảnh quan chi phí kỳ vọng} phù hợp cho tối ưu hóa.
+
+\begin{nx}[Trực giác: hàm bão hòa và cơ chế khám phá--khai thác]
+\label{NX_cost_intuition}
+Hãy hình dung bề mặt chi phí kỳ vọng $\mathbb{E}[c(x_t)]$ trong không gian tham số chính sách: đây là một \textit{cái cốc vằn} (bowl) phẳng và rộng phía ngoài, nhọng và dốc phía gần mục tiêu. Ở vung ngoài (trạng thái cách xa mục tiêu), chi phí gần 1 nhưng rất phẳng: gradient nhỏ, kí ch động cần để cải thiện rõ ràng hơn. Điều này khiến chính sách \textit{văng xa} khỏi mục tiêu không bị tử nặng, cho phép khám phá rộng hơn. Khi trạng thái tới gần mục tiêu, chi phí giảm nhanh (gradient lớn), cung cấp tín hiệu mạnh để khai thác. Do đó, hàm bão hòa tự nhiên cân bằng khám phá (exploration) ở giai đoạn đầu và khai thác (exploitation) khi chính sách gần tối ưu --- không cần thiết kế trường minh bất kỳ chiến lược khám phá thêm.
+\end{nx}
+
+\subsubsection{Chi phí kỳ vọng giải tích}
+\label{SUB_SUB_SEC_expected_cost}
+
+Với trạng thái phân phối $p(x_t) = \mathcal{N}(x_t \mid m_t, \mathbf{S}_t)$, chi phí kỳ vọng:
+\begin{equation}
+    \mathbb{E}_{x_t}[c(x_t)] = 1 - \mathbb{E}_{x_t}\!\left[\exp\!\Bigl(-\tfrac{1}{2}(x_t-x_{\mathrm{target}})^\top \mathbf{T}^{-1}(x_t-x_{\mathrm{target}})\Bigr)\right].
+    \label{expected_cost_raw}
+\end{equation}
+Số hạng kỳ vọng của hàm mũ Gaussian có lời giải giải tích (tích phân Gaussian--Gaussian):
+\begin{equation}
+    \mathbb{E}_{x_t}[c(x_t)] = 1 - \bigl|\mathbf{I} + \mathbf{S}_t \mathbf{T}^{-1}\bigr|^{-1/2} \exp\!\Bigl(-\tfrac{1}{2}(m_t - x_{\mathrm{target}})^\top \tilde{\mathbf{S}}_t^{-1} (m_t - x_{\mathrm{target}})\Bigr),
+    \label{expected_cost_analytic}
+\end{equation}
+trong đó $\tilde{\mathbf{S}}_t = \mathbf{S}_t + \mathbf{T}$.
+
+\begin{bd}[Tích phân Gaussian nhân Gaussian]
+    Với $p(x) = \mathcal{N}(x \mid m, \mathbf{S})$ và hàm mũ bậc hai $g(x) = \exp(-\tfrac{1}{2}(x-a)^\top \mathbf{C}^{-1}(x-a))$:
+    \begin{equation*}
+        \int g(x)\, p(x)\, \mathrm{d}x = \frac{1}{\sqrt{|\mathbf{I} + \mathbf{S}\mathbf{C}^{-1}|}} \exp\!\Bigl(-\tfrac{1}{2}(m-a)^\top(\mathbf{S}+\mathbf{C})^{-1}(m-a)\Bigr).
+    \end{equation*}
+\end{bd}
+
+\subsubsection{Gradient của chi phí kỳ vọng}
+\label{SUB_SUB_SEC_cost_gradient}
+
+Để tính gradient $\mathrm{d}J^\pi(\theta)/\mathrm{d}\theta$ (Mục \ref{SUB_SEC_analytic_gradient}), ta cần $\partial\,\mathbb{E}_t[c_t]/\partial m_t$ và $\partial\,\mathbb{E}_t[c_t]/\partial \mathbf{S}_t$.
+
+Đặt $L_t := 1 - \mathbb{E}_t[c_t] = |\mathbf{I} + \mathbf{S}_t \mathbf{T}^{-1}|^{-1/2} \exp(-\tfrac{1}{2} \delta_t^\top \tilde{\mathbf{S}}_t^{-1} \delta_t)$ với $\delta_t = m_t - x_{\mathrm{target}}$.
+
+\textbf{Gradient theo trung bình:}
+\begin{equation}
+    \frac{\partial\,\mathbb{E}_t[c_t]}{\partial m_t} = L_t\, \delta_t^\top \tilde{\mathbf{S}}_t^{-1}.
+    \label{cost_grad_mean}
+\end{equation}
+
+\textbf{Gradient theo hiệp phương sai:}
+\begin{equation}
+    \frac{\partial\,\mathbb{E}_t[c_t]}{\partial \mathbf{S}_t} = \tfrac{1}{2} L_t \Bigl(\tilde{\mathbf{S}}_t^{-1} \delta_t \delta_t^\top \tilde{\mathbf{S}}_t^{-1} - (\mathbf{S}_t + \mathbf{T})^{-1} - \tilde{\mathbf{S}}_t^{-1} \mathbf{T} (\mathbf{S}_t + \mathbf{T})^{-1}\Bigr).
+    \label{cost_grad_cov}
+\end{equation}
+Cả hai gradient đều có dạng giải tích đóng, đảm bảo rằng toàn bộ chuỗi gradient có thể được tính chính xác.
+
+\subsection{Cơ chế thám hiểm và khai thác}
+\label{SUB_SEC_exploration}
+
+Một trong những tính chất đặc biệt hấp dẫn của hàm chi phí bão hòa là nó \textit{tự động cân bằng} giữa \textbf{thám hiểm} (exploration) và \textbf{khai thác} (exploitation) mà không cần bất kỳ chiến lược thám hiểm tường minh nào.
+
+\subsubsection{Phân tích hành vi theo khoảng cách}
+\label{SUB_SUB_SEC_exploration_analysis}
+
+Xét chi phí kỳ vọng $\mathbb{E}_{x_t}[c_t]$ từ \eqref{expected_cost_analytic}. So sánh hai tình huống:
+
+\textbf{Khi xa mục tiêu} ($\|m_t - x_{\mathrm{target}}\|$ lớn): Chi phí kỳ vọng tiệm cận $1$ với mọi $\mathbf{S}_t$. Tuy nhiên, giá trị chính xác phụ thuộc vào $\mathbf{S}_t$ qua thừa số $|\mathbf{I} + \mathbf{S}_t \mathbf{T}^{-1}|^{-1/2}$: phân phối \textit{rộng} hơn (lớn hơn $\mathbf{S}_t$) giảm thừa số này và có thể đặt một phần mass vào vùng gần mục tiêu, dẫn đến \textit{chi phí kỳ vọng thấp hơn}. Điều này khuyến khích \textbf{thám hiểm}: chính sách có xu hướng duy trì sự không chắc chắn cao về trạng thái.
+
+\textbf{Khi gần mục tiêu} ($\|m_t - x_{\mathrm{target}}\|$ nhỏ): Số mũ trong \eqref{expected_cost_analytic} gần với $1$, và chi phí chủ yếu bị chi phối bởi $|\mathbf{I} + \mathbf{S}_t \mathbf{T}^{-1}|^{-1/2}$. Phân phối \textit{nhọn} hơn (nhỏ hơn $\mathbf{S}_t$) làm cho thừa số này tiệm cận $1$, giảm chi phí. Điều này khuyến khích \textbf{khai thác}: chính sách thu hẹp phân phối trạng thái về mục tiêu.
+
+\begin{nx}
+    Cơ chế trên cho phép PILCO tự nhiên chuyển từ thám hiểm rộng (khi còn xa mục tiêu, mô hình còn nhiều sai số) sang khai thác chính xác (khi đã gần mục tiêu, mô hình đủ tin cậy). Đây là lợi thế quan trọng so với các phương pháp cần thiết kế tường minh lịch trình thám hiểm ($\epsilon$-greedy, UCB, v.v.).
+\end{nx}
+
+\subsubsection{Liên hệ với ma trận $\mathbf{T}$}
+\label{SUB_SUB_SEC_T_matrix}
+
+Ma trận $\mathbf{T}$ đóng vai trò quan trọng:
+\begin{itemize}
+    \item $\mathbf{T} = s_c^2 \mathbf{I}$: phạt khoảng cách Euclidean đến mục tiêu với độ rộng $s_c$.
+    \item $\mathbf{T}$ tổng quát: phạt theo ellipsoid, cho phép ưu tiên những chiều trạng thái nhất định.
+\end{itemize}
+Trong các thí nghiệm, $\mathbf{T}$ thường được chọn dựa trên đặc tính của bài toán (ví dụ: chỉ phạt vị trí đầu con lắc, không phạt góc vận tốc).
+\medskip

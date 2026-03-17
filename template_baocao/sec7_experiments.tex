@@ -1,0 +1,198 @@
+\section{Kết quả thực nghiệm}
+\label{SEC_experiments}
+
+Nhóm tác giả đánh giá PILCO trên bốn bài toán điều khiển, từ mô phỏng đến phần cứng thực nghiệm, nhằm kiểm chứng hai tuyên bố chính: (1) PILCO hiệu quả dữ liệu hơn đáng kể so với các phương pháp state-of-the-art, và (2) mô hình GP xác suất đóng vai trò quan trọng trong hiệu suất này \cite{Deisenroth_2015}.
+
+\subsection{Thiết lập thực nghiệm chung}
+\label{SUB_SEC_experiment_setup}
+
+Trong tất cả thí nghiệm:
+\begin{itemize}
+    \item \textbf{Bước thời gian}: $\Delta t = 0.1$\,s.
+    \item \textbf{Điều kiện ban đầu}: $p(x_0) = \mathcal{N}(x_0 \mid \mu_0, 10^{-4} \mathbf{I})$ (gần tất định), phân tán nhỏ để mô phỏng khởi đầu thực tế.
+    \item \textbf{Giai đoạn đầu}: Áp dụng chính sách ngẫu nhiên (nhiễu Gaussian) để thu thập dữ liệu ban đầu.
+    \item \textbf{Tối ưu hóa chính sách}: BFGS với khởi tạo ngẫu nhiên nhiều lần, giữ lại lời giải tốt nhất.
+    \item \textbf{Đánh giá}: Thực hiện 100 rollout mô phỏng để ước lượng tỉ lệ thành công sau mỗi lần cập nhật chính sách.
+\end{itemize}
+
+\subsection{Bài toán 1: Con lắc đôi (Double Pendulum Swing-up)}
+\label{SUB_SEC_double_pendulum}
+
+\subsubsection{Mô tả bài toán}
+\label{SUB_SUB_SEC_dp_description}
+
+Hệ thống gồm hai thanh cứng nối nhau, mỗi thanh có khớp quay tự do. Mục tiêu là đưa cả hai thanh từ vị trí thẳng đứng xuống dưới lên vị trí thẳng đứng lên trên và giữ cân bằng:
+\begin{itemize}
+    \item \textbf{Chiều trạng thái}: $D = 4$ (góc $\theta_1, \theta_2$ và vận tốc góc $\dot{\theta}_1, \dot{\theta}_2$).
+    \item \textbf{Chiều điều khiển}: $F = 2$ (moment tại hai khớp).
+    \item \textbf{Chính sách}: RBF với $h = 100$ hàm cơ sở ($\sim$812 tham số).
+    \item \textbf{Chân trời}: $T = 3.5$\,s ($= 35$ bước).
+    \item \textbf{Dữ liệu mỗi lần cập nhật}: 1 episode $\times$ 2.5\,s $= 25$ bước.
+\end{itemize}
+
+\subsubsection{Kết quả}
+\label{SUB_SUB_SEC_dp_results}
+
+PILCO học được chính sách thành công (80\%+ tỉ lệ thành công) sau khoảng \textbf{30 episode} ($\approx 75$\,s dữ liệu thực). Đây là một kết quả ấn tượng vì:
+\begin{itemize}
+    \item Con lắc đôi là bài toán bậc tự do cao, cần điều khiển đồng thời hai khớp.
+    \item Các phương pháp RL model-free thường cần hàng nghìn episode để giải quyết bài này.
+    \item Không cần mô hình động học tham số trước; GP tự học từ dữ liệu.
+\end{itemize}
+
+Các chính sách trung gian cho thấy: ban đầu tác tử thám hiểm mạnh (phân phối trạng thái rộng), sau đó dần hội tụ và thu hẹp phân phối về mục tiêu, đúng với cơ chế được phân tích trong Mục \ref{SUB_SEC_exploration}.
+
+\subsection{Bài toán 2: Cart-Pole Swing-up}
+\label{SUB_SEC_cartpole}
+
+\subsubsection{Mô tả bài toán}
+\label{SUB_SUB_SEC_cp_description}
+
+Bài toán nổi tiếng trong nghiên cứu học tăng cường: điều khiển xe trượt để swing-up (đưa lên) rồi cân bằng con lắc đơn gắn ở đầu xe:
+\begin{itemize}
+    \item \textbf{Chiều trạng thái}: $D = 4$ (vị trí xe $x$, góc con lắc $\theta$, vận tốc $\dot{x}, \dot{\theta}$).
+    \item \textbf{Chiều điều khiển}: $F = 1$ (lực ngang, giới hạn $\pm 10$\,N).
+    \item \textbf{Chính sách}: RBF với $h = 50$ hàm cơ sở ($\sim$305 tham số).
+    \item \textbf{Chân trời}: $T = 2.5$\,s ($= 25$ bước).
+    \item \textbf{Dữ liệu mỗi lần cập nhật}: 1 episode $\times$ 2.5\,s $= 25$ bước.
+\end{itemize}
+
+\subsubsection{Kết quả chính}
+\label{SUB_SUB_SEC_cp_main_results}
+
+\begin{itemize}
+    \item \textbf{Moment matching}: Tỉ lệ thành công \textbf{95\%} sau khoảng 15--20 episode ($\approx$37.5\,s dữ liệu).
+    \item \textbf{Tuyến tính hóa}: Tỉ lệ thành công \textbf{83\%} sau cùng số episode nhưng không đáng tin cậy như MM.
+\end{itemize}
+
+\subsubsection{So sánh với các phương pháp khác}
+\label{SUB_SUB_SEC_cp_comparison}
+
+Bảng \ref{TAB_comparison} so sánh PILCO (MM) với các phương pháp state-of-the-art trên bài cart-pole swing-up, sử dụng \textbf{tổng lượng dữ liệu thực cần thiết} làm tiêu chí (ít hơn = tốt hơn):
+
+\begin{table}[h!]
+\centering
+\caption{So sánh hiệu quả dữ liệu trên bài toán cart-pole swing-up}
+\label{TAB_comparison}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Phương pháp} & \textbf{Dữ liệu cần thiết (s)} & \textbf{Loại} \\\hline
+PILCO (MM) \cite{Deisenroth_2015} & \textbf{$\approx 17$} & Model-based (GP) \\\hline
+PILCO (Tuyến tính hóa) \cite{Deisenroth_2015} & $\approx 20$ & Model-based (GP) \\\hline
+LWPR \cite{Schneider_1997} & $\approx 300$ & Model-based (local) \\\hline
+LS-TD w/ RBF \cite{Lagoudakis_Parr_2003} & $\approx 500$ & Model-free \\\hline
+GP-TD \cite{Engel_2005} & $\approx 400$ & Model-free (GP) \\\hline
+Policy gradient (REINFORCE) & $> 1000$ & Model-free \\\hline
+\end{tabular}
+\end{table}
+
+\textbf{Nhận xét:} PILCO nhanh hơn phương pháp tốt thứ hai \textit{ít nhất 10 lần} và nhanh hơn RL model-free \textit{hơn 50 lần}. Đây là bằng chứng thực nghiệm mạnh mẽ cho giả thuyết rằng mô hình xác suất GP giúp tận dụng dữ liệu hiệu quả hơn.
+
+\subsection{Bài toán 3: Unicycle (Xe đạp một bánh)}
+\label{SUB_SEC_unicycle}
+
+\subsubsection{Mô tả bài toán}
+\label{SUB_SUB_SEC_uni_description}
+
+Đây là thí nghiệm phần cứng thực (real hardware) với hệ thống cơ học phức tạp:
+\begin{itemize}
+    \item \textbf{Chiều trạng thái}: $D = 12$ (vị trí 3D, 3 góc Euler, 6 vận tốc tương ứng).
+    \item \textbf{Chiều điều khiển}: $F = 2$ (moment theo hai trục).
+    \item \textbf{Mục tiêu}: Giữ xe đạp một bánh cân bằng thẳng đứng.
+    \item \textbf{Chính sách}: RBF.
+\end{itemize}
+
+Bài toán này thách thức hơn vì không gian trạng thái cao chiều ($D = 12$) và được thực hiện trên phần cứng thực với tất cả sai số cảm biến và nhiễu cơ học. PILCO vẫn học được chính sách cân bằng thành công trong một số ít episode, chứng minh khả năng mở rộng lên không gian trạng thái cao chiều.
+
+\subsection{Bài toán 4: Cánh tay robot giá rẻ}
+\label{SUB_SEC_robot_arm}
+
+\subsubsection{Mô tả bài toán}
+\label{SUB_SUB_SEC_ra_description}
+
+Thí nghiệm thực tế với cánh tay robot thương mại giá rẻ:
+\begin{itemize}
+    \item \textbf{Phần cứng}: Cánh tay robot Lynxmotion SSC-32, giá $\approx \$370$.
+    \item \textbf{Cảm biến}: Camera PrimeSense (giống Kinect) để nhận vị trí 3D của khối mục tiêu.
+    \item \textbf{Chiều trạng thái}: $D = 3$ (tọa độ 3D của điểm cuối cánh tay $+$ xấp xỉ vận tốc $\to$ thực tế dùng sai phân có độ trễ).
+    \item \textbf{Chiều điều khiển}: $F = 3$ (góc 3 servo).
+    \item \textbf{Chính sách}: Tuyến tính ($\theta \in \mathbb{R}^{3 \times 3 + 3} = 12$ tham số, + 4 siêu tham số kernel = 16 tham số).
+    \item \textbf{Mục tiêu}: Đưa đầu cánh tay đến gần khối đỏ trong không gian 3D.
+\end{itemize}
+
+\subsubsection{Kết quả}
+\label{SUB_SUB_SEC_ra_results}
+
+\begin{itemize}
+    \item PILCO học được controller trong \textbf{10 lần cập nhật} (iterations).
+    \item Mỗi lần thực hiện khoảng 25 bước ($\times 0.9$\,s $= 22.5$\,s), tổng cộng $\approx 225$\,s dữ liệu thực.
+    \item Không cần hiệu chỉnh mô hình động học cánh tay trước (PILCO học từ đầu).
+    \item Chứng minh tính khả thi trên hệ thống chi phí thấp, cảm biến nhiễu, và môi trường thực không kiểm soát.
+\end{itemize}
+
+\begin{nx}
+    Với chính sách \textit{tuyến tính} chỉ 16 tham số, PILCO vẫn có thể học điều khiển cánh tay robot trong khoảng 4 phút. Điều này cho thấy ngay cả với mô hình chính sách đơn giản, hiệu quả dữ liệu của PILCO vẫn cho phép học nhanh trên hệ thống thực.
+\end{nx}
+
+\subsection{Minh họa bằng thực nghiệm tái hiện}
+\label{SUB_SEC_reproduced}
+
+Để minh họa trực quan các thành phần lý thuyết của PILCO, nhóm đã tái hiện thực nghiệm Cart-Pole Swing-Up sử dụng Python với mô hình GP từ thư viện scikit-learn, tích phân RK4 và thuật toán tối ưu hóa L-BFGS-B. Các hình sau đây được sinh ra từ mã nguồn thực nghiệm đính kèm.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig1_gp_regression.png}
+\caption{Minh họa hồi quy Gaussian Process: ảnh hưởng của số điểm dữ liệu đến chất lượng dự báo. Trái: 3 điểm dữ liệu — khoảng tin cậy rộng, thể hiện sự không chắc chắn cao. Phải: 10 điểm — khoảng tin cậy thu hẹp, dự báo trung bình GP bám sát hàm thực.}
+\label{FIG_gp_regression}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig2_saturating_cost.png}
+\caption{Hàm chi phí bão hòa và cơ chế khám phá/khai thác. Trái: so sánh chi phí bão hòa với chi phí bình phương — chi phí bão hòa bị chặn trên bởi 1, tránh gradient triệt tiêu ở vùng xa mục tiêu. Phải: chi phí kỳ vọng $\mathbb{E}[c(x)]$ là hàm của trung bình và độ lệch chuẩn — vùng không chắc chắn cao (trái phải trong bề mặt) được gán chi phí thấp hơn, khuyến khích thám hiểm.}
+\label{FIG_sat_cost}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig3_learning_curves.png}
+\caption{Đường học của PILCO trên bài toán Cart-Pole Swing-Up tái hiện. Trái: tỉ lệ thành công tăng dần theo thời gian tương tác. Phải: chi phí kỳ vọng $J^\pi(\theta)$ giảm dần qua các episode, phản ánh quá trình học chính sách hiệu quả.}
+\label{FIG_learning_curves}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{fig4_speed_comparison.png}
+\caption{So sánh hiệu quả dữ liệu giữa PILCO và các phương pháp học tăng cường khác trên bài toán Cart-Pole Swing-Up (thang log). PILCO (cột xanh) cần ít hơn khoảng 17 giây dữ liệu để đạt 50\%+ tỉ lệ thành công, so với hàng trăm đến hàng nghìn giây của các phương pháp khác.}
+\label{FIG_speed_comparison}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig5_learned_trajectory.png}
+\caption{Quỹ đạo trạng thái dưới chính sách đã học sau quá trình tối ưu hóa. Bốn thành phần trạng thái (vị trí xe, vận tốc xe, góc con lắc, vận tốc góc) hội tụ về trạng thái mục tiêu (đường đỏ đứt). Nhiều quỹ đạo kiểm tra (các mức alpha khác nhau) cho thấy tính nhất quán của chính sách học được.}
+\label{FIG_trajectory}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig6_gp_model_quality.png}
+\caption{Chất lượng mô hình động học GP sau quá trình học. So sánh quỹ đạo thực tế (đường xanh, từ mô phỏng vật lý) với dự báo của mô hình GP (đường đỏ đứt). Sự tương đồng cao giữa hai quỹ đạo chứng tỏ GP đã học được mô hình động học tốt, là nền tảng cho việc tối ưu hóa chính sách hiệu quả.}
+\label{FIG_gp_quality}
+\end{figure}
+
+\subsection{Phân tích tổng hợp}
+\label{SUB_SEC_overall_analysis}
+
+Bốn thí nghiệm kể trên cho thấy các tính chất nhất quán của PILCO:
+
+\begin{enumerate}
+    \item \textbf{Hiệu quả dữ liệu vượt trội}: Tốt hơn ít nhất 10$\times$ so với phương pháp state-of-the-art tốt nhất, và hơn 50$\times$ so với RL model-free.
+    
+    \item \textbf{Khả năng mở rộng}: Hoạt động tốt từ $D=3$ (robot arm) đến $D=12$ (unicycle), và từ chính sách tuyến tính (16 tham số) đến RBF (812 tham số).
+    
+    \item \textbf{Tính tổng quát}: Không cần mô hình cơ học hay cảm biến đặc biệt -- PILCO học từ đầu chỉ với dữ liệu $(x_t, u_t, x_{t+1})$.
+    
+    \item \textbf{Xác nhận vai trò mô hình xác suất}: So sánh MM vs. tuyến tính hóa xác nhận rằng xấp xỉ tốt hơn sự không chắc chắn cho kết quả tốt hơn (95\% vs. 83\%).
+\end{enumerate}
+\medskip

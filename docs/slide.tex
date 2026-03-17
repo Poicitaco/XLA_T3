@@ -1,0 +1,1132 @@
+% ============================================================
+%  SLIDE THUYẾT TRÌNH — BEAMER
+%  Hệ Thống: XLA Face Privacy System
+%  Nhóm: Đạt (Leader) · Khánh · Khoa
+% ============================================================
+\documentclass[aspectratio=169, 12pt]{beamer}
+
+% --- Theme ---
+\usetheme{Madrid}
+\usecolortheme{whale}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+% --- Colors ---
+\definecolor{primary}{RGB}{0,51,102}
+\definecolor{accent}{RGB}{220,50,47}
+\definecolor{secbg}{RGB}{230,240,255}
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{darkgreen}{RGB}{0,100,50}
+
+\setbeamercolor{palette primary}{bg=primary, fg=white}
+\setbeamercolor{palette secondary}{bg=primary!80, fg=white}
+\setbeamercolor{palette tertiary}{bg=primary!60, fg=white}
+\setbeamercolor{frametitle}{bg=primary, fg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{block title}{bg=primary, fg=white}
+\setbeamercolor{block body}{bg=secbg}
+\setbeamercolor{alerted text}{fg=accent}
+
+% --- Encoding ---
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+
+% --- Packages ---
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{pifont}
+\newcommand{\cmark}{\textcolor{darkgreen}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{accent}{\ding{55}}}
+
+% --- Code style ---
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{primary}\bfseries,
+  commentstyle=\color{darkgreen}\itshape,
+  stringstyle=\color{accent},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  frame=tb,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+  backgroundcolor=\color{codebg},
+}
+
+% --- TikZ styles ---
+\tikzset{
+  module/.style={rectangle, rounded corners=4pt,
+    draw=primary, fill=secbg, thick,
+    minimum height=1cm, minimum width=2.8cm,
+    text width=2.6cm, align=center, font=\small},
+  arrow/.style={->, >=Stealth, thick, color=primary},
+  highlight/.style={rectangle, rounded corners=4pt,
+    draw=accent, fill=accent!10, thick,
+    minimum height=1cm, minimum width=2.8cm,
+    text width=2.6cm, align=center, font=\small\bfseries},
+  label/.style={font=\tiny\color{gray}},
+}
+
+% --- Helper macros ---
+\newcommand{\filecode}[1]{\texttt{\textcolor{primary}{\small #1}}}
+\newcommand{\badge}[2]{\colorbox{#1!20}{\small\textbf{#2}}}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+% ---- TITLE SLIDE ----
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[primary] (current page.north west) rectangle
+    ([yshift=-0.42\paperheight] current page.north east);
+  \node[text=white, anchor=north, font=\Large\bfseries]
+    at ([yshift=-1.2cm] current page.north) {XLA Face Privacy System};
+  \node[text=white!80, anchor=north, font=\normalsize]
+    at ([yshift=-2.1cm] current page.north)
+    {Hệ Thống Camera Bảo Vệ Quyền Riêng Tư Khuôn Mặt Theo Thời Gian Thực};
+\end{tikzpicture}
+
+\vspace{3.5cm}
+\begin{columns}[c]
+\column{0.55\textwidth}
+\begin{block}{Thành viên nhóm}
+\footnotesize
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\textbf{Vai trò} & \textbf{Tên} & \textbf{Phụ trách} \\
+\hline
+\textcolor{accent}{\textbf{Leader}} & \textcolor{accent}{\textbf{Đạt}} & Security + Blur \\
+Backend & Khánh & FastAPI + Pipeline \\
+Detection & Khoa & YOLO + FaceDB \\
+\end{tabular}
+\end{block}
+
+\column{0.4\textwidth}
+\begin{block}{Thông tin}
+\footnotesize
+\begin{itemize}
+  \item Môn: Xử Lý Ảnh
+  \item Ngôn ngữ: Python 3.13
+  \item Framework: FastAPI
+  \item Model: YOLOv11n-face
+\end{itemize}
+\end{block}
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 1: VẤN ĐỀ & GIẢI PHÁP
+% ============================================================
+
+\section{Vấn Đề \& Giải Pháp}
+
+% ---- Frame 1: Bối cảnh ----
+\begin{frame}{Vấn Đề: Camera An Ninh vs Quyền Riêng Tư}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{alertblock}{\faExclamationTriangle\ Thực trạng}
+\begin{itemize}
+  \item Camera an ninh quay \textbf{tất cả mọi người}
+  \item Khách, người giúp việc bị nhận dạng không đồng ý
+  \item Vi phạm GDPR, quyền riêng tư cá nhân
+  \item Dữ liệu biometric lưu plaintext = nguy cơ rò rỉ
+\end{itemize}
+\end{alertblock}
+
+\column{0.48\textwidth}
+\begin{alertblock}{\faExclamationTriangle\ Hai thái cực}
+\smallskip
+\begin{center}
+\begin{tabular}{cc}
+\textbf{Ghi thô} & \textbf{Xóa hết} \\
+\hline
+\textcolor{accent}{Lộ danh tính} & \textcolor{accent}{Mất bằng chứng} \\
+Vi phạm privacy & Không điều tra được \\
+\xmark\ Privacy & \xmark\ Evidence \\
+\end{tabular}
+\end{center}
+\end{alertblock}
+\end{columns}
+
+\vspace{0.5em}
+\begin{block}{\faLightbulb\ Câu hỏi đặt ra}
+\centering\large
+Có thể \textbf{bảo vệ quyền riêng tư} mà \textbf{không mất bằng chứng} không?
+\end{block}
+\end{frame}
+
+% ---- Frame 2: Giải pháp ----
+\begin{frame}{Giải Pháp: Privacy by Default, Evidence on Demand}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.4cm and 1.4cm]
+  \node[module] (cam) {\faCamera\\\textbf{Camera}};
+  \node[module, right=of cam] (yolo) {\textbf{YOLOv11}\\\footnotesize Detect Face};
+  \node[module, right=of yolo] (face) {\textbf{InsightFace}\\\footnotesize Embedding};
+  \node[module, right=of face] (db) {\textbf{FamilyDB}\\\footnotesize Match?};
+
+  \node[module, below=1.2cm of db, xshift=-1.5cm] (blur)
+    {\textcolor{darkgreen}{\faEyeSlash}\\\textbf{Public}\\\footnotesize .mp4 blur};
+  \node[highlight, below=1.2cm of db, xshift=1.5cm] (enc)
+    {\faLock\\\textbf{Secure}\\\footnotesize .enc AES-256};
+
+  \draw[arrow] (cam) -- (yolo);
+  \draw[arrow] (yolo) -- (face);
+  \draw[arrow] (face) -- (db);
+  \draw[arrow] (db) -- node[label, left] {Public} (blur);
+  \draw[arrow] (db) -- node[label, right] {Admin only} (enc);
+\end{tikzpicture}
+\end{center}
+
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{\faEye\ Tầng 1: Blurred Stream}
+\begin{itemize}\footnotesize
+  \item Video đã che mặt người lạ
+  \item Lưu định dạng \texttt{.mp4} thường
+  \item Mọi người trong hệ thống xem được
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{\faLock\ Tầng 2: Encrypted Store}
+\begin{itemize}\footnotesize
+  \item Video gốc, khuôn mặt nguyên vẹn
+  \item Mã hóa \textbf{AES-256-GCM}
+  \item \textit{Chỉ} Admin biết password mới xem được
+\end{itemize}
+\end{block}
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 2: KIẾN TRÚC HỆ THỐNG
+% ============================================================
+
+\section{Kiến Trúc Hệ Thống}
+
+% ---- Frame 3: Architecture overview ----
+\begin{frame}{Kiến Trúc Tổng Thể}
+\begin{center}
+\begin{tikzpicture}[node distance=0.7cm and 0.5cm, scale=0.85, every node/.style={scale=0.85}]
+  % Frontend
+  \node[draw=primary, fill=primary!10, rounded corners, minimum width=11cm,
+        minimum height=0.8cm, font=\small\bfseries] (fe)
+    {FRONTEND (Tailwind CSS, Neobrutalism) --- Dashboard · Registry · Archive · Portal};
+
+  % Backend box
+  \node[draw=primary, fill=secbg, rounded corners, minimum width=11cm,
+        minimum height=1.8cm, below=0.6cm of fe] (be) {};
+  \node[font=\small\bfseries\color{primary}, above=0cm of be.north, anchor=south] {BACKEND --- FastAPI port 8000};
+  \node[module, below=0.1cm of be.north, xshift=-3.5cm,
+        minimum width=2cm, minimum height=0.65cm, font=\tiny] {Pipeline Session\\background thread};
+  \node[module, below=0.1cm of be.north, xshift=0cm,
+        minimum width=2cm, minimum height=0.65cm, font=\tiny] {REST API\\+ WebSocket};
+  \node[module, below=0.1cm of be.north, xshift=3.5cm,
+        minimum width=2cm, minimum height=0.65cm, font=\tiny] {Admin Auth\\+ Clips};
+
+  % Pipeline
+  \node[draw=darkgreen, fill=darkgreen!8, rounded corners, minimum width=11cm,
+        minimum height=1.0cm, below=0.6cm of be] (pipe) {};
+  \node[font=\small\bfseries\color{darkgreen}, above=-0.05cm of pipe.north, anchor=south]
+    {PROCESSING PIPELINE};
+  \node[font=\tiny, below=0.0cm of pipe.north, anchor=north, text width=10cm, align=center]
+    {Camera $\to$ FrameReader $\to$ YOLOv11 Detect $\to$ BBoxSmoother $\to$
+     InsightFace Embedding $\to$ FamilyDatabase Match $\to$
+     anonymize\_faces() $\to$ ClipRecorder};
+
+  % Security
+  \node[draw=accent, fill=accent!8, rounded corners, minimum width=5cm,
+        minimum height=0.7cm, below=0.6cm of pipe, xshift=-2.5cm] (sec) {};
+  \node[font=\small\bfseries\color{accent}, above=0cm of sec.north, anchor=south] {SECURITY};
+  \node[font=\tiny, below=0.05cm of sec.north, anchor=north]
+    {AES-256-GCM · PBKDF2-SHA256 · hmac.compare\_digest};
+
+  % Storage
+  \node[draw=gray, fill=gray!10, rounded corners, minimum width=4.5cm,
+        minimum height=0.7cm, below=0.6cm of pipe, xshift=3cm] (stor) {};
+  \node[font=\small\bfseries\color{gray!70}, above=0cm of stor.north, anchor=south] {STORAGE};
+  \node[font=\tiny, below=0.05cm of stor.north, anchor=north]
+    {data/clips/blurred/*.mp4 · data/clips/secure/*.enc};
+
+  % Arrows
+  \draw[arrow] (fe.south) -- (be.north);
+  \draw[arrow] (be.south) -- (pipe.north);
+  \draw[arrow] (pipe.south) -- (sec.north);
+  \draw[arrow] (pipe.south) -- (stor.north);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+% ---- Frame 4: File structure ----
+\begin{frame}{Cấu Trúc Mã Nguồn}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{\faPython\ Phụ trách: Khoa}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{ll}
+\filecode{src/detector.py} & YOLOv11 wrapper \\
+\filecode{src/face\_recognition.py} & InsightFace 512-dim \\
+\filecode{src/family\_database.py} & Face DB CRUD \\
+\filecode{src/bbox\_smoother.py} & EMA smoothing \\
+\filecode{models/yolov11n-face.pt} & YOLO weights \\
+\end{tabular}
+\end{block}
+
+\begin{block}{\faPython\ Phụ trách: Khánh}
+\footnotesize
+\begin{tabular}{ll}
+\filecode{src/app\_api.py} & FastAPI 1700+ dòng \\
+\filecode{src/backend\_api.py} & Pipeline runner \\
+\filecode{src/run\_phone\_cam.py} & FrameReader + Tracker \\
+\filecode{frontend/*.html} & 6 trang HTML \\
+\end{tabular}
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{\faPython\ Phụ trách: \textcolor{accent}{\textbf{Đạt (Leader)}}}
+\footnotesize
+\begin{tabular}{ll}
+\filecode{src/privacy.py} & 7 blur mode \\
+\filecode{src/anonymizer\_backend.py} & Config + Presets \\
+\filecode{src/clip\_recorder.py} & AES-256-GCM encrypt \\
+\filecode{src/admin\_auth.py} & PBKDF2 + verify \\
+\filecode{src/face\_lock.py} & Per-face AES lock \\
+\end{tabular}
+\end{block}
+
+\begin{block}{\faDatabase\ Data}
+\footnotesize
+\begin{tabular}{ll}
+\filecode{data/family\_members.json} & Embedding DB \\
+\filecode{data/admin\_credentials.json} & Salt + Hash only \\
+\filecode{data/clips/secure/*.enc} & Encrypted clips \\
+\filecode{data/clips/blurred/*.mp4} & Public clips \\
+\end{tabular}
+\end{block}
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 3: YOLO + INSIGHTFACE (KHOA)
+% ============================================================
+
+\section{Detection \& Recognition}
+
+% ---- Frame 5: YOLO ----
+\begin{frame}[fragile]{YOLOv11n-face --- Phát Hiện Khuôn Mặt}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{block}{Tại sao YOLOv11n?}
+\begin{itemize}\footnotesize
+  \item \textbf{Nano}: tối ưu inference trên CPU
+  \item Fine-tuned đặc biệt cho face detection
+  \item Hỗ trợ NMS (Non-Max Suppression)
+  \item conf\_threshold = \textbf{0.35}, iou\_threshold = \textbf{0.50}
+\end{itemize}
+\end{block}
+
+\begin{block}{Optimize: detect\_every}
+\footnotesize
+Frame xen kẽ: chỉ gọi YOLO mỗi \textbf{2 frame}.\\
+Frame bỏ qua dùng lại kết quả lần trước.\\
+$\Rightarrow$ Giảm 50\% compute, lag không đáng kể.
+\end{block}
+
+\column{0.46\textwidth}
+\begin{lstlisting}[language=Python, caption={}]
+class FaceDetector:
+  def detect_faces(self, frame):
+    results = self.model(
+      frame,
+      imgsz=512,       # inference size
+      conf=0.35,       # min confidence
+      iou=0.50,        # NMS threshold
+      verbose=False,
+    )
+    boxes = []
+    for r in results:
+      for box in r.boxes:
+        x1,y1,x2,y2 = map(int,
+          box.xyxy[0])
+        boxes.append(
+          [x1, y1,
+           x2-x1, y2-y1])
+    return boxes
+\end{lstlisting}
+\end{columns}
+\end{frame}
+
+% ---- Frame 6: InsightFace ----
+\begin{frame}[fragile]{InsightFace Buffalo-L --- Nhận Diện Thành Viên}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{block}{Embedding 512 chiều}
+\footnotesize
+\begin{itemize}
+  \item Model \textbf{buffalo\_l}: state-of-the-art recognition
+  \item Vector 512 chiều = ``vân tay số'' khuôn mặt
+  \item Cosine similarity: $-1$ (hoàn toàn khác) đến $+1$ (giống hệt)
+  \item Threshold: \textbf{0.35}
+  \begin{itemize}\scriptsize
+    \item $ > 0.35$ $\Rightarrow$ thành viên $\Rightarrow$ \textcolor{darkgreen}{\textbf{không blur}}
+    \item $\leq 0.35$ $\Rightarrow$ người lạ $\Rightarrow$ \textcolor{accent}{\textbf{blur}}
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\begin{block}{Vectorized Matching}
+\footnotesize
+So sánh \textit{một lần} với \textbf{toàn bộ} embedding matrix:\\
+$$\text{sim}(a,b) = \frac{a \cdot b}{\|a\| \cdot \|b\|}$$
+$\Rightarrow$ O(n) không cần vòng lặp Python
+\end{block}
+
+\column{0.46\textwidth}
+\begin{lstlisting}[language=Python, caption={}]
+class FaceRecognizer:
+  def __init__(self):
+    self.app = FaceAnalysis(
+      name="buffalo_l",
+      providers=[
+        "CPUExecutionProvider"
+      ]
+    )
+    self.app.prepare(
+      ctx_id=0,
+      det_size=(256, 256)
+    )
+
+  @staticmethod
+  def cosine_similarity(a, b):
+    return float(
+      np.dot(a, b) / (
+        np.linalg.norm(a)
+        * np.linalg.norm(b)
+      )
+    )
+\end{lstlisting}
+\end{columns}
+\end{frame}
+
+% ---- Frame 7: Face Registry ----
+\begin{frame}[fragile]{Face Registry --- Quản Lý Thành Viên}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{block}{Quy trình đăng ký}
+\footnotesize
+\begin{enumerate}
+  \item Admin upload ảnh thành viên (POST /members)
+  \item Backend extract InsightFace embedding
+  \item Lưu vector vào \filecode{data/family\_members.json}
+  \item Pipeline tự động load lại database
+\end{enumerate}
+\end{block}
+
+\begin{block}{Database Schema}
+\footnotesize
+\begin{lstlisting}[numbers=none]
+{
+  "member_id": "dat",
+  "name": "Dat",
+  "threshold": 0.35,
+  "embeddings": [
+    [0.12, -0.34, ...],  // 512-dim
+    [0.11, -0.33, ...],  // mau 2
+    ...                  // 100 mau
+  ]
+}
+\end{lstlisting}
+\end{block}
+
+\column{0.4\textwidth}
+\begin{block}{Database hiện tại}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lcc}
+\textbf{Thành viên} & \textbf{Ảnh} & \textbf{Threshold} \\
+\hline
+Đạt & 100 & 0.35 \\
+Khoa & 100 & 0.35 \\
+\end{tabular}
+\end{block}
+
+\begin{alertblock}{\faLightbulb\ Tại sao 100 ảnh?}
+\footnotesize
+Nhiều góc độ + điều kiện ánh sáng khác nhau
+$\Rightarrow$ embedding ổn định hơn
+$\Rightarrow$ giảm false positive
+\end{alertblock}
+
+\begin{block}{API}
+\footnotesize
+\texttt{GET /members} --- list\\
+\texttt{POST /members} --- register\\
+\texttt{PATCH /members/\{id\}} --- update\\
+\texttt{DELETE /members/\{id\}} --- remove
+\end{block}
+
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 4: BACKEND + PIPELINE (KHÁNH)
+% ============================================================
+
+\section{Backend \& Pipeline}
+
+% ---- Frame 8: FastAPI ----
+\begin{frame}{FastAPI Backend --- REST + WebSocket}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{Endpoint Groups}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{ll}
+\texttt{GET /health} & Server status \\
+\texttt{GET /presets} & 4 config presets \\
+\hline
+\texttt{POST /anonymize} & Blur 1 ảnh upload \\
+\texttt{POST /lock} & AES per-face lock \\
+\texttt{POST /recognize} & Nhận diện ảnh tĩnh \\
+\hline
+\texttt{GET /cameras} & List cameras \\
+\texttt{POST /pipeline/start} & Start live pipeline \\
+\texttt{PATCH /pipeline/config} & Hot-reload config \\
+\hline
+\texttt{GET /stream/mjpeg} & MJPEG stream \\
+\texttt{WS /stream/ws} & WebSocket binary \\
+\hline
+\texttt{GET /clips} & List clips \\
+\texttt{POST /clips/decrypt} & Admin decrypt \\
+\end{tabular}
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{4 Anonymization Presets}
+\renewcommand{\arraystretch}{1.4}
+\footnotesize
+\begin{tabular}{lll}
+\textbf{Preset} & \textbf{Mode} & \textbf{YOLO} \\
+\hline
+\texttt{fast} & pixelate & 416 \\
+\texttt{balanced} & headcloak & 512 \\
+\texttt{strong} & obliterate & 512 \\
+\texttt{strict} & headcloak & 416 \\
+\end{tabular}
+\end{block}
+
+\begin{block}{\faBolt\ Hot-reload Config}
+\footnotesize
+\texttt{PATCH /pipeline/config}\\
+Đổi mode, threshold, proc\_width\\
+\textbf{không cần restart server}.\\
+$\Rightarrow$ Production-ready
+\end{block}
+
+\begin{alertblock}{\faRss\ Streaming Options}
+\footnotesize
+\begin{itemize}
+  \item \textbf{MJPEG}: \texttt{<img src="/stream/mjpeg">}
+  \item \textbf{WebSocket}: binary frames, low latency
+  \item \textbf{SSE}: EventSource cho status updates
+\end{itemize}
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+% ---- Frame 9: Pipeline architecture ----
+\begin{frame}[fragile]{Live Pipeline --- Luồng Xử Lý Real-time}
+\begin{center}
+\begin{tikzpicture}[node distance=0.5cm and 0.8cm, scale=0.78, every node/.style={scale=0.78}]
+  \node[module, minimum width=2cm] (cam) {\faCamera\\Camera};
+  \node[module, right=of cam, minimum width=2.3cm] (fr) {Frame\\Reader\\Thread};
+  \node[module, right=of fr, minimum width=2.3cm] (yolo) {YOLOv11\\detect\_every\\= 2};
+  \node[module, right=of yolo, minimum width=2.3cm] (smooth) {BBox\\Smoother\\EMA $\alpha$=0.7};
+  \node[module, right=of smooth, minimum width=2.3cm] (if) {InsightFace\\buffalo\_l\\512-dim};
+  \node[module, below=1.5cm of yolo, xshift=1.2cm, minimum width=2.3cm] (db) {Family\\Database\\match()};
+  \node[module, left=0.8cm of db, minimum width=2.3cm] (anon) {anonymize\\\_faces()\\7 modes};
+  \node[highlight, right=0.8cm of db, minimum width=2.3cm] (rec) {Clip\\Recorder\\AES-256};
+
+  \draw[arrow] (cam) -- (fr);
+  \draw[arrow] (fr) -- (yolo);
+  \draw[arrow] (yolo) -- (smooth);
+  \draw[arrow] (smooth) -- (if);
+  \draw[arrow] (if) -- ++(0,-0.9) -| (db);
+  \draw[arrow] (db) -- (anon);
+  \draw[arrow] (db) -- (rec);
+  \draw[->, >=Stealth, dashed, gray] (anon) -- ++(-2.5,0)
+    node[left, font=\tiny] {MJPEG/WS};
+  \draw[->, >=Stealth, dashed, accent] (rec) -- ++(2,0)
+    node[right, font=\tiny\color{accent}] {.enc + .mp4};
+\end{tikzpicture}
+\end{center}
+
+\vspace{-0.3em}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{\faCheck\ Tại sao FrameReader thread riêng?}
+\footnotesize
+\texttt{cv2.VideoCapture.read()} blocking.\\
+Thread riêng giúp frame luôn fresh,\\
+không bị stale trong khi YOLO đang chạy.
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{\faCheck\ BBox Smoother}
+\footnotesize
+EMA: $\hat{b}_t = \alpha \cdot b_t + (1-\alpha)\cdot \hat{b}_{t-1}$\\
+$\alpha = 0.7$: responsive nhưng mượt.\\
+Loại bỏ jitter bounding box frame-by-frame.
+\end{block}
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 5: SECURITY (ĐẠT)
+% ============================================================
+
+\section{Security Layer}
+
+% ---- Frame 10: Security overview ----
+\begin{frame}{Security Architecture --- Tổng Quan}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1cm and 1.2cm, scale=0.85, every node/.style={scale=0.85}]
+  \node[module, minimum width=3cm] (frame) {Raw Frame\\từ camera};
+
+  \node[module, right=1.5cm of frame, minimum width=3cm] (pack)
+    {\_pack\_frames()\\JPEG 90 quality};
+
+  \node[highlight, right=1.5cm of pack, minimum width=3cm] (aes)
+    {AES-256-GCM\\encrypt()};
+
+  \node[module, below=1.2cm of frame, minimum width=3cm] (salt)
+    {secrets.token\_bytes(32)\\Per-clip Salt};
+
+  \node[module, below=1.2cm of pack, minimum width=3cm] (pbkdf2)
+    {PBKDF2-SHA256\\390.000 iterations};
+
+  \node[highlight, right=1.5cm of aes, minimum width=3cm] (enc)
+    {.enc file\\\texttt{[32B salt][12B nonce]}\\\texttt{AES-GCM ct+tag}};
+
+  \draw[arrow] (frame) -- (pack);
+  \draw[arrow] (pack) -- (aes) node[midway, above, font=\tiny] {plaintext};
+  \draw[arrow] (salt) -- (pbkdf2) node[midway, above, font=\tiny] {};
+  \draw[arrow] (pbkdf2) -- (aes) node[midway, left, font=\tiny] {32-byte key};
+  \draw[arrow] (aes) -- (enc);
+
+  \node[font=\tiny, below=0.0cm of salt]
+    {password từ admin};
+\end{tikzpicture}
+\end{center}
+
+\begin{columns}[T]
+\column{0.32\textwidth}
+\begin{block}{\faKey\ Per-clip Salt}
+\footnotesize
+Mỗi clip = 1 salt 32B ngẫu nhiên.\\
+Same password $\Rightarrow$ \textbf{different key}.\\
+Compromise 1 clip $\neq$ compromise tất cả.
+\end{block}
+
+\column{0.32\textwidth}
+\begin{block}{\faLock\ AES-GCM}
+\footnotesize
+\textbf{Authenticated Encryption}.\\
+Auth Tag 128-bit.\\
+Sửa 1 bit $\Rightarrow$ decrypt fail.\\
+$\not\Rightarrow$ dữ liệu sai.
+\end{block}
+
+\column{0.32\textwidth}
+\begin{block}{\faClock\ PBKDF2}
+\footnotesize
+390.000 rounds SHA256.\\
+Brute-force 8-char:\\
+$\approx$ hàng trăm nghìn năm.
+\end{block}
+\end{columns}
+\end{frame}
+
+% ---- Frame 11: Encrypt code ----
+\begin{frame}[fragile]{AES-256-GCM --- Code Chi Tiết}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{lstlisting}[language=Python, caption={src/clip\_recorder.py}]
+def encrypt_clip(frames, fps, password):
+    # Step 1: Serialize frames
+    plaintext = _pack_frames(frames, fps)
+    # [4B n_frames][4B fps*1000]
+    # for each: [4B len][JPEG bytes]
+
+    # Step 2: Random per-clip salt
+    salt  = secrets.token_bytes(32)  # 256-bit
+    nonce = secrets.token_bytes(12)  # 96-bit GCM
+
+    # Step 3: Key derivation
+    key = derive_clip_key(password, salt)
+    # PBKDF2-SHA256, 390000 rounds -> 32B
+
+    # Step 4: AES-256-GCM encrypt
+    ct = AESGCM(key).encrypt(
+        nonce, plaintext, None)
+    # Output includes 128-bit Auth Tag
+
+    # Step 5: Pack file
+    return salt + nonce + ct
+    # [32B salt][12B nonce][ciphertext]
+\end{lstlisting}
+
+\column{0.44\textwidth}
+\begin{lstlisting}[language=Python, caption={src/clip\_recorder.py}]
+def decrypt_clip(data, password):
+    if len(data) < 44:
+        raise ValueError("Corrupted")
+
+    # Unpack file format
+    salt      = data[:32]
+    nonce     = data[32:44]
+    ciphertext = data[44:]
+
+    # Re-derive same key
+    key = derive_clip_key(password, salt)
+
+    try:
+        # Decrypt + verify Auth Tag
+        plaintext = AESGCM(key).decrypt(
+            nonce, ciphertext, None)
+    except Exception:
+        raise ValueError(
+            "Decryption failed - "
+            "wrong password or "
+            "corrupted clip.")
+
+    return _unpack_frames(plaintext)
+\end{lstlisting}
+\end{columns}
+\end{frame}
+
+% ---- Frame 12: PBKDF2 + Admin Auth ----
+\begin{frame}[fragile]{PBKDF2-SHA256 + Admin Authentication}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Python, caption={src/admin\_auth.py}]
+# OWASP 2023 minimum
+_ITERATIONS = 390_000
+_KEY_LEN = 32  # 256-bit
+
+def _pbkdf2(password, salt,
+            iterations=_ITERATIONS):
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=_KEY_LEN,
+        salt=salt,
+        iterations=iterations,
+    )
+    return kdf.derive(
+        password.encode("utf-8"))
+
+def _ct_equal(a: bytes, b: bytes):
+    """Prevent Timing Attack."""
+    # Python '==' stops at first diff byte
+    # Attacker measures response time
+    # -> can guess chars one by one
+    # hmac.compare_digest: CONSTANT TIME
+    return hmac.compare_digest(a, b)
+\end{lstlisting}
+
+\column{0.46\textwidth}
+\begin{block}{\faDatabase\ Credentials File}
+\footnotesize
+\begin{lstlisting}[numbers=none]
+{
+  "salt": "aGVsbG8h...(base64)",
+  "hash": "c2VjcmV0...(base64)",
+  "iterations": 390000,
+  "created_at": 1741234567.89
+}
+\end{lstlisting}
+\textbf{Không có plaintext password.}\\
+Ngay cả dev cũng không biết password.
+\end{block}
+
+\begin{alertblock}{\faLock\ Timing Attack --- Quan trọng!}
+\footnotesize
+\texttt{a == b}: dừng ở byte khác đầu tiên\\
+$\Rightarrow$ thời gian response khác nhau\\
+$\Rightarrow$ hacker đoán được từng byte
+
+\texttt{hmac.compare\_digest}: luôn chạy full\\
+$\Rightarrow$ constant-time\\
+$\Rightarrow$ không leak thông tin
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+% ---- Frame 13: Blur Engine ----
+\begin{frame}[fragile]{Blur Engine --- 7 Privacy Modes}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{tabular}{lll}
+\toprule
+\textbf{Mode} & \textbf{Kỹ thuật} & \textbf{Mức độ} \\
+\midrule
+\texttt{blur} & Gaussian downscale & Nhẹ \\
+\texttt{pixelate} & Bilinear+Nearest & Nhẹ-TB \\
+\texttt{solid} & Constant fill & Nhanh \\
+\texttt{headcloak} & Mix+Noise+GBlur & \textbf{Mạnh}* \\
+\texttt{neckup} & Expand+Cloak & Mạnh \\
+\texttt{obliterate} & 4-step pipeline & \textbf{Rất mạnh} \\
+\texttt{silhouette} & Extreme cloak & \textbf{Cực mạnh} \\
+\bottomrule
+\multicolumn{3}{l}{\footnotesize *Default của hệ thống}
+\end{tabular}
+
+\vspace{0.5em}
+\begin{block}{\faExpand\ Expand box trước khi blur}
+\footnotesize
+Không chỉ blur đúng mặt.
+\texttt{headcloak} expand:
+\begin{itemize}\scriptsize
+  \item Left/Right: $\pm 35\%-70\%$ width
+  \item Top: $+70\%-120\%$ height (tóc)
+  \item Bottom: $+25\%-50\%$ height (cằm)
+\end{itemize}
+$\Rightarrow$ Không còn nhìn thấy tai, tóc, jawline
+\end{block}
+
+\column{0.46\textwidth}
+\begin{lstlisting}[language=Python,
+  caption={privacy.py --- obliterate}]
+def _obliterate_features(roi,...):
+  """4-step pipeline, IRREVERSIBLE"""
+
+  # Step 1: Compress 8% resolution
+  # Destroy all facial details
+  w, h = roi.shape[:2]
+  small = cv2.resize(roi,
+    (int(w*0.08), int(h*0.08)),
+    interpolation=INTER_AREA)
+  work = cv2.resize(small, (w, h),
+    interpolation=INTER_NEAREST)
+
+  # Step 2: Scramble 12x12 blocks
+  # Break geometric relationships
+  work = _scramble_blocks(work,
+    block_size=12, seed=1337)
+
+  # Step 3: Blur edges (kernel 35)
+  work = cv2.GaussianBlur(work,
+    (35,35), 0)
+
+  # Step 4: Quantize to 10 colors
+  # Remove subtle texture traces
+  work = _quantize_colors(work,
+    levels=10)
+  return work
+\end{lstlisting}
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 6: DEMO
+% ============================================================
+
+\section{Demo}
+
+% ---- Frame 14: Demo flow ----
+\begin{frame}{Demo --- End-to-End Flow}
+
+\begin{center}
+\begin{tikzpicture}[node distance=0.6cm and 1.0cm,
+  scale=0.82, every node/.style={scale=0.82}]
+
+  \node[module, minimum width=3cm, minimum height=1.2cm]
+    (s1) {\textbf{Bước 1}\\Start Pipeline\\mode: obliterate};
+
+  \node[module, right=1.2cm of s1, minimum width=3cm, minimum height=1.2cm,
+        fill=darkgreen!15, draw=darkgreen]
+    (s2) {\textbf{Bước 2}\\Đạt/Khoa trước cam\\$\Rightarrow$ \textcolor{darkgreen}{\textbf{Nhận ra, không blur}}};
+
+  \node[module, right=1.2cm of s2, minimum width=3cm, minimum height=1.2cm,
+        fill=accent!10, draw=accent]
+    (s3) {\textbf{Bước 3}\\Khánh trước cam\\$\Rightarrow$ \textcolor{accent}{\textbf{Bị obliterate}}};
+
+  \node[highlight, below=1.2cm of s2, minimum width=3cm, minimum height=1.2cm]
+    (s4) {\textbf{Bước 4}\\Secure Archive\\Decrypt clip};
+
+  \draw[arrow] (s1)--(s2);
+  \draw[arrow] (s2)--(s3);
+  \draw[arrow] (s3)--++(0,-0.8)-|(s4);
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5em}
+\begin{columns}[c]
+\column{0.3\textwidth}
+\begin{block}{\faCheckCircle\ Kết quả mong đợi}
+\footnotesize
+\begin{itemize}
+  \item Đạt/Khoa: tên hiện, không blur
+  \item Khánh: obliterate, không nhận ra
+  \item Decrypt $\Rightarrow$ khuôn mặt rõ nét
+  \item Wrong password $\Rightarrow$ fail ngay
+\end{itemize}
+\end{block}
+
+\column{0.65\textwidth}
+\begin{alertblock}{\faExclamationCircle\ URLs Demo}
+\footnotesize
+\begin{tabular}{ll}
+\texttt{/admin/dashboard.html} & Pipeline control \\
+\texttt{/admin/face-registry.html} & Member CRUD \\
+\texttt{/admin/secure-archive.html} & Decrypt clips \\
+\texttt{/user/live-portal.html} & User view (no admin) \\
+\end{tabular}
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+% ---- Frame 15: Privacy modes demo ----
+\begin{frame}{Demo --- So Sánh 5 Privacy Modes}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+  % Base face icon
+  \foreach \i/\name/\col/\desc in {
+    1/blur/blue!30/Gaussian mờ nhẹ,
+    2/pixelate/teal!30/Mosaic 16px,
+    3/headcloak/orange!30/Đầu+noise (default),
+    4/obliterate/red!30/4-step pipeline,
+    5/silhouette/purple!30/Extreme cloak
+  }{
+    \node[draw, fill=\col, minimum width=1.8cm,
+          minimum height=1.8cm, rounded corners,
+          font=\small\bfseries]
+      at ({(\i-1)*2.4}, 0) {\name};
+    \node[font=\tiny, text width=1.9cm, align=center]
+      at ({(\i-1)*2.4}, -1.3) {\desc};
+  }
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5em}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{Chọn mode nào?}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{ll}
+\textbf{Use case} & \textbf{Mode} \\
+\hline
+Xem tổng quan nhanh & \texttt{blur / pixelate} \\
+Gia đình hàng ngày & \texttt{headcloak} \\
+Bảo mật cao & \texttt{obliterate} \\
+Pháp lý / nghiên cứu & \texttt{silhouette} \\
+\end{tabular}
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{Performance}
+\footnotesize
+\begin{tabular}{lll}
+\textbf{Mode} & \textbf{CPU} & \textbf{FPS*} \\
+\hline
+blur & Thấp & $\sim$25 \\
+pixelate & Rất thấp & $\sim$28 \\
+headcloak & Trung bình & $\sim$18 \\
+obliterate & Cao & $\sim$12 \\
+silhouette & Rất cao & $\sim$8 \\
+\end{tabular}
+\footnotesize *CPU mid-range, proc\_width=640
+\end{block}
+\end{columns}
+\end{frame}
+
+% ============================================================
+% SECTION 7: KẾT LUẬN
+% ============================================================
+
+\section{Kết Luận}
+
+% ---- Frame 16: Kết quả đạt được ----
+\begin{frame}{Kết Quả Đạt Được}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{\cmark\ Privacy}
+\begin{itemize}\footnotesize
+  \item 7 chế độ ẩn danh từ nhẹ đến cực mạnh
+  \item Real-time inference $\sim$15--20 FPS
+  \item Thành viên đã đăng ký: không bị che
+  \item Người lạ: ẩn danh hoàn toàn
+  \item Hot-reload mode không restart
+\end{itemize}
+\end{block}
+
+\begin{block}{\cmark\ Security}
+\begin{itemize}\footnotesize
+  \item AES-256-GCM: mã hóa + authenticated
+  \item PBKDF2-SHA256 390.000 iter (OWASP 2023)
+  \item Per-clip unique salt: không reuse key
+  \item Constant-time comparison: no timing leak
+  \item Không lưu plaintext password bao giờ
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{\cmark\ Usability}
+\begin{itemize}\footnotesize
+  \item RESTful API đầy đủ (FastAPI + OpenAPI)
+  \item WebSocket + MJPEG streaming
+  \item 4 preset sẵn sàng dùng
+  \item Frontend HTML 6 trang, responsive
+  \item Admin \& User role separation
+\end{itemize}
+\end{block}
+
+\begin{block}{\cmark\ Recognition}
+\begin{itemize}\footnotesize
+  \item YOLOv11n-face: nano, fast, accurate
+  \item InsightFace buffalo\_l: 512-dim embedding
+  \item Vectorized batch matching O(n)
+  \item BBox EMA smoother: no jitter
+  \item 2 thành viên đăng ký, 100 mẫu/người
+\end{itemize}
+\end{block}
+\end{columns}
+\end{frame}
+
+% ---- Frame 17: Tech stack ----
+\begin{frame}{Technology Stack}
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Lớp} & \textbf{Công nghệ} & \textbf{Phiên bản} & \textbf{Vai trò} \\
+\midrule
+Detection & Ultralytics YOLO & v11 & Face bounding box \\
+Recognition & InsightFace & buffalo\_l & 512-dim embedding \\
+Image & OpenCV & $\geq$4.8 & Frame processing \\
+Backend & FastAPI & $\geq$0.115 & REST + WebSocket \\
+Server & Uvicorn & $\geq$0.30 & ASGI server \\
+Crypto & cryptography & $\geq$43.0 & AES-GCM, PBKDF2 \\
+Numeric & NumPy & $\geq$1.24 & Embedding vectors \\
+Frontend & HTML + Tailwind & CSS v3 & Neobrutalism UI \\
+Language & Python & 3.13 & Backend runtime \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.5em}
+\begin{block}{Lệnh khởi động}
+\centering\ttfamily\small
+uvicorn src.app\_api:app -{}-host 0.0.0.0 -{}-port 8000 -{}-reload
+\end{block}
+\end{frame}
+
+% ---- Frame 18: Q&A anticipation ----
+\begin{frame}{Câu Hỏi Thường Gặp}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{Q: AES-GCM vs AES-CBC?}
+\footnotesize
+GCM = \textbf{Authenticated Encryption}.\\
+Auth Tag 128-bit bảo vệ integrity.\\
+CBC chỉ encrypt, không verify.\\
+Với bằng chứng pháp lý: integrity bắt buộc.
+\end{block}
+
+\begin{block}{Q: Quên password?}
+\footnotesize
+Không recover được --- \textbf{by design}.\\
+Zero Knowledge of Plaintext.\\
+Production: Key Escrow hoặc\\
+Shamir Secret Sharing.
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{Q: 390.000 iterations?}
+\footnotesize
+OWASP 2023 minimum.\\
+Đủ chậm để brute-force không khả thi.\\
+Đủ nhanh để UX không bị ảnh hưởng\\
+(encrypt/decrypt $<$1 lần/phút).
+\end{block}
+
+\begin{block}{Q: False positive nhận diện?}
+\footnotesize
+Người lạ nhầm thành member $\rightarrow$ privacy leak.\\
+Mitigated: threshold 0.35 + 100 mẫu/người.\\
+Production: threshold calibration + A/B test.
+\end{block}
+\end{columns}
+
+\vspace{0.5em}
+\begin{alertblock}{Q: GDPR compliance?}
+\footnotesize
+Privacy by Design (Art.25): encrypt by default, limited access, right to delete (DELETE /members).
+Cần thêm trong production: audit log, consent management, data retention policy.
+\end{alertblock}
+\end{frame}
+
+% ---- Frame 19: Final slide ----
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[primary] (current page.north west) rectangle
+    ([yshift=-0.55\paperheight] current page.north east);
+
+  \node[text=white, font=\LARGE\bfseries, anchor=center]
+    at ([yshift=-1.8cm] current page.north)
+    {Cảm ơn Thầy/Cô đã lắng nghe!};
+
+  \node[text=white!80, font=\large, anchor=center]
+    at ([yshift=-3.0cm] current page.north)
+    {XLA Face Privacy System};
+
+  \node[text=white!70, font=\normalsize, anchor=center]
+    at ([yshift=-3.8cm] current page.north)
+    {Privacy by Default · Evidence on Demand};
+\end{tikzpicture}
+
+\vspace{4.5cm}
+\begin{columns}[c]
+\column{0.6\textwidth}
+\begin{block}{Nhóm thực hiện}
+\footnotesize\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lll}
+\textcolor{accent}{\textbf{Đạt}} & Leader & AES-256-GCM · PBKDF2 · Blur \\
+\textbf{Khánh} & Backend & FastAPI · Pipeline · Stream \\
+\textbf{Khoa} & Detection & YOLOv11 · InsightFace · DB \\
+\end{tabular}
+\end{block}
+
+\column{0.35\textwidth}
+\begin{block}{Repository}
+\footnotesize
+\faGithub\ \texttt{Poicitaco/XLA\_T3}\\
+Branch: \texttt{feature/cipher}\\
+\faServer\ Port \texttt{8000}
+\end{block}
+\end{columns}
+
+\vspace{0.5em}
+\begin{center}
+\large\textbf{\textcolor{primary}{Sẵn sàng trả lời câu hỏi!}}
+\end{center}
+\end{frame}
+
+\end{document}

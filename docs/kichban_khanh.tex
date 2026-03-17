@@ -1,0 +1,862 @@
+% ============================================================
+%  KICH BAN VIDEO CA NHAN --- KHANH
+%  Vai tro: Backend Architecture / API / Pipeline / Frontend + Ket luan toan bo de an
+%  Files: app_api.py (1893L) | run_phone_cam.py (1314L)
+%  Thoi luong muc tieu: 14-16 phut (có kết luận toàn đề án)
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{amsmath}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{NavyBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  frame=single, breaklines=true, showstringspaces=false,
+  tabsize=4, backgroundcolor=\color{gray!7},
+}
+
+\usepackage{titlesec}
+\titleformat{\section}[block]
+  {\large\bfseries\color{MidnightBlue!80!black}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}[block]
+  {\normalsize\bfseries\color{MidnightBlue!70!black}}{\thesubsection}{0.5em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}\fancyhf{}
+\lhead{\textcolor{MidnightBlue!80!black}{\textbf{Kịch Bản Video --- KHÁNH (Backend / API / Kết Luận)}}}
+\rhead{\textcolor{gray}{XLA Face Privacy System}}
+\cfoot{\thepage}
+\usepackage[hidelinks]{hyperref}
+
+%% ---- Environments ----
+\newtcolorbox{say}[1][]{
+  title={\faMicrophone\ \textbf{NÓI}},
+  colback=MidnightBlue!5, colframe=MidnightBlue!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{doact}[1][]{
+  title={\faMousePointer\ \textbf{THAO TÁC}},
+  colback=OliveGreen!5, colframe=OliveGreen!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{cam}[1][]{
+  title={\faVideo\ \textbf{CAMERA}},
+  colback=Goldenrod!8, colframe=Goldenrod!80,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{code}[2][]{
+  title={\faCode\ \textbf{CODE --- #2}},
+  colback=MidnightBlue!4, colframe=MidnightBlue!45,
+  fonttitle=\small\bfseries\color{MidnightBlue}, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{warn}[1][]{
+  title={\faExclamationTriangle\ \textbf{CHÚ Ý}},
+  colback=red!4, colframe=red!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{timing}[1]{
+  colback=MidnightBlue!8, colframe=MidnightBlue!60,
+  title={\faClock\ \textbf{#1}},
+  fonttitle=\small\bfseries\color{MidnightBlue!80!black}, left=4pt, right=4pt}
+
+\newcommand{\fpath}[1]{\texttt{\textcolor{purple}{#1}}}
+\newcommand{\lnum}[1]{\colorbox{yellow!40}{\texttt{\small dòng~#1}}}
+\newcommand{\pause}{\textcolor{gray}{\textit{[dừng 1 giây]}}}
+\newcommand{\camlook}{\textcolor{Goldenrod}{\textbf{[nhìn camera]}}}
+\newcommand{\screen}{\textcolor{OliveGreen}{\textbf{[nhìn màn hình]}}}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+\begin{titlepage}
+\centering\vspace*{1.5cm}
+{\Huge\bfseries\color{MidnightBlue!80!black} KỊCH BẢN VIDEO\par}
+\vspace{0.3cm}
+{\LARGE\bfseries\color{MidnightBlue!70!black} KHÁNH --- Backend API + Kết Luận Toàn Đề Án\par}
+\vspace{0.5cm}
+{\large\color{gray} XLA Face Privacy System --- Đồ Án Cuối Kỳ\par}
+\vspace{1.2cm}
+
+\begin{tcolorbox}[colback=MidnightBlue!6, colframe=MidnightBlue!80, width=0.9\textwidth]
+\centering\large
+\textbf{Em trực tiếp viết 2 files + đảm nhiệm phần kết luận toàn đề án:}\\[0.4cm]
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{llr}
+  \hline
+  \fpath{src/app\_api.py} & FastAPI Server: 40+ endpoints, Pipeline, Streaming & \textbf{1893 dòng} \\
+  \fpath{src/run\_phone\_cam.py} & FrameReader + Phone Camera Integration & \textbf{1314 dòng} \\
+  \hline
+  \multicolumn{2}{l}{\textbf{Tổng cộng}} & \textbf{3207 dòng} \\
+  \hline
+\end{tabular}\\[0.4cm]
+\textit{Đây là codebase lớn nhất trong nhóm.
+Khánh cũng là người trình bày cuối cùng --- kết luận toàn bộ đề án.}
+\end{tcolorbox}
+
+\vspace{0.8cm}
+\begin{tcolorbox}[colback=gray!6, colframe=gray!50, width=0.9\textwidth]
+\textbf{Thời lượng mục tiêu:} 14--16 phút\\[0.2cm]
+\textbf{Cần chuẩn bị:}
+Server \texttt{uvicorn} chạy cổng 8000 \textbullet{}
+VS Code mở \fpath{app\_api.py} + \fpath{run\_phone\_cam.py} \textbullet{}
+Browser mở \texttt{dashboard.html} + \texttt{face-registry.html} + \texttt{secure-archive.html} \textbullet{}
+Swagger UI: \texttt{localhost:8000/docs} \textbullet{}
+Camera kết nối
+\end{tcolorbox}
+
+\vspace{0.8cm}
+\begin{warn}
+\textbf{Lưu ý cho Khánh:}
+\fpath{app\_api.py} 1893 dòng --- không thể show hết. Chiến lược: show 5--6 điểm quan trọng và giải thích tại sao chúng quan trọng.
+Phần kết luận toàn đề án: chuẩn bị số liệu cụ thể (749+759+3207 dòng = 4725 dòng, etc.)
+\end{warn}
+
+\end{titlepage}
+
+\tableofcontents\newpage
+
+% ============================================================
+\section{CHUẨN BỊ TRƯỚC KHI BẤM REC}
+% ============================================================
+
+\begin{doact}
+\textbf{Bước 1 --- Khởi động server:}
+\begin{lstlisting}[language=bash, numbers=none]
+cd C:\Users\itent\Desktop\xla_demo
+.venv\Scripts\activate
+uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
+\end{lstlisting}
+Chờ thấy: \texttt{Application startup complete} trên terminal.
+\end{doact}
+
+\begin{doact}
+\textbf{Bước 2 --- VS Code:}
+Tab 1: \fpath{src/app\_api.py} (1893 dòng)\\
+Tab 2: \fpath{src/run\_phone\_cam.py} (1314 dòng)\\
+Font size 16--18.
+\end{doact}
+
+\begin{doact}
+\textbf{Bước 3 --- Browser (3 tab):}
+Tab 1: \texttt{http://localhost:8000/admin/dashboard.html}\\
+Tab 2: \texttt{http://localhost:8000/admin/face-registry.html}\\
+Tab 3: \texttt{http://localhost:8000/admin/secure-archive.html}\\
+Tab 4 (để Q\&A): \texttt{http://localhost:8000/docs} (Swagger auto-generated)
+\end{doact}
+
+\begin{cam}
+Camera ngang tầm mắt. Ánh sáng từ phía trước. Nói rõ ràng, xương sống thẳng.
+Video này kết thúc toàn bộ đề án --- tone tự tin, không vội vàng.
+\end{cam}
+
+\newpage
+% ============================================================
+\section{0:00--0:15 --- MỞ ĐẦU}
+% ============================================================
+
+\begin{timing}{0:00 -- 0:15}
+Nhìn camera, mở đầu.
+\end{timing}
+
+\begin{say}
+``Xin chào thầy cô. Em là Khánh.
+
+Em phụ trách phần \textbf{Backend API và hệ thống Pipeline xử lý video real-time}.
+Video này em trình bày 2 files em viết,
+sau đó kết luận toàn bộ đề án của nhóm.''
+\end{say}
+
+% ============================================================
+\section{0:15--1:30 --- GIỚI THIỆU ĐÓNG GÓP}
+% ============================================================
+
+\begin{doact}
+Hover chuột qua từng tab file khi nói.
+\end{doact}
+
+\begin{say}
+``Em viết 2 files lớn nhất trong đề án:
+
+\textbf{app\_api.py} --- 1893 dòng.
+Đây là trung tâm của toàn hệ thống --- FastAPI server.
+40+ HTTP endpoints, WebSocket, MJPEG stream, pipeline orchestration.
+Mọi thứ Đạt và Khoa viết đều được gọi thông qua server này.
+
+\textbf{run\_phone\_cam.py} --- 1314 dòng.
+Trong file này có class \texttt{FrameReader} --- thread đọc camera non-blocking.
+Cũng có pipeline xử lý khi chạy từ command line.
+
+Tổng cộng 3207 dòng --- nhiều nhất nhóm.
+
+Em sẽ chỉ rõ 6 điểm quan trọng nhất:
+Admin authentication, PipelineSession class, FrameReader,
+main processing loop, streaming, và CRUD endpoints.''
+\end{say}
+
+% ============================================================
+\section{1:30--3:00 --- APP\_API.PY --- ADMIN AUTHENTICATION}
+% ============================================================
+
+\begin{timing}{1:30 -- 3:00}
+Chuyển sang \fpath{src/app\_api.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{app\_api.py}.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{394}, Enter.
+\end{doact}
+
+\begin{say}
+``Điểm đầu tiên: \textbf{Admin Authentication flow}.
+
+\fpath{app\_api.py} không tự xử lý password --- nó delegate hết cho \fpath{admin\_auth.py} của Đạt.
+Nhưng em viết phần JWT token và middleware protect endpoints.''
+\end{say}
+
+\begin{code}{app\_api.py dòng 394--448 --- Admin auth: token + middleware}
+\begin{lstlisting}[language=Python, firstnumber=394]
+def _issue_admin_token() -> str:          # dong 394
+    """Issue a short-lived admin JWT (no library)."""
+    payload = {
+        "sub": "admin",
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 3600,   # 1 hour
+    }
+    token_b = json.dumps(payload).encode()
+    return base64.urlsafe_b64encode(token_b).decode()
+
+def _verify_admin_token(token: str) -> bool:   # dong 408
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(token))
+        return (payload.get("sub") == "admin" and
+                time.time() < payload.get("exp", 0))
+    except Exception:
+        return False
+
+async def _require_admin_auth(           # dong 426: middleware
+    request: Request,
+    x_admin_token: Optional[str] =
+        Header(None, alias="X-Admin-Token"),
+) -> None:
+    if x_admin_token and _verify_admin_token(x_admin_token):
+        return
+    # Also check cookie
+    cookie_tok = request.cookies.get("admin_token", "")
+    if cookie_tok and _verify_admin_token(cookie_tok):
+        return
+    raise HTTPException(status_code=401,
+                        detail="Admin authentication required")
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 394}: \texttt{\_issue\_admin\_token} tạo token JSON base64.
+Token chứa: sub="admin", thời điểm tạo, thời điểm hết hạn (1 tiếng).
+
+\textbf{Dòng 408}: \texttt{\_verify\_admin\_token} decode base64, parse JSON,
+verify sub="admin" và chưa expired.
+
+\textbf{Dòng 426}: \texttt{\_require\_admin\_auth} là dependency FastAPI.
+Mọi endpoint cần quyền admin đều khai báo \texttt{Depends(\_require\_admin\_auth)}.
+Kiểm tra header \texttt{X-Admin-Token} hoặc cookie \texttt{admin\_token}.
+Nếu cả hai đều fail: HTTP 401.
+
+Điểm quan trọng: chỉ sau khi Đạt's \texttt{verify\_admin} trong \fpath{admin\_auth.py}
+trả True em mới gọi \texttt{\_issue\_admin\_token} ở dòng 394.
+Không có password đúng $\to$ không có token $\to$ không qua middleware dòng 426.''
+\end{say}
+
+% ============================================================
+\section{3:00--6:00 --- PIPELINESESSION CLASS --- LIVE VIDEO PIPELINE}
+% ============================================================
+
+\begin{timing}{3:00 -- 6:00}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{512}, Enter.
+\end{timing}
+
+\begin{say}
+``Điểm thứ hai và quan trọng nhất: class \texttt{PipelineSession}.''
+\end{say}
+
+\subsection{3:00--4:30 --- PipelineSession \_\_init\_\_, start, stop, patch\_config}
+
+\begin{code}{app\_api.py dòng 512--590 --- PipelineSession: pipeline lifecycle management}
+\begin{lstlisting}[language=Python, firstnumber=512]
+class PipelineSession:
+    """
+    Manages one live video pipeline: camera -> detect -> anonymize ->
+    stream. One instance per active pipeline.
+    """
+
+    def __init__(self, camera_index: int,
+                 preset_name: str = "balanced") -> None:  # dong 515
+        self.camera_index = camera_index
+        self.preset_name  = preset_name
+        self.stop_event   = threading.Event()
+        self.cfg_lock     = threading.Lock()
+        self.live_cfg     = _LiveConfig(preset_name=preset_name)
+        self._thread: Optional[threading.Thread] = None
+        self.frame_buffer = _FrameBuffer()        # output buffer
+
+    def start(self) -> None:                      # dong 571
+        self.stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:                       # dong 575
+        self.stop_event.set()                     # signal stop
+        if self._thread:
+            self._thread.join(timeout=10.0)       # wait graceful shutdown
+
+    def is_alive(self) -> bool:                   # dong 580
+        return (self._thread is not None and
+                self._thread.is_alive())
+
+    def patch_config(self,                        # dong 583
+                     patch: Dict[str, Any]) -> None:
+        with self.cfg_lock:                       # dong 585: atomic
+            for key, value in patch.items():
+                setattr(self.live_cfg, key, value)# dong 587: hot-reload
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 515}: \texttt{\_\_init\_\_} nhận camera index và preset name.
+\texttt{stop\_event} là threading.Event --- cờ hiệu để dừng pipeline.
+\texttt{cfg\_lock} là Lock để protect live config khi hot-reload.
+
+\textbf{Dòng 571}: \texttt{start()} tạo thread daemon, gọi \texttt{self.\_run()}.
+Daemon thread: tự chết khi main process chết --- không leak process.
+
+\textbf{Dòng 575}: \texttt{stop()} --- hai bước quan trọng:
+Dòng 577: \texttt{stop\_event.set()} --- set cờ.
+Thread \texttt{\_run()} kiểm tra cờ này ở cuối mỗi vòng loop và tự thoát.
+Dòng 578: \texttt{join(timeout=10.0)} --- chờ tối đa 10 giây để thread thoát gracefully.
+Timeout để không block mãi mãi nếu thread bị stuck.
+
+\textbf{Dòng 583--587}: \texttt{patch\_config} --- hot-reload config không restart pipeline.
+Client frontend gửi PATCH /pipeline/config.
+\texttt{with self.cfg\_lock}: đảm bảo atomic --- thread pipeline không đọc config lúc đang write.
+\texttt{setattr}: thay đổi key-value bất kỳ trong \texttt{live\_cfg}.
+Ví dụ: đổi từ balanced sang strong, hoặc đổi detect\_every từ 2 sang 1.
+Pipeline đang chạy nhận config mới ngay frame tiếp theo --- không cần restart.''
+\end{say}
+
+\subsection{4:30--6:00 --- \_run: processing loop (dòng 636--750)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{636}, Enter.
+\end{doact}
+
+\begin{code}{app\_api.py dòng 636--752 --- \_run(): main processing loop}
+\begin{lstlisting}[language=Python, firstnumber=636]
+def _run(self) -> None:
+    """Main pipeline loop running in background thread."""
+    cam_idx  = self.camera_index
+    cap      = cv2.VideoCapture(cam_idx)     # dong 639
+
+    # --- Khoi dong 3 module tu cac file khac ---
+    detector   = FaceDetector(               # dong 674: tu Khoa
+        model_path=MODEL_PATH,
+        conf_threshold=cfg.conf_threshold,
+        iou_threshold=cfg.iou_threshold,
+        imgsz=cfg.imgsz)
+    db         = FamilyDatabase(             # dong 688: tu Khoa
+        db_path=str(_P("data/family_members.json")))
+    recognizer = FaceRecognizer(             # dong 692: tu Khoa
+        model=cfg.recognition_model)
+
+    frame_reader = FrameReader(cap)          # dong 711: tu run_phone_cam.py
+    frame_reader.start()                     # dong 712: thread start
+
+    frame_idx = 0
+
+    while not self.stop_event.is_set():      # dong 738: loop cho den khi stop
+        ok, frame = frame_reader.read()      # dong 739: non-blocking read
+        if not ok:
+            time.sleep(0.04)
+            continue
+        frame_idx += 1
+
+        if frame_idx % cfg.detect_every == 0:  # dong 750: YOLO every N frames
+            boxes_scores = detector.detect_faces_with_scores(frame)
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 639}: \texttt{cv2.VideoCapture(cam\_idx)} mở kết nối camera.
+
+\textbf{Dòng 674}: \texttt{FaceDetector} của Khoa. Khởi động một lần, tái dùng mãi mãi.
+\textbf{Dòng 688}: \texttt{FamilyDatabase} của Khoa. Load JSON từ disk vào RAM.
+\textbf{Dòng 692}: \texttt{FaceRecognizer} của Khoa. Load InsightFace buffalo\_l model.
+
+Ba module này \textbf{em không viết} --- em chỉ orchestrate chúng ở đây.
+Đây là Separation of Concerns: Khoa viết class riêng, em gọi từ pipeline.
+
+\textbf{Dòng 711--712}: \texttt{FrameReader(cap)} và \texttt{start()} --- khởi động thread đọc frame.
+\texttt{FrameReader} em giải thích ngay sau.
+
+\textbf{Dòng 738}: \texttt{while not self.stop\_event.is\_set()} --- loop tới khi \texttt{stop()} gọi.
+
+\textbf{Dòng 750}: \texttt{frame\_idx \% cfg.detect\_every == 0} --- chỉ chạy YOLO mỗi N frame.
+\texttt{detect\_every=2} (preset balanced): YOLO chạy 15fps, display vẫn 30fps.
+Tiết kiệm 50\% CPU cho YOLO --- box cũ vẫn apply cho frame bỏ qua.''
+\end{say}
+
+% ============================================================
+\section{6:00--7:30 --- RUN\_PHONE\_CAM.PY --- FRAMEREADER}
+% ============================================================
+
+\begin{timing}{6:00 -- 7:30}
+Chuyển sang tab \fpath{src/run\_phone\_cam.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{run\_phone\_cam.py}.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{327}, Enter.
+\end{doact}
+
+\begin{say}
+``Điểm thứ ba: \texttt{FrameReader} class --- tại sao cần một thread riêng để đọc camera?''
+\end{say}
+
+\begin{code}{run\_phone\_cam.py dòng 327--382 --- FrameReader: non-blocking camera reader}
+\begin{lstlisting}[language=Python, firstnumber=327]
+class FrameReader(threading.Thread):
+    """
+    Dedicated thread to drain frames from VideoCapture.
+    Keeps queue size = 1 so pipeline always gets THE LATEST frame,
+    not a stale one from 500ms ago.
+    """
+
+    def __init__(self, cap: cv2.VideoCapture) -> None:
+        super().__init__(daemon=True)              # dong 331
+        self.cap     = cap
+        self.queue: Queue = Queue(maxsize=1)       # dong 332: chi 1 slot
+        self.running = True
+
+    def run(self) -> None:                        # dong 338
+        while self.running:
+            ok, frame = self.cap.read()           # dong 341: blocking
+            if not ok:
+                time.sleep(0.02)
+                continue
+            # Drop-stale pattern: loai bo frame cu neu queue day
+            if self.queue.full():                 # dong 365
+                try:
+                    self.queue.get_nowait()       # dong 366: bỏ frame cu
+                except Empty:
+                    pass
+            try:
+                self.queue.put_nowait(frame)      # dong 369: push moi nhat
+            except Full:
+                pass
+
+    def read(self, timeout: float = 0.6):         # dong 376
+        try:
+            return True, self.queue.get(          # dong 378
+                timeout=timeout)
+        except Empty:
+            return False, None                    # dong 380
+
+    def stop(self) -> None:                       # dong 382
+        self.running = False
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Vấn đề nếu không có FrameReader:}
+\texttt{cv2.VideoCapture.read()} là blocking call --- nó block thread cho tới khi camera có frame.
+Nếu pipeline đang xử lý (YOLO + anonymize) mất 80ms,
+\texttt{cap.read()} trong cùng thread phải chờ.
+Trong 80ms đó camera có 2--3 frame mới --- tất cả bị drop trong OpenCV buffer.
+Khi \texttt{cap.read()} tiếp theo: trả về frame từ 80ms trước --- \textbf{stale}.
+Stream nhìn như lag.
+
+\textbf{Giải pháp --- FrameReader:}
+\textbf{Dòng 327}: inherit \texttt{threading.Thread}.
+\textbf{Dòng 331}: \texttt{daemon=True} --- tự chết khi process chết.
+\textbf{Dòng 332}: \texttt{Queue(maxsize=1)} --- chỉ 1 slot.
+Không phải 30 slot (framerate buffer) --- chỉ 1.
+
+\textbf{Dòng 341}: \texttt{cap.read()} chạy trong thread riêng.
+Nó block --- nhưng không ảnh hưởng pipeline thread.
+
+\textbf{Dòng 365--369}: đây là \textbf{drop-stale pattern}:
+Nếu queue đã đầy (có frame chưa được lấy):
+Bỏ frame cũ đó đi (dòng 366).
+Đẩy frame mới vào (dòng 369).
+Kết quả: queue luôn chứa frame \textbf{mới nhất}, không phải frame cũ.
+
+\textbf{Dòng 376}: pipeline gọi \texttt{frame\_reader.read(timeout=0.6)}.
+Nếu trong 0.6s không có frame (camera disconnect): trả False.
+Không block pipeline mãi mãi.''
+\end{say}
+
+% ============================================================
+\section{7:30--9:30 --- STREAMING ENDPOINTS}
+% ============================================================
+
+\begin{timing}{7:30 -- 9:30}
+Quay về tab \fpath{app\_api.py}.
+\end{timing}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{1540}, Enter.
+\end{doact}
+
+\begin{say}
+``Điểm thứ tư: làm sao browser nhận video real-time từ server?
+Ba protocol: MJPEG, SSE, WebSocket.''
+\end{say}
+
+\subsection{7:30--8:15 --- MJPEG Stream (dòng 1540--1572)}
+
+\begin{code}{app\_api.py dòng 1540--1572 --- GET /stream/mjpeg: MJPEG multipart stream}
+\begin{lstlisting}[language=Python, firstnumber=1540]
+@app.get("/stream/mjpeg")
+async def stream_mjpeg(
+    session_id: Optional[str] = None,
+    ...
+) -> StreamingResponse:
+
+    async def generate():
+        while True:
+            frame_data = await asyncio.get_event_loop(
+            ).run_in_executor(None,
+                session.frame_buffer.get, 0.5)  # dong 1553: get frame
+
+            if frame_data is None:
+                await asyncio.sleep(0.04)        # dong 1555: 25fps cap
+                continue
+
+            # MJPEG boundary format: RFC 2046 multipart
+            yield (b"--frame\r\n"                # dong 1560: boundary
+                   b"Content-Type: image/jpeg\r\n\r\n"
+                   + frame_data + b"\r\n")
+            await asyncio.sleep(0.04)            # dong 1563: 25fps
+
+    return StreamingResponse(
+        generate(),
+        media_type="multipart/x-mixed-replace"  # dong 1567
+                   ";boundary=frame",
+    )
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``MJPEG là cách đơn giản nhất để stream video qua HTTP.
+
+\textbf{Dòng 1560}: \texttt{--frame\textbackslash r\textbackslash n} là boundary separator.
+Server gửi sequence: [boundary][header][jpeg bytes][boundary][header][jpeg bytes]...
+Browser <img> tag decode từng JPEG liên tiếp --- thành video.
+
+\textbf{Dòng 1555, 1563}: \texttt{asyncio.sleep(0.04)} = 25fps cap.
+Tại sao 25fps chứ không 30? Camera 30fps, pipeline xử lý $\approx$25fps.
+Cap ở 25 tránh buffer overflow.
+
+\textbf{Tại sao không WebSocket luôn?}
+MJPEG với \texttt{<img>} tag không cần JS --- works với \texttt{<img src="/stream/mjpeg">}.
+Lowest latency setup. WebSocket cần JS to rebuild frames.''
+\end{say}
+
+\subsection{8:15--9:30 --- SSE và WebSocket (dòng 1581, 1620)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{1581}, Enter. Đọc 5 giây. Nhấn \texttt{Ctrl+G}, gõ \textbf{1620}, Enter.
+\end{doact}
+
+\begin{say}
+``\textbf{Dòng 1581}: \texttt{GET /stream/sse} --- Server-Sent Events.
+Thay vì stream JPEG bytes, stream JSON metadata: bao nhiêu khuôn mặt, tên ai đã nhận ra, thống kê.
+Frontend dùng để update số liệu dashboard mà không cần reload.
+
+\textbf{Dòng 1620}: \texttt{@app.websocket("/stream/ws")} --- WebSocket.
+Dùng khi client muốn bidirectional: subscribe stream và đồng thời gửi lệnh.
+Ví dụ: đang stream, client gửi \texttt{\{"action":"unlock","member\_id":"dat"\}}.
+Server nhận, unlock track đó ngay, stream tiếp.
+
+Ba protocol cover mọi use case: MJPEG cho display đơn giản, SSE cho metadata, WebSocket cho control.''
+\end{say}
+
+% ============================================================
+\section{9:30--11:00 --- CRUD ENDPOINTS (bảng tổng hợp)}
+% ============================================================
+
+\begin{timing}{9:30 -- 11:00}
+Mở \texttt{localhost:8000/docs} trên browser --- Swagger UI.
+\end{timing}
+
+\begin{say}
+``Điểm thứ năm: tổ chức endpoint.
+
+Em gom 40+ endpoint thành groups rõ ràng.
+Mở Swagger để thấy full list.''
+\end{say}
+
+\begin{doact}
+Chuyển sang browser tab Swagger UI (\texttt{localhost:8000/docs}).
+Scroll qua các group endpoint.
+\end{doact}
+
+\begin{tcolorbox}[colback=MidnightBlue!4, colframe=MidnightBlue!60, breakable,
+  title={\faTable\ \textbf{Tổng hợp endpoints chính (trích dẫn dòng)}}]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{lllX}
+\toprule
+Method & Endpoint & Dòng (app\_api.py) & Mục đích \\
+\midrule
+GET  & /health          & 968  & Kiểm tra server alive \\
+GET  & /presets         & 988  & Trả PRESETS dict của Đạt \\
+POST & /anonymize       & 1010 & Ẩn danh 1 ảnh tĩnh (no pipeline) \\
+POST & /lock            & 1035 & Lock track khỏi whitelist \\
+POST & /unlock          & 1074 & Unlock track về whitelist \\
+POST & /recognize       & 1102 & Nhận dạng 1 ảnh tĩnh \\
+\midrule
+GET  & /members         & 1261 & Danh sách thành viên đã đăng ký \\
+POST & /members         & 1305 & Đăng ký thành viên mới \\
+PATCH & /members/\{id\} & 1375 & Cập nhật thông tin / thêm embedding \\
+DELETE & /members/\{id\} & 1408 & Xoá thành viên \\
+\midrule
+POST & /pipeline/start  & 1432 & Khởi động PipelineSession (dòng 512) \\
+DELETE & /pipeline/stop & 1458 & Dừng pipeline, join thread (dòng 575) \\
+GET  & /pipeline/status & 1474 & Trạng thái: alive/stopped, frame count \\
+PATCH & /pipeline/config & 1488 & Hot-reload config (gọi patch\_config dòng 583) \\
+\midrule
+GET  & /stream/mjpeg    & 1540 & MJPEG stream (25fps) \\
+GET  & /stream/sse      & 1581 & SSE metadata stream \\
+WS   & /stream/ws       & 1620 & WebSocket bidirectional \\
+\midrule
+POST & /admin/setup     & 1707 & Tạo admin lần đầu (delegate sang Đạt auth) \\
+POST & /admin/verify    & 1725 & Login admin, issue JWT token \\
+\midrule
+GET  & /clips           & 1763 & Danh sách clips đã ghi \\
+GET  & /clips/\{id\}/video & 1792 & Download clip (raw, không decrypt) \\
+POST & /clips/\{id\}/decrypt & 1835 & Decrypt clip với password \\
+DELETE & /clips/\{id\} & 1876 & Xoá một clip \\
+DELETE & /clips          & 1884 & Xoá tất cả clips \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\begin{say}
+``Mỗi endpoint em sẽ chỉ một ví dụ quan trọng: \textbf{PATCH /pipeline/config}.''
+\end{say}
+
+\begin{doact}
+Quay về VS Code, \texttt{Ctrl+G}, gõ \textbf{1488}, Enter.
+\end{doact}
+
+\begin{code}{app\_api.py dòng 1488--1504 --- PATCH /pipeline/config: hot-reload runtime}
+\begin{lstlisting}[language=Python, firstnumber=1488]
+@app.patch("/pipeline/config",
+           dependencies=[Depends(_require_admin_auth)])  # dong 1489: auth
+async def patch_pipeline_config(
+    patch: Dict[str, Any],
+    session_id: Optional[str] = None,
+) -> dict:
+    session = _get_session(session_id)
+    if session is None:
+        raise HTTPException(404, "No active pipeline")
+
+    allowed = {"preset_name", "detect_every",    # dong 1498: whitelist
+               "blur_scale", "pixel_block",
+               "head_ratio", "anonymize"}
+    for key in patch:
+        if key not in allowed:
+            raise HTTPException(400, f"Unknown key: {key}")
+    session.patch_config(patch)                  # dong 1504: atomic update
+    return {"status": "ok", "applied": patch}
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 1489}: \texttt{Depends(\_require\_admin\_auth)} --- admin only.
+\textbf{Dòng 1498}: whitelist các keys được phép patch.
+Tránh client truyền arbitrary attributes vào config object --- injection prevention.
+\textbf{Dòng 1504}: gọi \texttt{session.patch\_config(patch)} --- atomic update dòng 583.
+Response trả lại chính xác những gì đã apply --- cho client confirm.''
+\end{say}
+
+% ============================================================
+\section{11:00--12:30 --- DEMO LIVE --- FRONTEND TOUR}
+% ============================================================
+
+\begin{timing}{11:00 -- 12:30}
+Chứng minh toàn bộ stack hoạt động end-to-end.
+\end{timing}
+
+\begin{doact}
+Mở browser tab 1: \texttt{http://localhost:8000/admin/dashboard.html}.
+\end{doact}
+
+\begin{say}
+``Demo nhanh 3 trang.''
+\end{say}
+
+\begin{doact}
+\textbf{Demo 1 --- Dashboard (dòng 1432, 1488, 1540):}\\
+1. Click ``Start Pipeline'' $\to$ POST /pipeline/start dòng 1432 $\to$ PipelineSession.start() dòng 571.\\
+2. Video stream hiện ra $\to$ MJPEG từ /stream/mjpeg dòng 1540.\\
+3. Dropdown đổi preset ``strong'' $\to$ PATCH /pipeline/config dòng 1488 $\to$ patch\_config dòng 583.\\
+4. Thấy blur mode thay đổi ngay không restart.\\
+Nói: ``Hot-reload, không cần restart pipeline.''
+\end{doact}
+
+\begin{doact}
+\textbf{Demo 2 --- Face Registry (dòng 1305, 1261):}\\
+Chuyển sang tab face-registry.html.\\
+Thấy danh sách thành viên $\to$ GET /members dòng 1261.\\
+Nói: ``Đây là database của Khoa's family\_database.py được expose qua endpoint của em.''
+\end{doact}
+
+\begin{doact}
+\textbf{Demo 3 --- Secure Archive (dòng 1763, 1835):}\\
+Chuyển sang tab secure-archive.html.\\
+Danh sách encrypted clips $\to$ GET /clips dòng 1763.\\
+Bấm decrypt trên một clip, nhập password $\to$ POST /clips/\{id\}/decrypt dòng 1835.\\
+Nói: ``Clip được encrypt bởi Đạt's clip\_recorder.py AES-256-GCM. Endpoint này gọi decrypt\_clip() của Đạt.''
+\end{doact}
+
+% ============================================================
+\section{12:30--15:00 --- KẾT LUẬN TOÀN ĐỀ ÁN}
+% ============================================================
+
+\begin{timing}{12:30 -- 15:00}
+QUAN TRỌNG NHẤT. Nhìn camera. Nói chậm, rõ. Đây là phần kết thúc toàn bộ đề án.
+\end{timing}
+
+\begin{say}
+``Em là người trình bày cuối --- vậy em xin kết luận toàn bộ đề án.
+
+\textbf{Ba thành viên, ba lớp trong pipeline:}
+
+Đạt viết \textbf{lớp Privacy và Security}:
+\fpath{privacy.py} 8 thuật toán ẩn danh,
+\fpath{anonymizer\_backend.py} 4 preset cấu hình,
+\fpath{clip\_recorder.py} AES-256-GCM encrypted storage,
+\fpath{admin\_auth.py} PBKDF2 390.000 iterations + timing-safe compare.
+Tổng 749 dòng.
+
+Khoa viết \textbf{lớp Detection và Recognition}:
+\fpath{detector.py} YOLOv11n-face,
+\fpath{face\_recognition.py} InsightFace buffalo\_l embedding 512-dim,
+\fpath{family\_database.py} vectorized cosine matching,
+\fpath{bbox\_smoother.py} EMA tracking.
+Tổng 759 dòng.
+
+Em viết \textbf{lớp Orchestration và API}:
+\fpath{app\_api.py} 40+ endpoints, PipelineSession, JWT middleware,
+3 streaming protocol, hot-reload config,
+\fpath{run\_phone\_cam.py} FrameReader non-blocking drop-stale pattern.
+Tổng 3207 dòng.
+
+\textbf{Tổng toàn đề án: $749 + 759 + 3207 = 4715$ dòng code.}
+
+\pause\ \camlook\
+
+\textbf{Ba quyết định thiết kế quan trọng nhất:}
+
+Thứ nhất: \textbf{Privacy by Design}.
+Không có option ``nhận diện trước, quyết định blur sau''.
+Mọi khuôn mặt detect được đều bị xử lý ngay.
+Whitelist (thành viên gia đình) là exception, không phải default.
+
+Thứ hai: \textbf{Separation of Concerns}.
+Privacy logic ở \fpath{privacy.py}. Detection ở \fpath{detector.py}.
+Recognition ở \fpath{family\_database.py}. Orchestration ở \fpath{app\_api.py}.
+Mỗi file có thể test, thay thế, nâng cấp độc lập.
+Ví dụ: thay YOLOv11 bằng YOLOv12 $\to$ chỉ sửa \fpath{detector.py}, pipeline không đổi.
+
+Thứ ba: \textbf{Security theo chuẩn OWASP}.
+Không hardcode credentials. PBKDF2 390.000 iterations chống brute-force.
+AES-256-GCM với salt ngẫu nhiên mỗi clip.
+Timing-safe compare chống timing attack.
+JWT check trên mọi admin endpoint.
+
+\pause\ \camlook\
+
+\textbf{Hạn chế và hướng phát triển:}
+
+Hạn chế: buffalo\_l model 500MB --- cold start chậm.
+InsightFace chạy CPU: 50--80ms/inference, nếu nhiều người trong frame đồng thời có thể lag.
+Chưa có caching embedding thực sự nhanh (FAISS, Annoy).
+
+Hướng phát triển:
+Thay InsightFace bằng model nhỏ hơn cho edge device.
+Thêm FAISS index cho database lớn hơn.
+Certificate-based auth thay JWT base64 đơn giản.
+
+\pause\ \camlook\
+
+Đây là toàn bộ đề án XLA Face Privacy System.
+Cảm ơn thầy cô đã theo dõi.''
+\end{say}
+
+% ============================================================
+\section{PHỤ LỤC --- CÂU HỎI DỰ KIẾN CHO KHÁNH}
+% ============================================================
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue!70, breakable,
+  title={\textbf{Q: Tại sao FastAPI chứ không Flask hay Django?}}]
+``FastAPI: async-native --- quan trọng cho streaming (MJPEG, SSE, WebSocket) cùng lúc nhiều client.
+Flask: sync mặc định, streaming phải dùng monkey-patch.
+Django: too heavy cho task này, ORM không cần thiết.
+FastAPI auto-generate Swagger UI từ Python type hints --- zero effort documentation.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue!70, breakable,
+  title={\textbf{Q: JWT token base64 không phải signed --- có an toàn không?}}]
+``Đúng --- đây là điểm hạn chế của implementation hiện tại.
+Token chỉ base64 encode, không sign bằng secret key.
+Ai decode được token có thể forge token hết hạn $\to$ đặt exp tương lai.
+Trong phạm vi đề án nội bộ (LAN, không expose internet) chấp nhận được.
+Production: dùng PyJWT với HS256 secret, thêm refresh token.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue!70, breakable,
+  title={\textbf{Q: detect\_every=2 có làm miss khuôn mặt không?}}]
+``Không miss --- YOLO chạy lần 2, box kết quả apply cho cả frame 1 và frame 2.
+Frame lẻ dùng box từ lần detect trước kết hợp BBoxSmoother của Khoa.
+Người di chuyển ở 30fps: 2 frame = 66ms.
+Ở 66ms người di chuyển $\approx$3--5cm --- box prediction vẫn valid.
+Nếu cần accuracy cao hơn: set detect\_every=1 qua PATCH /pipeline/config.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue!70, breakable,
+  title={\textbf{Q: FrameReader Queue(maxsize=1) có bị mất frame clip không?}}]
+``FrameReader phục vụ \textbf{live display} --- chỉ cần frame mới nhất.
+ClipRecorder (của Đạt, dòng 248) có queue riêng, maxsize=300 (10s x 30fps).
+Two separate queues: FrameReader queue for display (latest), ClipRecorder queue for recording (all frames).
+Không dùng chung queue $\to$ không conflict.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=MidnightBlue!70, breakable,
+  title={\textbf{Q: Làm sao chạy thực tế? Cần GPU không?}}]
+``Không cần GPU.
+YOLOv11n-face trên CPU Intel i5 gen 10: $\approx$25--30ms/frame.
+InsightFace buffalo\_l CPU: $\approx$50--80ms/frame.
+Tổng pipeline latency: 80--120ms end-to-end.
+Display lag $\approx$0.1s --- mắt thường không nhận ra.
+Máy yếu hơn: tăng detect\_every lên 3--4, giảm imgsz xuống 416.''
+\end{tcolorbox}
+
+\end{document}

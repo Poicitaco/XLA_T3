@@ -1,0 +1,20 @@
+\babel@toc {vietnamese}{}\relax 
+\contentsline {section}{\numberline {1}CHUẨN BỊ TRƯỚC KHI BẤM REC}{2}{section.1}%
+\contentsline {section}{\numberline {2}0:00--0:15 --- MỞ ĐẦU}{3}{section.2}%
+\contentsline {section}{\numberline {3}0:15--1:30 --- GIỚI THIỆU ĐÓNG GÓP}{3}{section.3}%
+\contentsline {section}{\numberline {4}1:30--4:30 --- DETECTOR.PY --- YOLOV11N-FACE}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}1:30--2:45 --- \_\_init\_\_ và 3 tham số quan trọng (dòng 13--43)}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}2:45--4:30 --- detect\_faces\_with\_scores (dòng 89--135)}{5}{subsection.4.2}%
+\contentsline {section}{\numberline {5}4:30--7:00 --- FACE\_RECOGNITION.PY --- INSIGHTFACE}{6}{section.5}%
+\contentsline {subsection}{\numberline {5.1}4:30--5:45 --- FaceRecognizer \_\_init\_\_ và cosine\_similarity (dòng 10--24)}{6}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}5:45--7:00 --- extract\_embeddings\_from\_frame (dòng 26--56)}{7}{subsection.5.2}%
+\contentsline {section}{\numberline {6}7:00--10:00 --- FAMILY\_DATABASE.PY --- VECTORIZED MATCHING}{8}{section.6}%
+\contentsline {subsection}{\numberline {6.1}7:00--7:45 --- FamilyMember dataclass (dòng 17--21)}{8}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}7:45--8:45 --- \_rebuild\_index (dòng 101--128)}{9}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}8:45--10:00 --- match() vectorized (dòng 139--168) --- QUAN TRỌNG NHẤT}{10}{subsection.6.3}%
+\contentsline {section}{\numberline {7}10:00--12:00 --- BBOX\_SMOOTHER.PY --- EMA TRACKING}{11}{section.7}%
+\contentsline {subsection}{\numberline {7.1}10:00--10:45 --- BBoxSmoother \_\_init\_\_ (dòng 24--49)}{11}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}10:45--12:00 --- \_ema\_smooth (dòng 115--132)}{12}{subsection.7.2}%
+\contentsline {section}{\numberline {8}12:00--13:30 --- DEMO LIVE}{13}{section.8}%
+\contentsline {section}{\numberline {9}13:30--14:00 --- KẾT THÚC VIDEO}{14}{section.9}%
+\contentsline {section}{\numberline {10}PHỤ LỤC --- CÂU HỎI DỰ KIẾN}{14}{section.10}%

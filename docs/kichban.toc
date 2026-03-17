@@ -1,0 +1,29 @@
+\babel@toc {vietnamese}{}\relax 
+\contentsline {section}{\numberline {1}Tổng Quan Kịch Bản \hfill \colorbox {NavyBlue!20}{\texttt {\small 0:00 – 30:00}}}{2}{section.1}%
+\contentsline {section}{\numberline {2}Phần 1 — Đạt: Mở Đầu và Kiến Trúc \hfill \colorbox {NavyBlue!20}{\texttt {\small 0:00 – 6:00}}}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Đặt vấn đề \hfill \colorbox {NavyBlue!20}{\texttt {\small 0:00 – 1:30}}}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Giới thiệu hai tầng bảo vệ \hfill \colorbox {NavyBlue!20}{\texttt {\small 1:30 – 3:00}}}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Kiến trúc tổng thể \hfill \colorbox {NavyBlue!20}{\texttt {\small 3:00 – 5:00}}}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Chuyển sang Khoa \hfill \colorbox {NavyBlue!20}{\texttt {\small 5:30 – 6:00}}}{3}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Phần 2 — Khoa: YOLO + InsightFace + Face Registry \hfill \colorbox {NavyBlue!20}{\texttt {\small 6:00 – 12:00}}}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}YOLOv11 Face Detection \hfill \colorbox {NavyBlue!20}{\texttt {\small 6:00 – 8:00}}}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}InsightFace Embedding \hfill \colorbox {NavyBlue!20}{\texttt {\small 8:00 – 10:00}}}{5}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Face Registry Demo \hfill \colorbox {NavyBlue!20}{\texttt {\small 10:00 – 12:00}}}{6}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Phần 3 — Khánh: Backend API + Live Pipeline \hfill \colorbox {NavyBlue!20}{\texttt {\small 12:00 – 18:00}}}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}FastAPI Architecture \hfill \colorbox {NavyBlue!20}{\texttt {\small 12:00 – 14:00}}}{7}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Live Pipeline Architecture \hfill \colorbox {NavyBlue!20}{\texttt {\small 14:00 – 16:00}}}{8}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Hot-reload Config \hfill \colorbox {NavyBlue!20}{\texttt {\small 16:00 – 17:30}}}{9}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Chuyển sang Đạt \hfill \colorbox {NavyBlue!20}{\texttt {\small 17:30 – 18:00}}}{9}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Phần 4 — Đạt: Security Layer \hfill \colorbox {NavyBlue!20}{\texttt {\small 18:00 – 25:00}}}{10}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Tại sao cần mã hóa? \hfill \colorbox {NavyBlue!20}{\texttt {\small 18:00 – 19:30}}}{10}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}AES-256-GCM Encryption \hfill \colorbox {NavyBlue!20}{\texttt {\small 19:30 – 21:30}}}{10}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}PBKDF2-SHA256 Key Derivation \hfill \colorbox {NavyBlue!20}{\texttt {\small 21:30 – 23:00}}}{11}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Constant-Time Comparison \hfill \colorbox {NavyBlue!20}{\texttt {\small 23:00 – 23:45}}}{12}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Blur Engine --- 7 Privacy Modes \hfill \colorbox {NavyBlue!20}{\texttt {\small 23:45 – 24:30}}}{13}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Demo Decrypt trên Secure Archive \hfill \colorbox {NavyBlue!20}{\texttt {\small 24:30 – 25:00}}}{14}{subsection.5.6}%
+\contentsline {section}{\numberline {6}Phần 5 — Demo End-to-End + Q\&A \hfill \colorbox {NavyBlue!20}{\texttt {\small 25:00 – 30:00}}}{14}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Demo end-to-end hoàn chỉnh \hfill \colorbox {NavyBlue!20}{\texttt {\small 25:00 – 27:30}}}{14}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Privacy Modes Showcase \hfill \colorbox {NavyBlue!20}{\texttt {\small 27:30 – 29:00}}}{16}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Kết luận \hfill \colorbox {NavyBlue!20}{\texttt {\small 29:00 – 30:00}}}{16}{subsection.6.3}%
+\contentsline {section}{\numberline {7}Câu Hỏi Thường Gặp --- Đáp Án Chuẩn Bị Sẵn}{16}{section.7}%
+\contentsline {section}{\numberline {8}Checklist Kỹ Thuật Trước Buổi Trình Bày}{18}{section.8}%

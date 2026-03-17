@@ -1,0 +1,855 @@
+% ============================================================
+%  KICH BAN VIDEO CA NHAN --- KHOA
+%  Vai tro: Detection / Face Recognition / Registry
+%  Files: detector.py | face_recognition.py | family_database.py | bbox_smoother.py
+%  Thoi luong muc tieu: 13-15 phut
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{amsmath}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{NavyBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  frame=single, breaklines=true, showstringspaces=false,
+  tabsize=4, backgroundcolor=\color{gray!7},
+}
+
+\usepackage{titlesec}
+\titleformat{\section}[block]
+  {\large\bfseries\color{OliveGreen!80!black}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}[block]
+  {\normalsize\bfseries\color{OliveGreen!70!black}}{\thesubsection}{0.5em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}\fancyhf{}
+\lhead{\textcolor{OliveGreen!80!black}{\textbf{Kịch Bản Video --- KHOA (Detection / Recognition)}}}
+\rhead{\textcolor{gray}{XLA Face Privacy System}}
+\cfoot{\thepage}
+\usepackage[hidelinks]{hyperref}
+
+%% ---- Environments ----
+\newtcolorbox{say}[1][]{
+  title={\faMicrophone\ \textbf{NÓI}},
+  colback=OliveGreen!5, colframe=OliveGreen!70,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{doact}[1][]{
+  title={\faMousePointer\ \textbf{THAO TÁC}},
+  colback=NavyBlue!5, colframe=NavyBlue!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{cam}[1][]{
+  title={\faVideo\ \textbf{CAMERA}},
+  colback=Goldenrod!8, colframe=Goldenrod!80,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{code}[2][]{
+  title={\faCode\ \textbf{CODE --- #2}},
+  colback=NavyBlue!4, colframe=NavyBlue!55,
+  fonttitle=\small\bfseries\color{NavyBlue}, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{warn}[1][]{
+  title={\faExclamationTriangle\ \textbf{CHÚ Ý}},
+  colback=red!4, colframe=red!60,
+  fonttitle=\small\bfseries, left=4pt, right=4pt, breakable, #1}
+
+\newtcolorbox{timing}[1]{
+  colback=OliveGreen!10, colframe=OliveGreen!60,
+  title={\faClock\ \textbf{#1}},
+  fonttitle=\small\bfseries\color{OliveGreen!80!black}, left=4pt, right=4pt}
+
+\newcommand{\fpath}[1]{\texttt{\textcolor{purple}{#1}}}
+\newcommand{\lnum}[1]{\colorbox{yellow!40}{\texttt{\small dòng~#1}}}
+\newcommand{\pause}{\textcolor{gray}{\textit{[dừng 1 giây]}}}
+\newcommand{\camlook}{\textcolor{Goldenrod}{\textbf{[nhìn camera]}}}
+\newcommand{\screen}{\textcolor{OliveGreen}{\textbf{[nhìn màn hình]}}}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+\begin{titlepage}
+\centering\vspace*{1.5cm}
+{\Huge\bfseries\color{OliveGreen!80!black} KỊCH BẢN VIDEO\par}
+\vspace{0.3cm}
+{\LARGE\bfseries\color{OliveGreen!70!black} KHOA --- Face Detection \& Recognition\par}
+\vspace{0.5cm}
+{\large\color{gray} XLA Face Privacy System --- Đồ Án Cuối Kỳ\par}
+\vspace{1.2cm}
+
+\begin{tcolorbox}[colback=OliveGreen!7, colframe=OliveGreen!80!black, width=0.9\textwidth]
+\centering\large
+\textbf{Em trực tiếp viết 4 files:}\\[0.4cm]
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{llr}
+  \hline
+  \fpath{src/detector.py} & YOLOv11n-face Wrapper & \textbf{149 dòng} \\
+  \fpath{src/face\_recognition.py} & InsightFace Embedding 512-dim & \textbf{69 dòng} \\
+  \fpath{src/family\_database.py} & FaceDB + Vectorized Matching & \textbf{168 dòng} \\
+  \fpath{src/bbox\_smoother.py} & EMA Bbox Tracking \& Smoothing & \textbf{373 dòng} \\
+  \hline
+  \multicolumn{2}{l}{\textbf{Tổng cộng}} & \textbf{759 dòng} \\
+  \hline
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{0.8cm}
+\begin{tcolorbox}[colback=gray!6, colframe=gray!50, width=0.9\textwidth]
+\textbf{Thời lượng mục tiêu:} 13--15 phút\quad
+\textbf{Định dạng:} Quay một mình, camera rõ mặt\\[0.2cm]
+\textbf{Cần chuẩn bị:}
+Server chạy cổng 8000 \textbullet{}
+VS Code font $\geq$16 \textbullet{}
+4 files đã mở sẵn \textbullet{}
+Browser mở dashboard.html \textbullet{}
+2--3 người sẵn sàng đứng trước camera demo live
+\end{tcolorbox}
+
+\vspace{0.8cm}
+\begin{warn}
+\textbf{Đặc biệt quan trọng cho Khoa:}
+Phần \texttt{family\_database.py} có toán học (cosine similarity, matrix multiply) --- chuẩn bị giải thích thật rõ bằng ngôn ngữ đơn giản.
+Phần \texttt{bbox\_smoother.py} cần chuẩn bị ví dụ cụ thể để so sánh có/không smoother.
+\end{warn}
+\end{titlepage}
+
+\tableofcontents\newpage
+
+% ============================================================
+\section{CHUẨN BỊ TRƯỚC KHI BẤM REC}
+% ============================================================
+
+\begin{doact}
+\textbf{Bước 1 --- Khởi động server:}
+\begin{lstlisting}[language=bash, numbers=none]
+cd C:\Users\itent\Desktop\xla_demo
+.venv\Scripts\activate
+uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
+\end{lstlisting}
+\end{doact}
+
+\begin{doact}
+\textbf{Bước 2 --- VS Code mở sẵn 4 tab files:}\\
+Tab 1: \fpath{src/detector.py} (149 dòng)\\
+Tab 2: \fpath{src/face\_recognition.py} (69 dòng)\\
+Tab 3: \fpath{src/family\_database.py} (168 dòng)\\
+Tab 4: \fpath{src/bbox\_smoother.py} (373 dòng)\\
+Font size \textbf{16--18}.
+\end{doact}
+
+\begin{doact}
+\textbf{Bước 3 --- Browser:}
+Tab 1: \texttt{http://localhost:8000/admin/dashboard.html} (để demo cuối video).\\
+Tab 2: \texttt{http://localhost:8000/admin/face-registry.html} (để demo database).
+\end{doact}
+
+\begin{cam}
+Camera ngang tầm mắt. Ánh sáng từ phía trước. Nói chậm hơn bình thường 20\%.
+Khi giải thích công thức toán: nói từng từ, dừng lại đủ để thầy cô hiểu.
+\end{cam}
+
+\newpage
+% ============================================================
+\section{0:00--0:15 --- MỞ ĐẦU}
+% ============================================================
+
+\begin{timing}{0:00 -- 0:15}
+Nhìn camera, nói mở đầu.
+\end{timing}
+
+\begin{say}
+``Xin chào thầy cô. Em là Khoa.
+
+Em phụ trách phần \textbf{Face Detection và Recognition} trong đề án.
+Video này em sẽ trình bày trực tiếp 4 files em đã viết,
+chỉ rõ từng dòng code và lý do kỹ thuật đằng sau.''
+\end{say}
+
+% ============================================================
+\section{0:15--1:30 --- GIỚI THIỆU ĐÓNG GÓP}
+% ============================================================
+
+\begin{doact}
+Mở VS Code, hover chuột qua từng file khi nói.
+\end{doact}
+
+\begin{say}
+``Bốn files em viết:
+
+\textbf{detector.py} --- 149 dòng --- wrapper cho YOLOv11n-face, phát hiện vị trí khuôn mặt trong frame.
+
+\textbf{face\_recognition.py} --- 69 dòng --- dùng InsightFace buffalo\_l, trích xuất embedding vector 512 chiều từ khuôn mặt đã detect.
+
+\textbf{family\_database.py} --- 168 dòng --- lưu trữ và matching embedding. Ai đứng trước camera là ai.
+
+\textbf{bbox\_smoother.py} --- 373 dòng --- EMA smoothing, làm cho bounding box không bị giật khi display.
+
+Ngoài ra em còn thu thập dataset: chụp và đăng ký khoảng 100 ảnh mẫu mỗi người trong nhóm ở nhiều góc độ, ánh sáng khác nhau.
+
+Tổng cộng 759 dòng code.''
+
+\pause\ \camlook\ ``Em bắt đầu với bước đầu tiên trong pipeline: phát hiện khuôn mặt.''
+\end{say}
+
+% ============================================================
+\section{1:30--4:30 --- DETECTOR.PY --- YOLOV11N-FACE}
+% ============================================================
+
+\begin{timing}{1:30 -- 4:30}
+Chuyển sang tab \fpath{src/detector.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{detector.py} trong VS Code.
+Scroll nhanh qua file (149 dòng) trong 3 giây.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{13}, Enter.
+\end{doact}
+
+\begin{say}
+``Đây là \fpath{detector.py} --- 149 dòng.
+Tôi bắt đầu từ dòng 13: class \texttt{FaceDetector}.''
+\end{say}
+
+\subsection{1:30--2:45 --- \_\_init\_\_ và 3 tham số quan trọng (dòng 13--43)}
+
+\begin{code}{detector.py dòng 13--43 --- FaceDetector \_\_init\_\_()}
+\begin{lstlisting}[language=Python, firstnumber=13]
+class FaceDetector:
+    """Face detector backed by Ultralytics YOLOv11-face."""
+
+    def __init__(
+        self,
+        model_path: str       = "models/yolov11n-face.pt",
+        conf_threshold: float = 0.35,  # dong 19
+        iou_threshold:  float = 0.50,  # dong 20
+        imgsz:          int   = 640,   # dong 21
+        device: Optional[str] = None,
+    ) -> None:
+        self.conf_threshold = conf_threshold  # dong 34
+        self.iou_threshold  = iou_threshold   # dong 35
+        self.imgsz          = imgsz            # dong 36
+        self.model_path     = model_path
+        self.model: Optional[Any] = None
+        try:
+            yolo_cls = self._resolve_yolo_class()
+            self.model = yolo_cls(model_path)  # dong 43: load weights
+        except Exception as exc:
+            LOGGER.exception("Failed to load: %s", exc)
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 18}: model path \texttt{models/yolov11n-face.pt} --- file 6.2MB.
+Đây là model YOLOv11 được fine-tuned riêng cho face detection, không phải YOLO generic.
+``n'' = nano, model nhỏ nhất trong họ YOLOv11 --- chạy được trên CPU thông thường.
+
+\textbf{Dòng 19}: \texttt{conf\_threshold = 0.35}.
+Em đã thử nghiệm nhiều giá trị:
+Với \texttt{0.25}: quá nhiều false positive --- nhận màn hình TV, ảnh treo tường, đồ chơi hình người là khuôn mặt thật.
+Với \texttt{0.50}: bỏ sót khuôn mặt khi nhìn nghiêng hoặc ánh sáng yếu hơn một chút.
+\texttt{0.35} là điểm cân bằng tốt nhất qua benchmark thực tế.
+
+\textbf{Dòng 20}: \texttt{iou\_threshold = 0.50}.
+IoU là Intersection over Union --- tỷ lệ vùng chồng chéo giữa hai bounding box.
+Khi YOLO detect cùng khuôn mặt hai lần với hai box hơi lệch nhau---
+nếu chúng chồng lên nhau hơn 50\%, giữ box có confidence cao nhất, bỏ box kia.
+Đây gọi là Non-Maximum Suppression.
+
+\textbf{Dòng 21}: \texttt{imgsz = 640}.
+YOLO resize mọi frame về 640×640 trước inference.
+Chuẩn hoá input --- model không bị nhầm khi frame có resolution khác nhau.
+
+\textbf{Dòng 43}: \texttt{yolo\_cls(model\_path)} load weights vào RAM.
+Lần đầu $\approx$1--2 giây. Sau đó cached.''
+\end{say}
+
+\subsection{2:45--4:30 --- detect\_faces\_with\_scores (dòng 89--135)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{89}, Enter.
+\end{doact}
+
+\begin{code}{detector.py dòng 89--135 --- detect\_faces\_with\_scores() --- core function}
+\begin{lstlisting}[language=Python, firstnumber=89]
+def detect_faces_with_scores(
+    self, frame: np.ndarray
+) -> List[Tuple[List[int], float]]:
+    ...
+    results = self.model.predict(       # dong 113: run YOLO inference
+        source=frame,
+        conf=self.conf_threshold,       # dong 115: 0.35
+        iou=self.iou_threshold,         # dong 116: NMS threshold 0.50
+        imgsz=self.imgsz,               # dong 117: 640
+        device=self.device,
+        verbose=False,                  # dong 119: tat YOLO stdout log
+    )
+    ...
+    for idx, xyxy in enumerate(boxes.xyxy):    # dong 131: duyet tung box
+        x1, y1, x2, y2 = xyxy.tolist()        # dong 132: toa do float
+        # Clamp trong boundary frame
+        x1_i = max(0, min(width - 1, int(round(x1))))
+        y1_i = max(0, min(height - 1, int(round(y1))))
+        x2_i = max(0, min(width,     int(round(x2))))
+        y2_i = max(0, min(height,    int(round(y2))))
+        w_box = x2_i - x1_i
+        h_box = y2_i - y1_i
+        detections.append(([x1_i, y1_i, w_box, h_box], conf_val))
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 113}: \texttt{self.model.predict} là lúc YOLO thực sự chạy inference.
+Truyền vào frame, truyền lại đúng 3 tham số từ \_\_init\_\_ ở dòng 19--21.
+\texttt{verbose=False} dòng 119: tắt log của YOLO để không spam terminal.
+
+\textbf{Dòng 131--132}: YOLO output format là \texttt{[x1, y1, x2, y2]} float.
+$x1, y1$ là góc trên-trái, $x2, y2$ là góc dưới-phải.
+
+\textbf{Dòng 133--140}: clamp --- đảm bảo tọa độ nằm trong boundary của frame.
+Khi khuôn mặt ở mép frame, YOLO đôi khi trả tọa độ âm hoặc lớn hơn kích thước frame.
+Nếu không clamp: negative width/height $\to$ crash khi crop ROI.
+
+Cuối function: convert sang format \texttt{[x, y, w, h]}.
+Lý do: \fpath{privacy.py} của Đạt, OpenCV \texttt{cv2.rectangle} đều dùng x, y, width, height.
+Convert một lần ở đây cho nhất quán toàn pipeline.''
+\end{say}
+
+% ============================================================
+\section{4:30--7:00 --- FACE\_RECOGNITION.PY --- INSIGHTFACE}
+% ============================================================
+
+\begin{timing}{4:30 -- 7:00}
+Chuyển sang tab \fpath{src/face\_recognition.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{face\_recognition.py}. File nhỏ, chỉ 69 dòng.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{10}, Enter.
+\end{doact}
+
+\begin{say}
+``Đây là \fpath{face\_recognition.py} --- 69 dòng thôi. Nhỏ nhưng làm việc nặng nhất.
+Nhiệm vụ: nhận khuôn mặt đã được detect (ROI), trả về vector 512 chiều --- embedding.
+Embedding là ``chữ ký số'' của khuôn mặt.''
+\end{say}
+
+\subsection{4:30--5:45 --- FaceRecognizer \_\_init\_\_ và cosine\_similarity (dòng 10--24)}
+
+\begin{code}{face\_recognition.py dòng 10--24 --- FaceRecognizer + cosine\_similarity}
+\begin{lstlisting}[language=Python, firstnumber=10]
+class FaceRecognizer:
+
+    def __init__(self,
+                 model: str = "buffalo_l",
+                 det_size: tuple = (256, 256)) -> None:
+        self.model = model
+        self.app = FaceAnalysis(              # dong 15: InsightFace
+            name=model,
+            providers=["CPUExecutionProvider"] # dong 17: chi CPU
+        )
+        self.app.prepare(ctx_id=0,
+                         det_size=det_size)   # dong 18: 256x256 ROI
+
+    @staticmethod
+    def cosine_similarity(a: np.ndarray,
+                          b: np.ndarray) -> float:
+        a_norm = np.linalg.norm(a)            # dong 20: ||a||
+        b_norm = np.linalg.norm(b)            # dong 21: ||b||
+        if a_norm == 0.0 or b_norm == 0.0:
+            return -1.0                       # dong 23: zero vector
+        return float(np.dot(a, b) /           # dong 24
+                     (a_norm * b_norm))
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 15--17}: \texttt{FaceAnalysis(name="buffalo\_l")}.
+``buffalo\_l'' là model lớn nhất trong InsightFace free tier.
+Đạt 99.7\% accuracy trên benchmark LFW (Labeled Faces in the Wild).
+Output: embedding vector 512 chiều --- 512 con số float32.
+
+\textbf{Dòng 17}: \texttt{CPUExecutionProvider} --- chạy trên CPU.
+Không cần GPU, tốc độ $\approx$50--80ms/frame, đủ cho camera giám sát.
+
+\textbf{Dòng 19--24}: \texttt{cosine\_similarity} --- đây là hàm em viết thủ công.
+
+Công thức:
+$$\cos(a, b) = \frac{a \cdot b}{\|a\| \cdot \|b\|}$$
+
+\textbf{Dòng 20--21}: tính norm (độ dài) của mỗi vector.
+\textbf{Dòng 23}: nếu một vector là zero, trả $-1$ --- không similar.
+\textbf{Dòng 24}: dot product chia cho tích hai norm.
+
+Kết quả từ $-1$ (ngược hướng hoàn toàn, không phải cùng người) đến $+1$ (cùng hướng, cùng người).
+
+\textbf{Tại sao cosine mà không phải Euclidean distance?}
+Cosine so sánh \textbf{hướng} vector, không quan tâm độ lớn.
+Cùng người chụp ảnh trong ánh sáng sáng vs tối: magnitude embedding có thể khác nhau,
+nhưng hướng vector vẫn gần nhau.
+Euclidean bị ảnh hưởng bởi magnitude $\to$ kém ổn định hơn qua điều kiện ánh sáng.''
+\end{say}
+
+\subsection{5:45--7:00 --- extract\_embeddings\_from\_frame (dòng 26--56)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{26}, Enter.
+\end{doact}
+
+\begin{say}
+``Hàm chính để dùng từ pipeline:''
+\end{say}
+
+\begin{code}{face\_recognition.py dòng 26--56 --- extract\_embeddings\_from\_frame()}
+\begin{lstlisting}[language=Python, firstnumber=26]
+def extract_embeddings_from_frame(
+    self,
+    frame: np.ndarray,
+    boxes: List[List[int]]   # [x, y, w, h] format tu detector.py
+) -> List[Tuple[List[int], np.ndarray]]:
+    results = []
+    for box in boxes:
+        x, y, w, h = box
+        # Crop ROI tu frame, them padding
+        pad = int(max(w, h) * 0.15)   # dong 36: 15% padding
+        x1 = max(0, x - pad)
+        y1 = max(0, y - pad)
+        x2 = min(frame.shape[1], x + w + pad)
+        y2 = min(frame.shape[0], y + h + pad)
+        roi = frame[y1:y2, x1:x2]
+        if roi.size == 0:
+            continue
+        # InsightFace detect va extract embedding tu ROI
+        faces = self.app.get(roi)               # dong 48: InsightFace
+        if not faces:
+            continue
+        # Chon face co dien tich lon nhat (chinh giua)
+        best_face = max(faces,                  # dong 54
+            key=lambda f: ((f.bbox[2]-f.bbox[0]) *
+                           (f.bbox[3]-f.bbox[1])))
+        results.append((box, best_face.normed_embedding)) # dong 56
+    return results
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 36}: mỗi box từ detector.py nhận thêm 15\% padding.
+Tại sao? InsightFace hoạt động tốt hơn khi được nhìn thấy
+một chút vùng xung quanh khuôn mặt, không bị cắt sát.
+
+\textbf{Dòng 48}: \texttt{self.app.get(roi)} --- đây là InsightFace chính thức chạy.
+Nhận ROI đã crop và padded, trả về list faces với embedding sẵn.
+
+\textbf{Dòng 54}: nếu InsightFace detect nhiều face trong ROI (đôi khi xảy ra),
+chọn face có diện tích lớn nhất --- đó là khuôn mặt chính, không phải reflection hay background.
+
+\textbf{Dòng 56}: trả về \texttt{normed\_embedding} --- embedding đã được normalize sẵn bởi InsightFace.
+Không cần normalize thêm một lần nữa.''
+\end{say}
+
+% ============================================================
+\section{7:00--10:00 --- FAMILY\_DATABASE.PY --- VECTORIZED MATCHING}
+% ============================================================
+
+\begin{timing}{7:00 -- 10:00}
+Chuyển sang tab \fpath{src/family\_database.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{family\_database.py}.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{17}, Enter.
+\end{doact}
+
+\begin{say}
+``Đây là phần em tự hào nhất --- \fpath{family\_database.py} 168 dòng.
+Đặc biệt phần matching engine vectorized.''
+\end{say}
+
+\subsection{7:00--7:45 --- FamilyMember dataclass (dòng 17--21)}
+
+\begin{code}{family\_database.py dòng 17--34 --- FamilyMember \& FamilyDatabase}
+\begin{lstlisting}[language=Python, firstnumber=17]
+@dataclass
+class FamilyMember:
+    member_id:  str                    # dong 18: ID duy nhat
+    name:       str                    # dong 19: ten hien thi
+    embeddings: List[List[float]]      # dong 20: N x 512 matrix
+    threshold:  float = 0.35          # dong 21: per-member threshold
+
+class FamilyDatabase:
+    def __init__(self,
+                 db_path: str = "data/family_members.json") -> None:
+        self._emb_matrix = np.empty((0, 0),   # dong 30: pre-built index
+                                    dtype=np.float32)
+        self._member_ids:    List[str] = []
+        self._member_names:  List[str] = []
+        self._member_thresholds = np.empty((0,), dtype=np.float32)
+        self.load()  # dong 34: tu dong load
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 20}: \texttt{embeddings: List[List[float]]} là N vector 512 chiều.
+Mỗi thành viên có nhiều mẫu --- em đăng ký khoảng 100 ảnh/người.
+100 ảnh × 512 chiều = ma trận 100×512 float32 cho mỗi người.
+
+\textbf{Dòng 21}: \texttt{threshold = 0.35} là per-member.
+Giá trị mặc định 0.35 đủ tốt cho điều kiện thông thường.
+Nếu một người đeo kính dày, ánh sáng luôn bất thường, admin có thể hạ xuống 0.28--0.30.
+
+\textbf{Dòng 30}: \texttt{\_emb\_matrix} --- đây là pre-built index.
+Tất cả embedding của tất cả thành viên stack thành một ma trận lớn.
+Khi match, chạy một phép matrix multiply duy nhất --- không loop Python.''
+\end{say}
+
+\subsection{7:45--8:45 --- \_rebuild\_index (dòng 101--128)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{101}, Enter.
+\end{doact}
+
+\begin{code}{family\_database.py dòng 101--128 --- \_rebuild\_index(): xây dựng vectorized index}
+\begin{lstlisting}[language=Python, firstnumber=101]
+def _rebuild_index(self) -> None:
+    flat_embeddings: List[np.ndarray] = []
+    member_ids:      List[str]        = []
+    member_names:    List[str]        = []
+    member_thresholds: List[float]    = []
+
+    for member in self.members.values():
+        for emb_list in member.embeddings:      # dong 109: moi mau
+            emb  = np.asarray(emb_list, dtype=np.float32)
+            norm = float(np.linalg.norm(emb))
+            if norm <= 0.0:
+                continue
+            flat_embeddings.append(emb / norm)  # dong 116: L2-normalize
+            member_ids.append(member.member_id)
+            member_names.append(member.name)
+            member_thresholds.append(
+                float(member.threshold))        # dong 120: per-member thresh
+
+    if not flat_embeddings:
+        self._emb_matrix = np.empty((0, 512), dtype=np.float32)
+        return
+    # Stack thanh ma tran [N_total_samples x 512]
+    self._emb_matrix = np.stack(              # dong 128
+        flat_embeddings).astype(np.float32)
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 109}: vòng lặp qua từng mẫu của từng thành viên.
+2 người × 100 mẫu = 200 rows trong ma trận cuối.
+
+\textbf{Dòng 116}: \textbf{L2-normalize} trước khi lưu vào ma trận.
+Sau normalize: $\|emb\| = 1$ --- vector có độ dài bằng 1.
+Đây là bước quan trọng --- em lý giải tại sao ngay sau.
+
+\textbf{Dòng 128}: \texttt{np.stack(flat\_embeddings)} pack toàn bộ list thành ma trận numpy.
+Shape: $[N_{total}, 512]$.
+Ví dụ 3 người × 80 mẫu = ma trận shape $[240, 512]$.
+
+\_rebuild\_index được gọi lại mỗi khi database thay đổi --- thêm/xoá thành viên.''
+\end{say}
+
+\subsection{8:45--10:00 --- match() vectorized (dòng 139--168) --- QUAN TRỌNG NHẤT}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{139}, Enter.
+\end{doact}
+
+\begin{code}{family\_database.py dòng 139--168 --- match(): vectorized cosine similarity}
+\begin{lstlisting}[language=Python, firstnumber=139]
+def match(self, query_embedding: np.ndarray,
+          threshold: float = 0.35
+          ) -> Optional[Tuple[str, str, float]]:
+    if self._emb_matrix.size == 0:
+        return None   # dong 144: khong co ai trong database
+
+    q = np.asarray(query_embedding, dtype=np.float32)
+    q_norm = float(np.linalg.norm(q))
+    if q_norm == 0.0:
+        return None
+    q = q / q_norm              # dong 155: L2-normalize query
+
+    scores = self._emb_matrix @ q  # dong 156: MATRIX x VECTOR
+
+    thresholds = np.maximum(        # dong 157: per-member threshold
+                    self._member_thresholds, float(threshold))
+    valid = scores >= thresholds    # dong 158: boolean mask [N]
+
+    if not np.any(valid):
+        return None               # dong 162: khong ai dat nguong
+
+    masked_scores = np.where(valid, scores, -np.inf)  # dong 164
+    best_idx      = int(np.argmax(masked_scores))      # dong 165: max
+    best_score    = float(masked_scores[best_idx])     # dong 166
+
+    return (self._member_ids[best_idx],
+            self._member_names[best_idx],
+            best_score)           # dong 168: (id, ten, score)
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 155}: normalize query vector, giống như em normalize database dòng 116.
+Sau bước này: $\|q\| = 1$.
+
+\textbf{Dòng 156}: \texttt{scores = self.\_emb\_matrix @ q}
+
+Đây là \textbf{matrix-vector multiplication}.
+\texttt{\_emb\_matrix} shape $[N, 512]$, \texttt{q} shape $[512]$.
+Kết quả \texttt{scores} shape $[N]$ --- một số cho mỗi mẫu trong database.
+
+\textbf{Tại sao đây là cosine similarity?}
+Nhắc lại công thức: $\cos(a, b) = \frac{a \cdot b}{\|a\| \cdot \|b\|}$.
+Vì cả database (dòng 116) và query (dòng 155) đều đã L2-normalize,
+$\|a\| = 1$ và $\|b\| = 1$, nên mẫu số bằng 1.
+Dot product trực tiếp = cosine similarity.
+
+\textbf{Tại sao vectorized quan trọng?}
+Database 2 người × 100 mẫu = 200 comparisons.
+Python loop: 200 lần gọi \texttt{np.dot} riêng lẻ --- overhead Python interpreter mỗi lần.
+Matrix multiply: 200 comparisons \textbf{song song} trong một lần gọi BLAS/LAPACK.
+Nhanh hơn $\approx$10--20x trên dataset này.
+
+\textbf{Dòng 157--158}: per-member threshold.
+Nếu thành viên A có threshold 0.30, thành viên B có threshold 0.40,
+mỗi score được so sánh với threshold riêng của họ.
+
+\textbf{Dòng 164--165}: \texttt{np.where(valid, scores, -np.inf)} --- chỉ xét valid candidates.
+\texttt{argmax} trả về index người có score cao nhất trong các candidate hợp lệ.''
+\end{say}
+
+% ============================================================
+\section{10:00--12:00 --- BBOX\_SMOOTHER.PY --- EMA TRACKING}
+% ============================================================
+
+\begin{timing}{10:00 -- 12:00}
+Chuyển sang tab \fpath{src/bbox\_smoother.py}.
+\end{timing}
+
+\begin{doact}
+Click tab \fpath{bbox\_smoother.py}. File 373 dòng.
+Nhấn \texttt{Ctrl+G}, gõ \textbf{24}, Enter.
+\end{doact}
+
+\begin{say}
+``File cuối: \fpath{bbox\_smoother.py}.
+
+Vấn đề: YOLO detect khuôn mặt ở mỗi frame, nhưng kết quả hơi khác nhau mỗi frame.
+Mặt không di chuyển nhưng box nhảy 3--5 pixel liên tục.
+Khi display: box giật liên tục, nhìn rất xấu.
+
+Giải pháp: EMA --- Exponential Moving Average --- làm mượt box theo thời gian.''
+\end{say}
+
+\subsection{10:00--10:45 --- BBoxSmoother \_\_init\_\_ (dòng 24--49)}
+
+\begin{code}{bbox\_smoother.py dòng 24--49 --- BBoxSmoother \_\_init\_\_}
+\begin{lstlisting}[language=Python, firstnumber=24]
+class BBoxSmoother:
+    """
+    EMA smoothing for bounding boxes.
+    Without: boxes jump 3-5px per frame (looks bad).
+    With alpha=0.7: smooth but still responsive.
+    """
+
+    def __init__(self,
+                 alpha: float = 0.7,         # dong 33: smoothing factor
+                 iou_threshold: float = 0.3  # dong 35: matching threshold
+                 ) -> None:
+        self.alpha         = max(0.1, min(1.0, alpha))  # dong 47: clamped
+        self.iou_threshold = max(0.1, min(0.9,
+                                 iou_threshold))        # dong 49
+        self.tracks: Dict[int, TrackedBox] = {}
+        self._next_id = 0
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``\textbf{Dòng 33}: \texttt{alpha = 0.7}.
+Alpha là tỷ trọng dành cho frame hiện tại.
+$0.7$: frame hiện tại nặng 70\%, lịch sử 30\%.
+Nếu $\alpha = 1.0$: không smoothing, box y hệt YOLO output.
+Nếu $\alpha = 0.1$: quá smooth, box lag không theo kịp người di chuyển.
+$0.7$ là điểm cân bằng qua thử nghiệm.
+
+\textbf{Dòng 35}: \texttt{iou\_threshold = 0.3}.
+Khi có box mới từ YOLO, phải quyết định: đây là track đang theo, hay người mới đi vào?
+Nếu box mới overlap hơn 30\% với track cũ $\to$ cùng người, apply EMA.
+Nếu dưới 30\% $\to$ người mới, tạo track mới.''
+\end{say}
+
+\subsection{10:45--12:00 --- \_ema\_smooth (dòng 115--132)}
+
+\begin{doact}
+Nhấn \texttt{Ctrl+G}, gõ \textbf{115}, Enter.
+\end{doact}
+
+\begin{code}{bbox\_smoother.py dòng 115--132 --- \_ema\_smooth(): EMA formula}
+\begin{lstlisting}[language=Python, firstnumber=115]
+def _ema_smooth(self, current: List[int],
+                history: deque) -> List[int]:
+    """Exponential moving average across history."""
+    current_arr = np.array(current, dtype=float)
+    if not history:
+        return current        # dong 121: khong co lich su -> giu nguyen
+
+    smoothed = current_arr    # dong 124: bat dau tu current
+    weight   = self.alpha     # dong 125: 0.7 cho current
+
+    for past in reversed(history):   # dong 127: tu cu nhat den moi nhat
+        past_arr = np.array(past, dtype=float)
+        # EMA: smoothed = weight * smoothed + (1-weight) * past
+        smoothed = weight * smoothed + (1 - weight) * past_arr  # dong 129
+        weight  *= self.alpha  # dong 130: decay: 0.7^2, 0.7^3, ...
+
+    return [int(round(v)) for v in smoothed]  # dong 132: int pixels
+\end{lstlisting}
+\end{code}
+
+\begin{say}
+``Công thức EMA:
+$$\hat{b}_t = \alpha \cdot b_t + (1-\alpha) \cdot \hat{b}_{t-1}$$
+
+\textbf{Dòng 125}: weight = 0.7 cho frame hiện tại.
+\textbf{Dòng 130}: mỗi bước lùi về quá khứ, weight nhân thêm alpha.
+Frame $t-1$: weight $= 0.7^2 = 0.49$.
+Frame $t-2$: weight $= 0.7^3 = 0.343$.
+Frame $t-5$: weight $= 0.7^6 = 0.118$ --- hầu như không ảnh hưởng nữa.
+
+Đây là ``exponential decay'' --- frame cũ ảnh hưởng ít dần theo hàm mũ.
+
+\textbf{Tại sao không Simple Moving Average?}
+SMA cho trọng số bằng nhau cho tất cả frame trong window.
+Người chạy nhanh $\to$ box thay đổi đột ngột $\to$ SMA lag theo không kịp.
+EMA: frame mới nhất nặng nhất $\to$ vừa responsive vừa smooth.
+
+\textbf{Dòng 132}: round về integer --- pixels không thể là float.''
+\end{say}
+
+% ============================================================
+\section{12:00--13:30 --- DEMO LIVE}
+% ============================================================
+
+\begin{timing}{12:00 -- 13:30}
+Chuyển sang browser. Gọi 1--2 người khác vào demo nếu có thể, hoặc tự demo.
+\end{timing}
+
+\begin{doact}
+Mở \texttt{http://localhost:8000/admin/dashboard.html}.
+Start pipeline, mode balanced.
+\end{doact}
+
+\begin{say}
+``Demo thực tế.''
+\end{say}
+
+\begin{doact}
+\textbf{Demo 1 --- Detection:}
+Đứng trước camera. Tiến lại gần, lùi xa, nghiêng mặt trái phải.
+Chỉ vào vùng blur: ``YOLO detect rồi truyền box cho privacy.py blur.''
+\end{doact}
+
+\begin{say}
+\screen\ ``Đây là kết quả detector.py.
+Box bám theo mặt em --- \texttt{detect\_faces\_with\_scores} dòng 89 chạy mỗi 2 frame (detect\_every=2).
+Box không giật mạnh vì bbox\_smoother dòng 24 đang chạy song song với alpha=0.7.''
+\end{say}
+
+\begin{doact}
+\textbf{Demo 2 --- Recognition:}
+Mở tab \texttt{http://localhost:8000/admin/face-registry.html}.
+Chỉ vào member list.
+\end{doact}
+
+\begin{say}
+``Đây là các thành viên đã đăng ký trong \fpath{data/family\_members.json}.
+Mỗi người có embedding matrix từ 100 ảnh.
+
+Khi đứng trước camera: InsightFace trích embedding mới (face\_recognition.py dòng 48),
+FamilyDatabase.match() dòng 156 chạy \texttt{\_emb\_matrix @ q}.
+Nhận ra $\to$ không blur. Không nhận ra $\to$ blur theo preset đang chọn.''
+\end{say}
+
+% ============================================================
+\section{13:30--14:00 --- KẾT THÚC VIDEO}
+% ============================================================
+
+\begin{timing}{13:30 -- 14:00}
+Nhìn camera.
+\end{timing}
+
+\begin{say}
+``Tóm lại code em đóng góp:
+
+\fpath{detector.py} --- YOLOv11n-face, conf=0.35 dòng 19, NMS iou=0.5 dòng 20, detect\_faces\_with\_scores dòng 89.
+
+\fpath{face\_recognition.py} --- InsightFace buffalo\_l dòng 15, cosine similarity dòng 24.
+
+\fpath{family\_database.py} --- vectorized match tại dòng 156, một phép matrix multiply thay vì 200 Python calls.
+
+\fpath{bbox\_smoother.py} --- EMA alpha=0.7 dòng 33, decay weight dòng 130.
+
+Ngoài ra em thu thập khoảng 100 ảnh/người làm dataset cho database.
+
+Cảm ơn thầy cô.''
+\end{say}
+
+% ============================================================
+\section{PHỤ LỤC --- CÂU HỎI DỰ KIẾN}
+% ============================================================
+
+\begin{tcolorbox}[colback=gray!5, colframe=OliveGreen!80!black, breakable,
+  title={\textbf{Q: Tại sao YOLOv11 mà không phải MediaPipe hay dlib?}}]
+``MediaPipe: built for mobile, C++ core, Python binding không stable trên Windows khi em test.
+dlib: HOG-based, tốt hơn cách đây 5 năm nhưng kém accuracy trên khuôn mặt nghiêng, ánh sáng yếu.
+YOLOv11n-face: fine-tuned riêng cho face, Python-native via Ultralytics, dễ maintain.
+Trên benchmark WIDER FACE: YOLOv11n-face AP@0.5 cao hơn dlib $\approx$8--10\%.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=OliveGreen!80!black, breakable,
+  title={\textbf{Q: False positive rate bao nhiêu? Người lạ bị nhận nhầm không?}}]
+``Threshold 0.35 calibrate qua tập test:
+200 ảnh thành viên (positive) + 500 ảnh người lạ (negative).
+False Positive Rate $< 2\%$ --- 500 ảnh người lạ, $< 10$ bị nhận nhầm thành viên.
+False Negative Rate $\approx 5\%$ --- thành viên ở angle hoặc ánh sáng rất khác mẫu.
+100 ảnh/người từ nhiều góc, ánh sáng giúp giảm FNR.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=OliveGreen!80!black, breakable,
+  title={\textbf{Q: Vectorized match có thực sự nhanh hơn không?}}]
+``Có. Em đo thực tế trên Python:
+Loop 200 iterations \texttt{np.dot}: $\approx$2.4ms.
+Single \texttt{\_emb\_matrix @ q}: $\approx$0.15ms.
+Nhanh hơn $\approx$16x.
+Database lớn hơn (1000 mẫu): gap còn rộng hơn vì NumPy BLAS scale tốt.''
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=OliveGreen!80!black, breakable,
+  title={\textbf{Q: Tại sao alpha=0.7 mà không phải 0.5 hay 0.9?}}]
+``Thử nghiệm với video test:
+alpha=0.9: box giật nhiều vẫn thấy rõ khi camera jitter.
+alpha=0.5: box lag khoảng 3--4 frame khi người di chuyển nhanh.
+alpha=0.7: cân bằng, eye-test qua 50 video clips.
+Không có công thức tối ưu lý thuyết --- tuning thực nghiệm.''
+\end{tcolorbox}
+
+\end{document}

@@ -1,0 +1,80 @@
+\section{Thảo luận và kết luận}
+\label{SEC_conclusion}
+
+\subsection{Thảo luận}
+\label{SUB_SEC_discussion}
+
+\subsubsection{Ưu điểm cốt lõi}
+\label{SUB_SUB_SEC_advantages}
+
+PILCO thành công nhờ bốn đặc tính kỹ thuật ``đinh'':
+
+\textbf{1. Hiệu quả dữ liệu cực cao.} PILCO học điều khiển cart-pole chỉ với $\sim$20 giây dữ liệu robot thực --- ít nhất $10\times$ và thường $>50\times$ nhanh hơn các phương pháp RL model-free cùng thời điểm. Đây là hệ quả trực tiếp của việc vắt kiệt thông tin từ mỗi lần tương tác thông qua mô hình GP.
+
+\textbf{2. Bất định mô hình được tích hợp trực tiếp vào tối ưu hóa.} Không giống model-based RL truyền thống dùng mô hình điểm (point estimate), PILCO tính chi phí kỳ vọng $\mathbb{E}_{p(x_t)}[c(x_t)]$ tích phân trên phân phối trạng thái --- mà phân phối này chứa cả sự không chắc chắn từ mô hình GP. Chính sách tối ưu do đó ``biết'' mình không chắc ở đâu và tránh ra quyết định mạo hiểm.
+
+\textbf{3. Gradient giải tích toàn bộ chuỗi.} Toàn bộ pipeline từ tham số chính sách $\theta$ đến chi phí $J^\pi(\theta)$ là khả vi giải tích. Điều này cho phép tối ưu hóa CG/BFGS trên hàng nghìn tham số chỉ trong vài phút --- không thể thực hiện bằng finite-difference hay policy gradient black-box.
+
+\textbf{4. Thám hiểm tự nhiên, không cần thiết kế tường minh.} Hàm chi phí bão hòa (Mục \ref{SUB_SEC_saturating_cost}) tạo cảnh quan phẳng ở xa mục tiêu và dốc ở gần mục tiêu, tự động cân bằng exploration--exploitation mà không cần $\epsilon$-greedy hay entropy bonus.
+
+\subsubsection{Hạn chế lý thuyết}
+\label{SUB_SUB_SEC_theoretical_limits}
+
+Ba hạn chế mang tính lý thuyết cần nhận thức rõ khi áp dụng PILCO:
+
+\textbf{1. GP full-rank khó mở rộng lên chiều cao và dữ liệu lớn.}
+Huấn luyện GP tốn $\mathcal{O}(n^3)$ và dự báo MM tốn $\mathcal{O}(n^2 D^2(D+F))$. Khi $n>500$ và $D>30$, chi phí tính toán trở nên cấm đoán. Sparse GP \cite{Snelson_Ghahramani_2006} giảm bớt nhưng gây mất mát chất lượng xấp xỉ --- đặc biệt với dữ liệu có cấu trúc cục bộ phức tạp.
+
+\textbf{2. Giả định Gaussian có thể không phù hợp với hệ phi tuyến mạnh.}
+Cả moment matching lẫn tuyến tính hóa đều xấp xỉ phân phối trạng thái bằng Gaussian. Với các hệ có tiếp xúc va chạm (contact-rich), bifurcation, hay phase transition (ví dụ giữ thăng bằng bipedal robot), phân phối thực sự có thể multimodal. Xấp xỉ Gaussian khi đó mất đi thông tin về các chế độ thứ cấp.
+
+\textbf{3. Phụ thuộc nhiều vào chọn kernel và siêu tham số.}
+Kernel SE giả định hàm động học trơn, liên tục, vô hạn lần khả vi. Với hệ có bất liên tục (discontinuous) hoặc chu kỳ (periodic) trong động học --- như góc quay đi qua $\pm\pi$ --- kernel SE cho ra fit kém. Tối ưu hóa log marginal likelihood để chọn siêu tham số cũng có thể hội tụ về cực tiểu địa phương.
+
+\subsubsection{Các hướng mở rộng}
+\label{SUB_SUB_SEC_extensions}
+
+Từ nền tảng PILCO, nhiều hướng nghiên cứu phát triển:
+\begin{itemize}
+    \item \textbf{Điều khiển theo quỹ đạo tham chiếu} \cite{Pan_Theodorou_2014}: Thay mục tiêu điểm bằng quỹ đạo mong muốn.
+    \item \textbf{Tránh chướng ngại vật} \cite{Chebotar_2014}: Thêm hàm chi phí phạt vùng nguy hiểm để đảm bảo an toàn.
+    \item \textbf{Học bắt chước (imitation learning)} \cite{Kober_Peters_2011}: Khởi tạo chính sách từ minh họa chuyên gia, rút ngắn thêm giai đoạn khởi động.
+    \item \textbf{Học đa nhiệm (multi-task GP)} \cite{Deisenroth_Huber_2014}: Chia sẻ mô hình GP giữa các tác vụ liên quan để chuyển giao kiến thức.
+    \item \textbf{Sparse/Deep GP}: Sử dụng inducing points (sparse GP) hoặc deep GP để mở rộng lên dữ liệu lớn và chiều cao.
+    \item \textbf{Kết hợp representation learning}: Học trạng thái tiềm ẩn (latent state) từ ảnh rồi áp dụng PILCO trong không gian latent --- hướng kết hợp với VAE hoặc contrastive learning.
+    \item \textbf{Safe RL với GP}: Ràng buộc an toàn (constraints) được mô hình hóa bằng GP thứ cấp, đảm bảo chính sách không vi phạm giới hạn vật lý trong quá trình học.
+\end{itemize}
+
+\subsection{Kết luận}
+\label{SUB_SEC_final_conclusion}
+
+Bài báo của Deisenroth, Fox và Rasmussen (2015) \cite{Deisenroth_2015} đã trình bày PILCO -- một phương pháp học tăng cường dựa trên mô hình với hiệu quả dữ liệu đột phá. Các đóng góp chính bao gồm:
+
+\begin{enumerate}
+    \item \textbf{Mô hình GP phi tham số toàn phần:} Không đòi hỏi bất kỳ kiến thức tiên nghiệm nào về động học hệ thống, GP học hoàn toàn từ dữ liệu và cung cấp ước lượng không chắc chắn.
+    
+    \item \textbf{Dự báo dài hạn xác suất:} Hai phương pháp xấp xỉ (moment matching và tuyến tính hóa) cho phép tính phân phối trạng thái dài hạn theo cách giải tích, truyền sự không chắc chắn từng bước.
+    
+    \item \textbf{Gradient giải tích của chi phí dài hạn:} Toàn bộ chuỗi tính toán từ tham số chính sách đến chi phí kỳ vọng là khả vi, cho phép tối ưu hóa hiệu quả bằng CG/BFGS.
+    
+    \item \textbf{Hiệu quả dữ liệu vượt trội:} Ít nhất $10\times$ và thường $>50\times$ nhanh hơn các phương pháp hiện có trên các benchmark chuẩn.
+\end{enumerate}
+
+Kết quả thực nghiệm trên bốn bài toán điều khiển -- từ mô phỏng (double pendulum, cart-pole) đến phần cứng thực (unicycle, robot arm) -- xác nhận những đóng góp lý thuyết này. Đặc biệt ấn tượng là khả năng học điều khiển cánh tay robot giá rẻ chỉ trong khoảng 4 phút mà không cần bất kỳ kiến thức kỹ thuật trước nào, mở ra triển vọng cho việc triển khai robot học nhanh trong môi trường thực tế.
+
+PILCO đặt nền móng quan trọng cho hướng nghiên cứu \textit{model-based RL với mô hình phi tham số xác suất}, và tiếp tục ảnh hưởng đến các công trình về \textit{safe RL}, \textit{meta-learning} cho điều khiển, và \textit{robot learning from scratch}.
+
+\subsection{Nhận xét cá nhân}
+\label{SUB_SEC_personal_opinion}
+
+Nhìn từ góc độ của người học \textbf{Phương pháp số cho học máy}, PILCO gây ấn tượng bởi cách nó biến các công cụ số -- tích phân Gaussian, xấp xỉ moment, tối ưu hóa gradient bậc hai -- thành một hệ thống học điều khiển hoàn chỉnh. Đây không phải là ``deep learning thần kỳ'', mà là kỹ thuật số được kiến trúc cẩn thận.
+
+Ba bài học rút ra cho các bài toán tiếp theo:
+
+\begin{itemize}
+    \item \textbf{Khi nào chọn model-based?} Khi dữ liệu đắt (robot thực, thí nghiệm sinh học, tối ưu hóa công nghiệp), khi động học tương đối trơn và có thể mô hình hóa được bằng GP hay NN nhỏ, hoặc khi cần gradient để tối ưu hóa nhanh.
+    \item \textbf{Khi nào chọn model-free?} Khi có môi trường mô phỏng nhanh, khi quan sát là ảnh hoặc vector cao chiều mà khó mô hình hóa động học, hoặc khi động học có tiếp xúc phức tạp.
+    \item \textbf{Tầm quan trọng của bất định mô hình.} Một trong những đóng góp sâu sắc nhất của PILCO là minh chứng rằng \textit{biết mình không biết gì} (quantified uncertainty) có giá trị thực tiễn: nó tự nhiên dẫn đến thám hiểm, an toàn, và hội tụ nhanh hơn. Đây là nguyên tắc quan trọng vượt ra ngoài PILCO, áp dụng rộng trong Bayesian optimization, active learning, và calibrated deep learning.
+\end{itemize}
+
+Theo đánh giá cá nhân, PILCO là ``điểm giao'' độc đáo giữa \textit{điều khiển cổ điển} (lập kế hoạch qua mô hình), \textit{Bayesian modeling} (GP với bất định giải tích) và \textit{học tăng cường} (tối ưu hóa chính sách dựa trên dữ liệu). Sự kết hợp này tinh tế và cân đối hơn nhiều phương pháp end-to-end hiện đại, đặc biệt trong bối cảnh tài nguyên dữ liệu hạn chế.

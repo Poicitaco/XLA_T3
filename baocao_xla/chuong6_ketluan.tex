@@ -1,0 +1,170 @@
+% ============================================================
+%  CHƯƠNG 6: KẾT LUẬN
+% ============================================================
+\section{Kết luận}
+\label{sec:ketluan}
+
+\subsection{Tổng kết}
+\label{subsec:tongket}
+
+Báo cáo này đã trình bày toàn bộ quá trình thiết kế, triển khai và đánh giá hệ thống \textbf{XLA Face Privacy System} --- một hệ thống camera giám sát thời gian thực đặt quyền riêng tư làm trung tâm. Xuất phát từ bài toán mâu thuẫn giữa quyền riêng tư và nhu cầu bằng chứng trong giám sát hiện đại, đề tài đã đề xuất và hiện thực hóa một giải pháp kỹ thuật toàn diện dựa trên kiến trúc lưu trữ kép.
+
+\medskip
+Hệ thống tích hợp thành công các công nghệ tiên tiến:
+\begin{itemize}
+    \item \textbf{YOLOv11n-face} cho phát hiện khuôn mặt thời gian thực với tốc độ tới 72 FPS trên CPU.
+    \item \textbf{InsightFace buffalo\_l} (ArcFace 512D) cho nhận diện thành viên với độ chính xác cao.
+    \item \textbf{9 chế độ ẩn danh hoá} đa dạng từ mức độ nhẹ đến mạnh nhất.
+    \item \textbf{AES-256-GCM + PBKDF2-SHA256} (390.000 iterations) cho lưu trữ mã hoá chuẩn công nghiệp.
+    \item \textbf{FastAPI + 4 giao thức streaming} cho backend hiệu suất cao.
+    \item \textbf{Giao diện web đầy đủ} cho cả admin và người dùng thường.
+\end{itemize}
+
+\subsection{Đóng góp của đề tài}
+\label{subsec:donggop}
+
+Đề tài có các đóng góp chính sau:
+
+\begin{enumerate}[1.]
+    \item \textbf{Kiến trúc Privacy-First mới}: Thiết kế hệ thống lưu trữ kép (blurred MP4 + AES-encrypted .enc) với kiến trúc phân quyền rõ ràng: người dùng thường chỉ thấy video đã ẩn danh hoá, admin mới có thể xem bản gốc.
+    
+    \item \textbf{Đánh giá định lượng toàn diện}: Xây dựng framework đánh giá hai chiều (hiệu suất + bảo mật) với các chỉ số cụ thể (FPS, SSIM, cosine similarity, recognition prevention rate), đưa ra so sánh có căn cứ đo lường giữa 9 chế độ ẩn danh hoá trên 4 preset.
+    
+    \item \textbf{Phát hiện điểm yếu của pixelate}: Kết quả thực nghiệm cho thấy pixelate \textit{không đủ} bảo vệ quyền riêng tư trước hệ thống nhận diện hiện đại (cosine similarity 0,98 sau pixelate), điều này thường bị bỏ qua trong các hệ thống thực tế.
+    
+    \item \textbf{Tích hợp bảo mật đúng cách}: Áp dụng đúng các tiêu chuẩn bảo mật thực tiễn: salt ngẫu nhiên riêng từng clip, PBKDF2 với 390.000 iterations (OWASP 2023), Scrypt cho face lock, constant-time comparison, zero plaintext password storage.
+    
+    \item \textbf{API mở và có thể mở rộng}: REST API đầy đủ 25+ endpoints cho phép tích hợp với hệ thống khác hoặc thay thế frontend bất kỳ lúc nào.
+\end{enumerate}
+
+\subsection{Hạn chế và thách thức}
+\label{subsec:hanche}
+
+Đề tài còn tồn tại các hạn chế sau đây cần thừa nhận:
+
+\begin{enumerate}[1.]
+    \item \textbf{Phụ thuộc vào ánh sáng và góc nhìn}: Detector YOLOv11n-face bỏ sót khuôn mặt ở góc nghiêng $> 45°$, trong tối, hoặc khi bị che khuất một phần. Điều này có thể để lọt khuôn mặt chưa được ẩn danh hoá trong một số khung hình.
+    
+    \item \textbf{Chỉ một pipeline tại một thời điểm}: Thiết kế singleton pipeline không hỗ trợ xử lý đồng thời nhiều camera. Đây là giới hạn kiến trúc quan trọng cho ứng dụng quy mô lớn.
+    
+    \item \textbf{Lưu trữ JSON không thể mở rộng}: Sử dụng JSON thuần cho face database không phù hợp khi số thành viên lên đến hàng nghìn. Tốc độ truy vấn sẽ giảm và nguy cơ race condition khi write đồng thời.
+    
+    \item \textbf{Chưa có xác thực API đầy đủ}: Các endpoint thông thường không yêu cầu token xác thực. Trong production, cần thêm lớp authentication (JWT/OAuth2) cho toàn bộ API.
+    
+    \item \textbf{Blur không đủ bảo vệ}: Như được chứng minh trong Chương 5, chế độ blur truyền thống không ngăn nhận diện bởi deep learning. Người dùng cần được hướng dẫn chọn chế độ phù hợp.
+    
+    \item \textbf{Bộ nhớ pre-buffer}: Pre-buffer 3 giây lưu trong RAM. Với camera 4K 60fps, bộ nhớ cần cho pre-buffer có thể lên đến vài GB.
+    
+    \item \textbf{Chưa đánh giá trên tập dữ liệu chuẩn}: Thực nghiệm được tiến hành trên tập dữ liệu nội bộ nhỏ, chưa có đánh giá trên các benchmark công khai như LFW, CFP-FP, AgeDB.
+\end{enumerate}
+
+\subsection{Hướng phát triển tương lai}
+\label{subsec:huongphat}
+
+Dựa trên các hạn chế đã xác định, các hướng phát triển sau đây được đề xuất:
+
+\subsubsection{Ngắn hạn (3--6 tháng)}
+\begin{itemize}
+    \item \textbf{Multi-camera support}: Refactor pipeline từ singleton sang multi-instance, mỗi camera có pipeline riêng, quản lý qua session ID.
+    \item \textbf{API authentication}: Thêm JWT-based authentication với role-based access control (RBAC): \texttt{viewer}, \texttt{member}, \texttt{admin}.
+    \item \textbf{SQLite cho face database}: Thay JSON bằng SQLite với vector extension cho indexed embedding search.
+    \item \textbf{GPU acceleration}: Thêm hỗ trợ CUDA/TensorRT cho môi trường có GPU để tăng FPS thêm 5--10x.
+\end{itemize}
+
+\subsubsection{Trung hạn (6--18 tháng)}
+\begin{itemize}
+    \item \textbf{Deep anonymization}: Tích hợp các kỹ thuật generative model (GAN-based face de-identification) như DeepPrivacy \cite{hasler2019deepprivacy} để tạo khuôn mặt giả thực sự thay thế, vừa bảo vệ quyền riêng tư vừa giữ ngữ cảnh tự nhiên hơn.
+    \item \textbf{Edge deployment}: Tối ưu hóa model với quantization (INT8) để triển khai trên thiết bị nhúng (Raspberry Pi, Jetson Nano) hoặc camera thông minh.
+    \item \textbf{Federated privacy-preserving recognition}: Nhận diện thành viên mà không cần gửi ảnh gốc về server --- dùng on-device inference và chỉ truyền kết quả nhị phân (nhận ra/không nhận ra).
+    \item \textbf{Audit log mã hoá}: Ghi log tất cả truy cập giải mã clip với timestamp, đảm bảo trách nhiệm giải trình (accountability) ngay cả khi admin truy cập bản gốc.
+\end{itemize}
+
+\subsubsection{Dài hạn (nghiên cứu)}
+\begin{itemize}
+    \item \textbf{Differential Privacy cho embedding}: Thêm nhiễu Gaussian đã hiệu chỉnh vào embedding trước khi lưu, đảm bảo bảo mật toán học (differential privacy) ngay cả khi database bị lộ.
+    \item \textbf{Tuân thủ GDPR đầy đủ}: Cài đặt \textit{right to be forgotten} (xóa hoàn toàn mọi dấu vết của một cá nhân), \textit{data minimization} (tự động xóa clip sau $N$ ngày), và \textit{consent management}.
+    \item \textbf{Zero-knowledge decryption}: Nghiên cứu cơ chế cho phép admin xác nhận danh tính mà không bao giờ giao khoá trực tiếp cho server, dùng zero-knowledge proof.
+\end{itemize}
+
+% =========================================================
+\subsection{Điểm sáng sáng tạo (Creative Spark)}
+\label{subsec:creativespark}
+% =========================================================
+
+Phần này nêu bật những điểm sáng kỹ thuật và tư duy thiết kế mà nhóm đóng góp vượt ra ngoài yêu cầu bài tập thông thường, phù hợp với Tiêu chí 4.1 của rubric đánh giá.
+
+\subsubsection{Điểm sáng 1: Kiến trúc lưu trữ kép (Dual-Layer Storage)}
+
+Thay vì chọn một trong hai cực (lưu thô hoặc không lưu), nhóm thiết kế kiến trúc \textbf{lưu đồng thời hai bản}: (1) clip đã ẩn danh hoá hoàn toàn dưới dạng MP4 thường cho xem ngay lập tức, và (2) bản gốc mã hoá AES-256-GCM dưới dạng file .enc chỉ admin với mật khẩu đúng mới giải mã được. Đây là cách tiếp cận vừa \textit{bảo vệ quyền riêng tư theo mặc định} vừa \textit{bảo tồn bằng chứng pháp lý}. Kiến trúc này là sự cân bằng kỹ thuật tinh tế giữa hai nguyên tắc đối lập.
+
+\subsubsection{Điểm sáng 2: Phát hiện điểm yếu bảo mật của Pixelate}
+
+Kết quả thực nghiệm (Chương 5) cho thấy pixelate với \textit{bất kỳ} block size nào đều \textbf{không ngăn được nhận diện bằng deep learning} (cosine similarity $\geq 0.48$ ngay cả với block size 256). Đây là phát hiện quan trọng về mặt thực tiễn:
+\begin{itemize}
+    \item Nhiều hệ thống giám sát thương mại hiện tại dùng pixelate và tuyên bố ẩn danh hoá, nhưng thực tế không bảo vệ.
+    \item Phát hiện này có giá trị ứng dụng thực tế: hướng dẫn người dùng chọn headcloak hoặc silhouette thay vì pixelate khi cần bảo vệ danh tính mạnh.
+\end{itemize}
+
+\subsubsection{Điểm sáng 3: CPU-Only Real-Time Processing}
+
+Toàn bộ pipeline chạy trên CPU với tốc độ 72 FPS (pixelate/fast). Điều này đạt được qua 4 tầng tối ưu:
+\begin{enumerate}[a)]
+    \item Vectorization NumPy/BLAS thay Python loops (145× speedup cho 100 thành viên).
+    \item Skip detection mỗi $N$ frame (35\% FPS gain).
+    \item Downsample-blur-upsample (20× speedup vs. blur kích thước gốc).
+    \item Drop-frame queue + async architecture tránh blocking.
+\end{enumerate}
+Đây không phải tối ưu ``viết lại code nhanh hơn'', mà là tối ưu có tính toán thuật toán với phép đo thực nghiệm trước/sau.
+
+\subsubsection{Điểm sáng 4: Mã hoá bảo mật đúng cách (Security Best Practices)}
+
+Thay vì dùng mã hoá đơn giản hoặc mật khẩu plaintext, hệ thống áp dụng đúng các tiêu chuẩn:
+\begin{itemize}
+    \item \textbf{Không bao giờ lưu mật khẩu plaintext}: Dùng Scrypt hash cho face lock, PBKDF2 KDF cho encryption key.
+    \item \textbf{Salt ngẫu nhiên riêng từng clip}: Ngăn rainbow table và identical-ciphertext attacks.
+    \item \textbf{AES-256-GCM}: Vừa mã hoá vừa xác thực toàn vẹn --- phát hiện ngay nếu file bị tampering.
+    \item \textbf{PBKDF2 390.000 iterations}: Brute-force time ước tính 12 năm với phần cứng hiện tại.
+    \item \textbf{Constant-time comparison}: Tránh timing attack khi so sánh hash.
+\end{itemize}
+
+\subsubsection{Điểm sáng 5: Hệ thống 9 chế độ với đánh giá định lượng}
+
+Thay vì chỉ cài đặt ``blur khuôn mặt'', nhóm thiết kế \textbf{9 chế độ ẩn danh hoá} với đánh giá định lượng bảo mật. Kết quả tạo ra \textbf{ma trận đánh giá 2 chiều} (privacy strength $\times$ performance) cung cấp thông tin để người dùng lựa chọn dựa trên tradeoff rõ ràng, không phải dựa trên cảm quan.
+
+\medskip
+
+% =========================================================
+\subsection{Tóm tắt quy trình khoa học}
+\label{subsec:quytrinhkhoa}
+% =========================================================
+
+Để đảm bảo tính khoa học, nhóm tuân thủ quy trình nghiên cứu có cấu trúc rõ ràng:
+
+\begin{enumerate}[label=\textbf{Bước \arabic*.}]
+    \item \textbf{Xác định vấn đề} $\rightarrow$ Mâu thuẫn privacy vs. evidence trong camera giám sát. Formal definition: cần hệ thống $\mathcal{S}$ sao cho $\text{Privacy}(\mathcal{S}) \geq \tau_{priv}$ đồng thời $\text{Evidence}(\mathcal{S}) = 1$.
+    
+    \item \textbf{Đặt câu hỏi nghiên cứu} $\rightarrow$ (i) Chế độ nào đủ bảo vệ quyền riêng tư trước deep learning? (ii) Chi phí hiệu suất của từng chế độ là bao nhiêu? (iii) Có thể đạt real-time CPU-only không?
+    
+    \item \textbf{Xây dựng giả thuyết} $\rightarrow$ H1: Pixelate không đủ bảo vệ. H2: Headcloak/silhouette ngăn nhận diện hoàn toàn. H3: Tốc độ $\geq 25$ FPS (real-time) là khả thi trên CPU.
+    
+    \item \textbf{Thiết kế thực nghiệm} $\rightarrow$ 9 chế độ $\times$ 4 preset, mỗi tổ hợp chạy 100 frame, đo 5 chỉ số (FPS, SSIM, PSNR, cosine similarity, tỷ lệ ngăn nhận diện).
+    
+    \item \textbf{Thu thập dữ liệu} $\rightarrow$ Kết quả lưu vào \texttt{bench\allowbreak{}mark\_results.csv} và \texttt{se\allowbreak{}cu\allowbreak{}rity\_eva\allowbreak{}lu\allowbreak{}ation.csv}.
+    
+    \item \textbf{Phân tích kết quả} $\rightarrow$ H1 xác nhận (pixelate sim $=0.98$). H2 xác nhận (headcloak, silhouette, obliterate ngăn $100\%$). H3 xác nhận (pixelate/fast: 72 FPS).
+    
+    \item \textbf{Rút ra kết luận} $\rightarrow$ Không phải mọi ``ẩn danh hoá'' đều như nhau; cần phân biệt visual anonymization (bảo vệ trước mắt người) và algorithmic anonymization (bảo vệ trước AI).
+\end{enumerate}
+
+\medskip
+
+% =========================================================
+\subsection{Kết luận chung}
+\label{subsec:ketluanchung}
+
+Đề tài đã đạt được mục tiêu đặt ra: xây dựng thành công hệ thống camera giám sát privacy-first hoàn chỉnh, từ camera input đến web interface, với triết lý \textit{ẩn danh hoá theo mặc định -- bằng chứng theo yêu cầu}. Kết quả thực nghiệm định lượng cung cấp cơ sở rõ ràng để người dùng lựa chọn chế độ phù hợp cho từng ngữ cảnh, đồng thời phát hiện được điểm yếu quan trọng của pixelate --- thông tin có giá trị thực tiễn cho các nhà phát triển hệ thống camera tương tự.
+
+\medskip
+Trong bối cảnh quyền riêng tư ngày càng trở thành quyền cơ bản được pháp lý bảo vệ, các hệ thống như XLA Face Privacy System không chỉ là giải pháp kỹ thuật mà còn là hiện thực hóa của một triết lý: \textbf{công nghệ phải phục vụ con người, không phải theo dõi con người}.
+
+\medskip

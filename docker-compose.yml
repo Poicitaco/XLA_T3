@@ -1,0 +1,26 @@
+services:
+  xla:
+    build: .
+    image: xla-face-privacy:latest
+    container_name: xla_server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+
+    # ── Persist data between restarts ────────────────────────────────────────
+    volumes:
+      - ./data:/app/data
+
+    # ── Camera access (Linux only) ────────────────────────────────────────────
+    # On Linux, pass through the webcam device:
+    #   devices:
+    #     - /dev/video0:/dev/video0
+    #
+    # On Windows / macOS, use an IP camera or phone camera instead
+    # (e.g. DroidCam, Camo over network) and pass the stream URL when
+    # starting the pipeline via the dashboard.
+
+    environment:
+      # Pre-download insightface models into the mounted volume so they
+      # survive container rebuilds.
+      - INSIGHTFACE_HOME=/app/data/.insightface
