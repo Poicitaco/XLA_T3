@@ -13,5 +13,11 @@ venv/
 .env
 .env.*
 
+# Sensitive runtime data (do not commit real credentials or biometric data)
+data/admin_credentials.json
+data/family_members.json
+data/members/
+data/clips/
+
 # Logs and binary outputs
 *.log

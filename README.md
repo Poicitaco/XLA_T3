@@ -70,7 +70,7 @@ xla_demo/
 
 ## Quick Start
 
-### 1. Install dependencies
+### 1. Install Python dependencies
 
 ```bash
 python -m venv .venv
@@ -82,7 +82,32 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Start the server
+### 2. Install ffmpeg (required for clip recording)
+
+**Windows** — install via winget or download from https://ffmpeg.org/download.html and add to PATH:
+
+```powershell
+winget install ffmpeg
+```
+
+**macOS:**
+
+```bash
+brew install ffmpeg
+```
+
+**Linux:**
+
+```bash
+sudo apt install ffmpeg
+```
+
+### 3. First-startup — model auto-download
+
+- **YOLOv11 face weights** (`models/yolov11n-face.pt`) — included in the repo, no download needed
+- **InsightFace buffalo_l** (~300 MB) — downloaded automatically on first run into `~/.insightface/models/`, requires internet access
+
+### 4. Start the server
 
 ```bash
 uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
@@ -90,13 +115,13 @@ uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
 .\start_server.ps1
 ```
 
-### 3. Open the dashboard
+### 5. Open the dashboard
 
 - Admin panel: http://localhost:8000/ui/admin/dashboard.html
 - User portal: http://localhost:8000/ui/user/live-portal.html
 - API docs: http://localhost:8000/docs
 
-### 4. First-time setup
+### 6. First-time setup
 
 1. Go to the **Admin Dashboard** and set your admin password (stored as PBKDF2-SHA256 hash, never plaintext)
 2. Go to **Face Registry** and register members by uploading photos
@@ -106,15 +131,15 @@ uvicorn src.app_api:app --host 0.0.0.0 --port 8000 --reload
 
 ## API Overview
 
-| Category | Endpoints |
-|---|---|
-| **Health** | `GET /health`, `GET /info` |
-| **Pipeline** | `POST /pipeline/start`, `DELETE /pipeline/stop`, `GET /pipeline/status`, `PATCH /pipeline/config` |
-| **Streaming** | `GET /stream/mjpeg`, `GET /stream/sse`, `WS /stream/ws`, `GET /stream/frame` |
-| **Members** | `GET/POST /members`, `GET/PATCH/DELETE /members/{id}` |
-| **Clips** | `GET /clips`, `GET /clips/{id}/video`, `POST /clips/{id}/decrypt`, `DELETE /clips/{id}`, `DELETE /clips` |
-| **Cameras** | `GET /cameras` |
-| **Image ops** | `POST /anonymize`, `POST /lock`, `POST /unlock`, `POST /recognize` |
+| Category      | Endpoints                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------- |
+| **Health**    | `GET /health`, `GET /info`                                                                               |
+| **Pipeline**  | `POST /pipeline/start`, `DELETE /pipeline/stop`, `GET /pipeline/status`, `PATCH /pipeline/config`        |
+| **Streaming** | `GET /stream/mjpeg`, `GET /stream/sse`, `WS /stream/ws`, `GET /stream/frame`                             |
+| **Members**   | `GET/POST /members`, `GET/PATCH/DELETE /members/{id}`                                                    |
+| **Clips**     | `GET /clips`, `GET /clips/{id}/video`, `POST /clips/{id}/decrypt`, `DELETE /clips/{id}`, `DELETE /clips` |
+| **Cameras**   | `GET /cameras`                                                                                           |
+| **Image ops** | `POST /anonymize`, `POST /lock`, `POST /unlock`, `POST /recognize`                                       |
 
 Full interactive docs: **http://localhost:8000/docs**
 
@@ -122,12 +147,12 @@ Full interactive docs: **http://localhost:8000/docs**
 
 ## Anonymization Modes
 
-| Mode | Description |
-|---|---|
-| `blur` | Gaussian blur over detected faces |
-| `solid` | Solid color block |
-| `noise` | Cryptographic noise pattern |
-| `rps` | Reversible Pixel Shuffling (recoverable with key) |
+| Mode    | Description                                       |
+| ------- | ------------------------------------------------- |
+| `blur`  | Gaussian blur over detected faces                 |
+| `solid` | Solid color block                                 |
+| `noise` | Cryptographic noise pattern                       |
+| `rps`   | Reversible Pixel Shuffling (recoverable with key) |
 
 ---
 
@@ -146,11 +171,11 @@ Decryption requires the admin password that was active when the pipeline recorde
 
 Members registered in the face database can be excluded from anonymization:
 
-| Mode | Behavior |
-|---|---|
-| `disabled` | All faces anonymized |
-| `family_only` | Registered members shown clearly, strangers blurred |
-| `strangers_only` | Only unrecognized faces anonymized |
+| Mode             | Behavior                                            |
+| ---------------- | --------------------------------------------------- |
+| `disabled`       | All faces anonymized                                |
+| `family_only`    | Registered members shown clearly, strangers blurred |
+| `strangers_only` | Only unrecognized faces anonymized                  |
 
 ---
 
@@ -167,9 +192,11 @@ Members registered in the face database can be excluded from anonymization:
 
 - Python 3.10+
 - ffmpeg in system PATH (used for H.264 transcoding)
-- Webcam or IP camera
+- Webcam or IP camera (physical or virtual, e.g. Camo, OBS)
 
 Key Python packages: `ultralytics`, `deepface`, `fastapi`, `uvicorn`, `cryptography`, `opencv-python`
+
+> **Note:** The `insightface` buffalo_l model (~300 MB) is downloaded automatically on first run into `~/.insightface/models/`. Requires internet access on first startup.
 
 ---
 
